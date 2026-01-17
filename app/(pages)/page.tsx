@@ -1,5 +1,3 @@
-"use client";
-
 import { TagsModal, useTagsModal, type TagColor } from "../components/tags-modal";
 
 // Example initial tags
