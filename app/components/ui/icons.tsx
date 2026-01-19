@@ -317,3 +317,101 @@ export function MindFlowLogo({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+export function BoldIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="22"
+      viewBox="0 0 18 22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M11 7H9V4H11C11.8 4 12.5 4.7 12.5 5.5C12.5 6.3 11.8 7 11 7ZM9 13V9H11.5C12.6 9 13.5 9.9 13.5 11C13.5 12.1 12.6 13 11.5 13H9ZM7 2V16H11.5C13.7 16 15.5 14.2 15.5 12C15.5 10.3 14.5 8.9 13.1 8.3C13.7 7.8 14 7.1 14 6.5C14 4 11.8 2 9.5 2H7Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function ItalicIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="22"
+      viewBox="0 0 18 22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M11 2H6L5 4H10L6 18H11L12 16H7L11 2Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function UnderlineIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="22"
+      viewBox="0 0 18 22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M2 20H16V18H2V20ZM9 2C6.2 2 4 4.2 4 7V13H6V7C6 5.3 7.3 4 9 4C10.7 4 12 5.3 12 7V13H14V7C14 4.2 11.8 2 9 2Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function LinkIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="22"
+      viewBox="0 0 18 22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M7 9L5 11C3.3 12.7 3.3 15.3 5 17C6.7 18.7 9.3 18.7 11 17L13.5 14.5M11 13L13 11C14.7 9.3 14.7 6.7 13 5C11.3 3.3 8.7 3.3 7 5L4.5 7.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ListIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="22"
+      viewBox="0 0 18 22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M2 4H16M2 11H16M2 18H16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <circle cx="0" cy="4" r="0" fill="currentColor" />
+      <circle cx="0" cy="11" r="0" fill="currentColor" />
+      <circle cx="0" cy="18" r="0" fill="currentColor" />
+    </svg>
+  );
+}

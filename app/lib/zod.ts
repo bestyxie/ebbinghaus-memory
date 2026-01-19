@@ -23,3 +23,21 @@ export const memoryItemSchema = z.object({
   review_count: z.number(),
   next_review: z.number(),
 })
+
+// 卡片创建验证
+export const createCardSchema = z.object({
+  front: z.string().min(1, "Title is required"),
+  back: z.string().min(1, "Content is required"),
+  note: z.string().optional(),
+  deckId: z.string().optional(),
+  quality: z.enum(["5", "4", "3"]),
+})
+
+// 根据 SM-2 算法计算初始 easeFactor
+// quality 5 (Easy) → 2.6
+// quality 4 (Medium) → 2.5
+// quality 3 (Hard) → 2.36
+export function calculateInitialEaseFactor(quality: number): number {
+  const baseEF = 2.5;
+  return baseEF + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+}

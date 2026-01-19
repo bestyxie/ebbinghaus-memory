@@ -3735,7 +3735,7 @@ export namespace Prisma {
     easeFactor: number
     repetitions: number
     state: $Enums.CardState
-    deckId: string
+    deckId: string | null
     userId: string
     createdAt: Date
     updatedAt: Date
@@ -3774,7 +3774,7 @@ export namespace Prisma {
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deck?: boolean | DeckDefaultArgs<ExtArgs>
+    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
     logs?: boolean | Card$logsArgs<ExtArgs>
     _count?: boolean | CardCountOutputTypeDefaultArgs<ExtArgs>
@@ -3794,7 +3794,7 @@ export namespace Prisma {
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deck?: boolean | DeckDefaultArgs<ExtArgs>
+    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["card"]>
 
@@ -3812,7 +3812,7 @@ export namespace Prisma {
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deck?: boolean | DeckDefaultArgs<ExtArgs>
+    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["card"]>
 
@@ -3834,24 +3834,24 @@ export namespace Prisma {
 
   export type CardOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "front" | "back" | "note" | "nextReviewAt" | "interval" | "easeFactor" | "repetitions" | "state" | "deckId" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["card"]>
   export type CardInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    deck?: boolean | DeckDefaultArgs<ExtArgs>
+    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
     logs?: boolean | Card$logsArgs<ExtArgs>
     _count?: boolean | CardCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type CardIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    deck?: boolean | DeckDefaultArgs<ExtArgs>
+    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
   export type CardIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    deck?: boolean | DeckDefaultArgs<ExtArgs>
+    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
 
   export type $CardPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Card"
     objects: {
-      deck: Prisma.$DeckPayload<ExtArgs>
+      deck: Prisma.$DeckPayload<ExtArgs> | null
       user: Prisma.$UserPayload<ExtArgs>
       logs: Prisma.$ReviewLogPayload<ExtArgs>[]
     }
@@ -3865,7 +3865,7 @@ export namespace Prisma {
       easeFactor: number
       repetitions: number
       state: $Enums.CardState
-      deckId: string
+      deckId: string | null
       userId: string
       createdAt: Date
       updatedAt: Date
@@ -4263,7 +4263,7 @@ export namespace Prisma {
    */
   export interface Prisma__CardClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    deck<T extends DeckDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DeckDefaultArgs<ExtArgs>>): Prisma__DeckClient<$Result.GetResult<Prisma.$DeckPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    deck<T extends Card$deckArgs<ExtArgs> = {}>(args?: Subset<T, Card$deckArgs<ExtArgs>>): Prisma__DeckClient<$Result.GetResult<Prisma.$DeckPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     logs<T extends Card$logsArgs<ExtArgs> = {}>(args?: Subset<T, Card$logsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReviewLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -4701,6 +4701,25 @@ export namespace Prisma {
      * Limit how many Cards to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Card.deck
+   */
+  export type Card$deckArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Deck
+     */
+    select?: DeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Deck
+     */
+    omit?: DeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeckInclude<ExtArgs> | null
+    where?: DeckWhereInput
   }
 
   /**
@@ -6203,6 +6222,7 @@ export namespace Prisma {
 
   export type DeckWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    userId_title?: DeckUserIdTitleCompoundUniqueInput
     AND?: DeckWhereInput | DeckWhereInput[]
     OR?: DeckWhereInput[]
     NOT?: DeckWhereInput | DeckWhereInput[]
@@ -6214,7 +6234,7 @@ export namespace Prisma {
     userId?: StringFilter<"Deck"> | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     cards?: CardListRelationFilter
-  }, "id">
+  }, "id" | "userId_title">
 
   export type DeckOrderByWithAggregationInput = {
     id?: SortOrder
@@ -6255,11 +6275,11 @@ export namespace Prisma {
     easeFactor?: FloatFilter<"Card"> | number
     repetitions?: IntFilter<"Card"> | number
     state?: EnumCardStateFilter<"Card"> | $Enums.CardState
-    deckId?: StringFilter<"Card"> | string
+    deckId?: StringNullableFilter<"Card"> | string | null
     userId?: StringFilter<"Card"> | string
     createdAt?: DateTimeFilter<"Card"> | Date | string
     updatedAt?: DateTimeFilter<"Card"> | Date | string
-    deck?: XOR<DeckScalarRelationFilter, DeckWhereInput>
+    deck?: XOR<DeckNullableScalarRelationFilter, DeckWhereInput> | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     logs?: ReviewLogListRelationFilter
   }
@@ -6274,7 +6294,7 @@ export namespace Prisma {
     easeFactor?: SortOrder
     repetitions?: SortOrder
     state?: SortOrder
-    deckId?: SortOrder
+    deckId?: SortOrderInput | SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -6296,11 +6316,11 @@ export namespace Prisma {
     easeFactor?: FloatFilter<"Card"> | number
     repetitions?: IntFilter<"Card"> | number
     state?: EnumCardStateFilter<"Card"> | $Enums.CardState
-    deckId?: StringFilter<"Card"> | string
+    deckId?: StringNullableFilter<"Card"> | string | null
     userId?: StringFilter<"Card"> | string
     createdAt?: DateTimeFilter<"Card"> | Date | string
     updatedAt?: DateTimeFilter<"Card"> | Date | string
-    deck?: XOR<DeckScalarRelationFilter, DeckWhereInput>
+    deck?: XOR<DeckNullableScalarRelationFilter, DeckWhereInput> | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     logs?: ReviewLogListRelationFilter
   }, "id">
@@ -6315,7 +6335,7 @@ export namespace Prisma {
     easeFactor?: SortOrder
     repetitions?: SortOrder
     state?: SortOrder
-    deckId?: SortOrder
+    deckId?: SortOrderInput | SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -6339,7 +6359,7 @@ export namespace Prisma {
     easeFactor?: FloatWithAggregatesFilter<"Card"> | number
     repetitions?: IntWithAggregatesFilter<"Card"> | number
     state?: EnumCardStateWithAggregatesFilter<"Card"> | $Enums.CardState
-    deckId?: StringWithAggregatesFilter<"Card"> | string
+    deckId?: StringNullableWithAggregatesFilter<"Card"> | string | null
     userId?: StringWithAggregatesFilter<"Card"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Card"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Card"> | Date | string
@@ -6583,7 +6603,7 @@ export namespace Prisma {
     state?: $Enums.CardState
     createdAt?: Date | string
     updatedAt?: Date | string
-    deck: DeckCreateNestedOneWithoutCardsInput
+    deck?: DeckCreateNestedOneWithoutCardsInput
     user: UserCreateNestedOneWithoutCardsInput
     logs?: ReviewLogCreateNestedManyWithoutCardInput
   }
@@ -6598,7 +6618,7 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId: string
+    deckId?: string | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -6617,7 +6637,7 @@ export namespace Prisma {
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deck?: DeckUpdateOneRequiredWithoutCardsNestedInput
+    deck?: DeckUpdateOneWithoutCardsNestedInput
     user?: UserUpdateOneRequiredWithoutCardsNestedInput
     logs?: ReviewLogUpdateManyWithoutCardNestedInput
   }
@@ -6632,7 +6652,7 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: StringFieldUpdateOperationsInput | string
+    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6649,7 +6669,7 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId: string
+    deckId?: string | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -6679,7 +6699,7 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: StringFieldUpdateOperationsInput | string
+    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6934,6 +6954,11 @@ export namespace Prisma {
     isNot?: UserWhereInput
   }
 
+  export type DeckUserIdTitleCompoundUniqueInput = {
+    userId: string
+    title: string
+  }
+
   export type DeckCountOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
@@ -7001,9 +7026,9 @@ export namespace Prisma {
     not?: NestedEnumCardStateFilter<$PrismaModel> | $Enums.CardState
   }
 
-  export type DeckScalarRelationFilter = {
-    is?: DeckWhereInput
-    isNot?: DeckWhereInput
+  export type DeckNullableScalarRelationFilter = {
+    is?: DeckWhereInput | null
+    isNot?: DeckWhereInput | null
   }
 
   export type CardCountOrderByAggregateInput = {
@@ -7414,10 +7439,12 @@ export namespace Prisma {
     set?: $Enums.CardState
   }
 
-  export type DeckUpdateOneRequiredWithoutCardsNestedInput = {
+  export type DeckUpdateOneWithoutCardsNestedInput = {
     create?: XOR<DeckCreateWithoutCardsInput, DeckUncheckedCreateWithoutCardsInput>
     connectOrCreate?: DeckCreateOrConnectWithoutCardsInput
     upsert?: DeckUpsertWithoutCardsInput
+    disconnect?: DeckWhereInput | boolean
+    delete?: DeckWhereInput | boolean
     connect?: DeckWhereUniqueInput
     update?: XOR<XOR<DeckUpdateToOneWithWhereWithoutCardsInput, DeckUpdateWithoutCardsInput>, DeckUncheckedUpdateWithoutCardsInput>
   }
@@ -7710,7 +7737,7 @@ export namespace Prisma {
     state?: $Enums.CardState
     createdAt?: Date | string
     updatedAt?: Date | string
-    deck: DeckCreateNestedOneWithoutCardsInput
+    deck?: DeckCreateNestedOneWithoutCardsInput
     logs?: ReviewLogCreateNestedManyWithoutCardInput
   }
 
@@ -7724,7 +7751,7 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId: string
+    deckId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     logs?: ReviewLogUncheckedCreateNestedManyWithoutCardInput
@@ -7832,7 +7859,7 @@ export namespace Prisma {
     easeFactor?: FloatFilter<"Card"> | number
     repetitions?: IntFilter<"Card"> | number
     state?: EnumCardStateFilter<"Card"> | $Enums.CardState
-    deckId?: StringFilter<"Card"> | string
+    deckId?: StringNullableFilter<"Card"> | string | null
     userId?: StringFilter<"Card"> | string
     createdAt?: DateTimeFilter<"Card"> | Date | string
     updatedAt?: DateTimeFilter<"Card"> | Date | string
@@ -8158,7 +8185,7 @@ export namespace Prisma {
     state?: $Enums.CardState
     createdAt?: Date | string
     updatedAt?: Date | string
-    deck: DeckCreateNestedOneWithoutCardsInput
+    deck?: DeckCreateNestedOneWithoutCardsInput
     user: UserCreateNestedOneWithoutCardsInput
   }
 
@@ -8172,7 +8199,7 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId: string
+    deckId?: string | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -8231,7 +8258,7 @@ export namespace Prisma {
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deck?: DeckUpdateOneRequiredWithoutCardsNestedInput
+    deck?: DeckUpdateOneWithoutCardsNestedInput
     user?: UserUpdateOneRequiredWithoutCardsNestedInput
   }
 
@@ -8245,7 +8272,7 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: StringFieldUpdateOperationsInput | string
+    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8301,7 +8328,7 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId: string
+    deckId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -8359,7 +8386,7 @@ export namespace Prisma {
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deck?: DeckUpdateOneRequiredWithoutCardsNestedInput
+    deck?: DeckUpdateOneWithoutCardsNestedInput
     logs?: ReviewLogUpdateManyWithoutCardNestedInput
   }
 
@@ -8373,7 +8400,7 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: StringFieldUpdateOperationsInput | string
+    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     logs?: ReviewLogUncheckedUpdateManyWithoutCardNestedInput
@@ -8389,7 +8416,7 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: StringFieldUpdateOperationsInput | string
+    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

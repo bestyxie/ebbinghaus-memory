@@ -39,6 +39,10 @@ model Deck {
   user        User     @relation(fields: [userId], references: [id])
   
   cards       Card[]
+
+  // 在同一个 userId 下，title 不能重复。
+  // 但是不同用户可以使用相同的 title。
+  @@unique([userId, title])
 }
 
 // 4. 卡片表 (Card) - ★★★ 最核心的部分 ★★★
@@ -71,8 +75,8 @@ model Card {
   state        CardState @default(NEW)
   
   // --- 关系 ---
-  deckId      String
-  deck        Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  deckId      String?
+  deck        Deck?     @relation(fields: [deckId], references: [id], onDelete: SetNull)
   
   userId      String
   user        User     @relation(fields: [userId], references: [id])
