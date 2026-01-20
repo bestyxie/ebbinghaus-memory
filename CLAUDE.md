@@ -52,6 +52,17 @@ npx prisma studio
 - `app/components/` - Reusable components
 - `prisma/` - Database schema and migrations
 - `generated/` - Generated Prisma client (output directory)
+- `docs/` - Additional documentation for major features
+
+### Dashboard
+- Route: `/dashboard` - Main study dashboard
+- Components: `app/(pages)/dashboard/components/`
+  - `stats-grid.tsx` - Statistics cards
+  - `card-table.tsx` - Card listing with pagination
+  - `filters-bar.tsx` - Sort and filter controls
+- API Endpoints:
+  - `/api/dashboard/stats` - Get user statistics
+  - `/api/dashboard/cards` - Get paginated card list
 
 ### Authentication Flow
 - Uses NextAuth 5 with Credentials provider
