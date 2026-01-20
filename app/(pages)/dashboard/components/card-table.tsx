@@ -31,6 +31,7 @@ interface CardsResponse {
 export function CardTable() {
   const [data, setData] = useState<CardsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState('nextReviewAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -47,12 +48,15 @@ export function CardTable() {
         });
 
         const response = await fetch(`/api/dashboard/cards?${params}`);
-        if (response.ok) {
-          const result = await response.json();
-          setData(result);
+        if (!response.ok) {
+          throw new Error('Failed to fetch cards');
         }
+        const result = await response.json();
+        setData(result);
+        setError(null);
       } catch (error) {
         console.error('Failed to fetch cards:', error);
+        setError('Failed to load cards');
       } finally {
         setLoading(false);
       }
@@ -60,6 +64,14 @@ export function CardTable() {
 
     fetchCards();
   }, [currentPage, sortBy, sortOrder]);
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+        <p className="text-red-700">{error}</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -83,7 +95,9 @@ export function CardTable() {
 
   return (
     <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-      <table className="w-full">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[800px]">
+          <caption className="sr-only">List of all knowledge points with their status and familiarity</caption>
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
             <th className="py-4 px-6 text-left text-sm font-medium text-gray-700">
@@ -109,6 +123,7 @@ export function CardTable() {
           ))}
         </tbody>
       </table>
+      </div>
 
       {/* Pagination */}
       <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-between">

@@ -109,6 +109,7 @@ export function CardRow({ card }: CardRowProps) {
           <Link
             href={`/review/${card.id}`}
             className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            aria-label={`Start reviewing ${card.front}`}
             title="Start reviewing"
           >
             <Play className="h-4 w-4" />
@@ -116,12 +117,14 @@ export function CardRow({ card }: CardRowProps) {
           <Link
             href={`/cards/${card.id}/edit`}
             className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            aria-label={`Edit ${card.front}`}
             title="Edit card"
           >
             <Pencil className="h-4 w-4" />
           </Link>
           <button
             className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            aria-label={`Delete ${card.front}`}
             title="Delete card"
             onClick={() => {
               // TODO: Implement delete functionality

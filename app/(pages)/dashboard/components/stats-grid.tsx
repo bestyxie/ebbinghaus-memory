@@ -12,17 +12,21 @@ interface DashboardStats {
 export function StatsGrid() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchStats() {
       try {
         const response = await fetch('/api/dashboard/stats');
-        if (response.ok) {
-          const data = await response.json();
-          setStats(data);
+        if (!response.ok) {
+          throw new Error('Failed to fetch statistics');
         }
+        const data = await response.json();
+        setStats(data);
+        setError(null);
       } catch (error) {
         console.error('Failed to fetch stats:', error);
+        setError('Failed to load statistics');
       } finally {
         setLoading(false);
       }
@@ -30,6 +34,14 @@ export function StatsGrid() {
 
     fetchStats();
   }, []);
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-700">{error}</p>
+      </div>
+    );
+  }
 
   if (loading || !stats) {
     return (
