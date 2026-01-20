@@ -527,7 +527,7 @@ import React from 'react';
 import Link from 'next/link';
 import { CardStatusBadge } from './card-status-badge';
 import { FamiliarityProgress } from './familiarity-progress';
-import { PencilIcon, TrashIcon, PlayIcon } from '@heroicons/react/24/outline';
+import { Pencil, Trash, Play } from 'lucide-react';
 
 interface Card {
   id: string;
@@ -634,14 +634,14 @@ export function CardRow({ card }: CardRowProps) {
             className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             title="Start reviewing"
           >
-            <PlayIcon className="h-4 w-4" />
+            <Play className="h-4 w-4" />
           </Link>
           <Link
             href={`/cards/${card.id}/edit`}
             className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             title="Edit card"
           >
-            <PencilIcon className="h-4 w-4" />
+            <Pencil className="h-4 w-4" />
           </Link>
           <button
             className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -651,7 +651,7 @@ export function CardRow({ card }: CardRowProps) {
               console.log('Delete card:', card.id);
             }}
           >
-            <TrashIcon className="h-4 w-4" />
+            <Trash className="h-4 w-4" />
           </button>
         </div>
       </td>
@@ -660,9 +660,9 @@ export function CardRow({ card }: CardRowProps) {
 }
 ```
 
-**Step 2: Install heroicons if not present**
+**Step 2: Install lucide-react if not present**
 
-Run: `pnpm add @heroicons/react`
+Run: `pnpm add lucide-react`
 
 **Step 3: Check compilation**
 
@@ -673,7 +673,7 @@ Run: `pnpm build` (no errors expected)
 ```bash
 git add app/(pages)/dashboard/components/card-row.tsx
 git add package.json pnpm-lock.yaml
-git commit -m "feat: add card row component with deck display (labeled as Tags)"
+git commit -m "feat: add card row component with deck display and lucide-react icons"
 ```
 
 ---
@@ -852,7 +852,7 @@ git commit -m "feat: add card table component with pagination"
 'use client';
 
 import React, { useState } from 'react';
-import { FunnelIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { Funnel, ChevronDown, Grid3x3, List } from 'lucide-react';
 
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 type DeckOption = string | null;
@@ -882,7 +882,7 @@ export function FiltersBar({ onSortChange, onDeckFilter }: FiltersBarProps) {
     <div className="flex items-center gap-4 mb-6">
       {/* Filters Button */}
       <button className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-        <FunnelIcon className="h-4 w-4" />
+        <Funnel className="h-4 w-4" />
         <span>Filters</span>
       </button>
 
@@ -893,7 +893,7 @@ export function FiltersBar({ onSortChange, onDeckFilter }: FiltersBarProps) {
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
         >
           <span>{sortOptions.find((o) => o.value === selectedSort)?.label}</span>
-          <ChevronDownIcon className="h-4 w-4" />
+          <ChevronDown className="h-4 w-4" />
         </button>
 
         {sortOpen && (
@@ -920,36 +920,12 @@ export function FiltersBar({ onSortChange, onDeckFilter }: FiltersBarProps) {
       <div className="ml-auto flex gap-2">
         {/* Grid View Toggle */}
         <button className="p-2 text-gray-600 hover:text-gray-900">
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-            />
-          </svg>
+          <Grid3x3 className="h-5 w-5" />
         </button>
 
         {/* List View Toggle */}
         <button className="p-2 text-gray-900">
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
+          <List className="h-5 w-5" />
         </button>
       </div>
     </div>
@@ -988,7 +964,7 @@ import { StatsGrid } from './components/stats-grid';
 import { CardTable } from './components/card-table';
 import { FiltersBar } from './components/filters-bar';
 import { CreateBtn } from './components/createBtn';
-import { PlusIcon, PlayIcon } from '@heroicons/react/24/outline';
+import { Plus, Play } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
@@ -1010,14 +986,14 @@ export default function DashboardPage() {
               href="/cards/new"
               className="flex items-center gap-2 px-5 py-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              <PlusIcon className="h-5 w-5" />
+              <Plus className="h-5 w-5" />
               New Point
             </Link>
             <Link
               href="/review"
               className="flex items-center gap-2 px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
             >
-              <PlayIcon className="h-5 w-5" />
+              <Play className="h-5 w-5" />
               Start Reviewing
             </Link>
           </div>
@@ -1453,6 +1429,8 @@ This plan implements a complete dashboard page with:
 5. **Accessibility features** for inclusive design
 6. **Error handling** and loading states
 7. **Comprehensive documentation** for future maintenance
+
+**Icon Library:** Uses `lucide-react` for all icons (consistent with existing codebase).
 
 **Note:** UI shows "Tags" but maps to database "Deck" model (flashcard folders/sets).
 
