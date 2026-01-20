@@ -35,12 +35,12 @@ export async function GET() {
     // Calculate retention rate from review logs
     const reviewLogs = await prisma.reviewLog.findMany({
       where: { userId },
-      select: { quality: true },
+      select: { rating: true },
     });
 
     const retentionRate = reviewLogs.length > 0
       ? Math.round(
-          (reviewLogs.filter((log) => log.quality >= 3).length / reviewLogs.length) * 100
+          (reviewLogs.filter((log) => log.rating >= 3).length / reviewLogs.length) * 100
         )
       : 100;
 
