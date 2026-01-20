@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
     const skip = (page - 1) * limit;
 
-    const where: any = { userId };
+    const where: { userId: string; deckId?: string } = { userId };
 
     // Add deck filter if provided
     if (deckId) {

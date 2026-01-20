@@ -11,7 +11,7 @@ interface FiltersBarProps {
   onDeckFilter: (deckId: DeckOption) => void;
 }
 
-export function FiltersBar({ onSortChange, onDeckFilter }: FiltersBarProps) {
+export function FiltersBar({ onSortChange }: FiltersBarProps) {
   const [sortOpen, setSortOpen] = useState(false);
   const [selectedSort, setSelectedSort] = useState<SortOption>('nextReviewAt');
 

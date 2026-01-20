@@ -33,8 +33,8 @@ export function CardTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState('nextReviewAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const sortBy = 'nextReviewAt';
+  const sortOrder: 'asc' | 'desc' = 'asc';
 
   useEffect(() => {
     async function fetchCards() {
