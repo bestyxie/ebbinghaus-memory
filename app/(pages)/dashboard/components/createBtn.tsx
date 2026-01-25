@@ -2,13 +2,27 @@
 
 import { CreateCardModal } from "./create-card-modal";
 import { useState } from "react";
+import { useCardRefresh } from "./card-refresh-context";
 
-export default function CreateMemoryItemBtn() {
+interface CreateBtnProps {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export default function CreateMemoryItemBtn({ className = "", children }: CreateBtnProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { refresh } = useCardRefresh();
+
+  const handleClose = () => {
+    setIsOpen(false);
+  };
+
   return (
     <>
-      <button className="cursor" onClick={() => setIsOpen(true)}>create</button>
-      <CreateCardModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <button className={className} onClick={() => setIsOpen(true)}>
+        {children || "create"}
+      </button>
+      <CreateCardModal isOpen={isOpen} onClose={handleClose} onSuccess={refresh} />
     </>
   )
 }

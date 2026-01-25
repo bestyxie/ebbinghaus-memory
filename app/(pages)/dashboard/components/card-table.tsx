@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { CardRow } from './card-row';
 
 interface Card {
@@ -28,42 +28,58 @@ interface CardsResponse {
   totalPages: number;
 }
 
-export function CardTable() {
+interface CardTableProps {
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  deckId?: string | null;
+  onFetch?: (refetch: () => void) => void;
+}
+
+export function CardTable({ sortBy = 'nextReviewAt', sortOrder = 'asc', deckId, onFetch }: CardTableProps) {
   const [data, setData] = useState<CardsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const sortBy = 'nextReviewAt';
-  const sortOrder: 'asc' | 'desc' = 'asc';
+
+  const fetchCards = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '10',
+        sortBy,
+        sortOrder,
+      });
+
+      if (deckId) {
+        params.append('deckId', deckId);
+      }
+
+      const response = await fetch(`/api/dashboard/cards?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch cards');
+      }
+      const result = await response.json();
+      setData(result);
+      setError(null);
+    } catch (error) {
+      console.error('Failed to fetch cards:', error);
+      setError('Failed to load cards');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, sortBy, sortOrder, deckId]);
 
   useEffect(() => {
-    async function fetchCards() {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          limit: '10',
-          sortBy,
-          sortOrder,
-        });
-
-        const response = await fetch(`/api/dashboard/cards?${params}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch cards');
-        }
-        const result = await response.json();
-        setData(result);
-        setError(null);
-      } catch (error) {
-        console.error('Failed to fetch cards:', error);
-        setError('Failed to load cards');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchCards();
-  }, [currentPage, sortBy, sortOrder]);
+  }, [fetchCards]);
+
+  // Expose refetch function to parent via callback
+  useEffect(() => {
+    if (onFetch) {
+      onFetch(fetchCards);
+    }
+  }, [onFetch, fetchCards]);
 
   if (error) {
     return (

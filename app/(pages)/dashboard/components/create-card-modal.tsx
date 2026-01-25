@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect, useRef } from "react";
 import { createCard } from "@/app/lib/actions";
 import {
   CloseIcon,
@@ -17,11 +17,29 @@ import { DifficultySelector } from "./difficulty-selector";
 interface CreateCardModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
+export function CreateCardModal({ isOpen, onClose, onSuccess }: CreateCardModalProps) {
   const [state, formAction, isPending] = useActionState(createCard, null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<"5" | "4" | "3">("4");
+  const hasHandledSuccess = useRef(false);
+
+  // Close modal and trigger refresh on success (after render)
+  useEffect(() => {
+    if (state?.success && !isPending && !hasHandledSuccess.current) {
+      hasHandledSuccess.current = true;
+      onSuccess?.();
+      onClose();
+    }
+  }, [state?.success, isPending, onSuccess, onClose]);
+
+  // Reset the success handler when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      hasHandledSuccess.current = false;
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

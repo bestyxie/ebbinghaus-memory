@@ -27,23 +27,34 @@ export async function GET(request: NextRequest) {
       where.deckId = deckId;
     }
 
-    const [cards, total] = await Promise.all([
-      prisma.card.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: {
-          deck: {
-            select: {
-              id: true,
-              name: true,
-            },
+    // Build orderBy object based on sortBy parameter
+    let orderBy: Record<string, 'asc' | 'desc'> = { nextReviewAt: 'asc' };
+    if (sortBy === 'createdAt') {
+      orderBy = { createdAt: sortOrder as 'asc' | 'desc' };
+    } else if (sortBy === 'easeFactor') {
+      orderBy = { easeFactor: sortOrder as 'asc' | 'desc' };
+    } else if (sortBy === 'nextReviewAt') {
+      orderBy = { nextReviewAt: sortOrder as 'asc' | 'desc' };
+    }
+
+    // Run queries sequentially to avoid PrismaPg connection pool issue
+    // Parallel execution with Promise.all causes 10+ second delays
+    const cards = await prisma.card.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      include: {
+        deck: {
+          select: {
+            id: true,
+            title: true,
           },
         },
-      }),
-      prisma.card.count({ where }),
-    ]);
+      },
+    });
+
+    const total = await prisma.card.count({ where });
 
     return NextResponse.json({
       cards,

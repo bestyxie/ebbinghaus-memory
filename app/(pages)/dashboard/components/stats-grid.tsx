@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { StatsCard } from './stats-card';
 
 interface DashboardStats {
@@ -9,31 +9,42 @@ interface DashboardStats {
   retentionRate: number;
 }
 
-export function StatsGrid() {
+interface StatsGridProps {
+  onFetch?: (refetch: () => void) => void;
+}
+
+export function StatsGrid({ onFetch }: StatsGridProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const response = await fetch('/api/dashboard/stats');
-        if (!response.ok) {
-          throw new Error('Failed to fetch statistics');
-        }
-        const data = await response.json();
-        setStats(data);
-        setError(null);
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-        setError('Failed to load statistics');
-      } finally {
-        setLoading(false);
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await fetch('/api/dashboard/stats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch statistics');
       }
+      const data = await response.json();
+      setStats(data);
+      setError(null);
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+      setError('Failed to load statistics');
+    } finally {
+      setLoading(false);
     }
-
-    fetchStats();
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  // Expose refetch function to parent via callback
+  useEffect(() => {
+    if (onFetch) {
+      onFetch(fetchStats);
+    }
+  }, [onFetch, fetchStats]);
 
   if (error) {
     return (
