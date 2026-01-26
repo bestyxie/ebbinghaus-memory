@@ -135,7 +135,7 @@ export function CardTable({ sortBy = 'nextReviewAt', sortOrder = 'asc', deckId, 
         </thead>
         <tbody>
           {data.cards.map((card) => (
-            <CardRow key={card.id} card={card} />
+            <CardRow key={card.id} card={card} sortBy={sortBy} sortOrder={sortOrder} deckId={deckId} />
           ))}
         </tbody>
       </table>

@@ -25,9 +25,28 @@ interface Card {
 
 interface CardRowProps {
   card: Card;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  deckId?: string | null;
 }
 
-export function CardRow({ card }: CardRowProps) {
+export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deckId }: CardRowProps) {
+  // Build review URL with current filters
+  const buildReviewUrl = () => {
+    const params = new URLSearchParams({
+      mode: 'filtered',
+      startCardId: card.id,
+      sortBy,
+      sortOrder,
+    });
+
+    if (deckId) {
+      params.append('deckId', deckId);
+    }
+
+    return '/review?' + params.toString();
+  };
+
   // Calculate card status
   const getCardStatus = (): { status: 'new' | 'due' | 'overdue' | 'scheduled'; daysUntil?: number } => {
     const now = new Date();
@@ -62,7 +81,7 @@ export function CardRow({ card }: CardRowProps) {
     }
 
     const now = new Date();
-    const diffTime = now.getTime() - card.updatedAt.getTime();
+    const diffTime = now.getTime() - (new Date(card.updatedAt)).getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return 'Reviewed today';
@@ -107,7 +126,7 @@ export function CardRow({ card }: CardRowProps) {
       <td className="py-6 px-6">
         <div className="flex items-center gap-2">
           <Link
-            href={`/review/${card.id}`}
+            href={buildReviewUrl()}
             className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             aria-label={`Start reviewing ${card.front}`}
             title="Start reviewing"
