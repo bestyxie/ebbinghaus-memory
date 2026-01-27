@@ -26,19 +26,34 @@ model User {
   logs      ReviewLog[] // 复习记录
 }
 
+// 关系表：卡片-卡组 多对多关系
+model CardDeck {
+  cardId     String
+  deckId     String
+
+  card       Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  deck       Deck   @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, deckId])
+  @@index([cardId])
+  @@index([deckId])
+}
+
 // 3. 卡组表 (Deck) - 类似于文件夹，比如 "英语四级", "前端面试题"
 model Deck {
   id          String   @id @default(cuid())
   title       String
   description String?
+  color       String?  @default("#137fec") // 标签颜色 (hex)
   isPublic    Boolean  @default(false) // 是否公开给其他人使用
+  deletedAt   DateTime? // 软删除时间戳 (null = 未删除)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   userId      String
   user        User     @relation(fields: [userId], references: [id])
-  
-  cards       Card[]
+
+  cardDecks   CardDeck[]
 
   // 在同一个 userId 下，title 不能重复。
   // 但是不同用户可以使用相同的 title。
@@ -73,14 +88,13 @@ model Card {
 
   // 卡片状态
   state        CardState @default(NEW)
-  
+
   // --- 关系 ---
-  deckId      String?
-  deck        Deck?     @relation(fields: [deckId], references: [id], onDelete: SetNull)
-  
+  cardDecks    CardDeck[]
+
   userId      String
   user        User     @relation(fields: [userId], references: [id])
-  
+
   logs        ReviewLog[] // 关联历史复习记录
 
   createdAt   DateTime @default(now())

@@ -19,6 +19,11 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
+ * Model CardDeck
+ * 
+ */
+export type CardDeck = $Result.DefaultSelection<Prisma.$CardDeckPayload>
+/**
  * Model Deck
  * 
  */
@@ -179,6 +184,16 @@ export class PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.cardDeck`: Exposes CRUD operations for the **CardDeck** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more CardDecks
+    * const cardDecks = await prisma.cardDeck.findMany()
+    * ```
+    */
+  get cardDeck(): Prisma.CardDeckDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.deck`: Exposes CRUD operations for the **Deck** model.
@@ -644,6 +659,7 @@ export namespace Prisma {
 
   export const ModelName: {
     User: 'User',
+    CardDeck: 'CardDeck',
     Deck: 'Deck',
     Card: 'Card',
     ReviewLog: 'ReviewLog'
@@ -662,7 +678,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "deck" | "card" | "reviewLog"
+      modelProps: "user" | "cardDeck" | "deck" | "card" | "reviewLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -737,6 +753,80 @@ export namespace Prisma {
           count: {
             args: Prisma.UserCountArgs<ExtArgs>
             result: $Utils.Optional<UserCountAggregateOutputType> | number
+          }
+        }
+      }
+      CardDeck: {
+        payload: Prisma.$CardDeckPayload<ExtArgs>
+        fields: Prisma.CardDeckFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.CardDeckFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.CardDeckFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>
+          }
+          findFirst: {
+            args: Prisma.CardDeckFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.CardDeckFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>
+          }
+          findMany: {
+            args: Prisma.CardDeckFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>[]
+          }
+          create: {
+            args: Prisma.CardDeckCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>
+          }
+          createMany: {
+            args: Prisma.CardDeckCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.CardDeckCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>[]
+          }
+          delete: {
+            args: Prisma.CardDeckDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>
+          }
+          update: {
+            args: Prisma.CardDeckUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>
+          }
+          deleteMany: {
+            args: Prisma.CardDeckDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.CardDeckUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.CardDeckUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>[]
+          }
+          upsert: {
+            args: Prisma.CardDeckUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardDeckPayload>
+          }
+          aggregate: {
+            args: Prisma.CardDeckAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCardDeck>
+          }
+          groupBy: {
+            args: Prisma.CardDeckGroupByArgs<ExtArgs>
+            result: $Utils.Optional<CardDeckGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.CardDeckCountArgs<ExtArgs>
+            result: $Utils.Optional<CardDeckCountAggregateOutputType> | number
           }
         }
       }
@@ -1071,6 +1161,7 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     user?: UserOmit
+    cardDeck?: CardDeckOmit
     deck?: DeckOmit
     card?: CardOmit
     reviewLog?: ReviewLogOmit
@@ -1203,11 +1294,11 @@ export namespace Prisma {
    */
 
   export type DeckCountOutputType = {
-    cards: number
+    cardDecks: number
   }
 
   export type DeckCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    cards?: boolean | DeckCountOutputTypeCountCardsArgs
+    cardDecks?: boolean | DeckCountOutputTypeCountCardDecksArgs
   }
 
   // Custom InputTypes
@@ -1224,8 +1315,8 @@ export namespace Prisma {
   /**
    * DeckCountOutputType without action
    */
-  export type DeckCountOutputTypeCountCardsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: CardWhereInput
+  export type DeckCountOutputTypeCountCardDecksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CardDeckWhereInput
   }
 
 
@@ -1234,10 +1325,12 @@ export namespace Prisma {
    */
 
   export type CardCountOutputType = {
+    cardDecks: number
     logs: number
   }
 
   export type CardCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    cardDecks?: boolean | CardCountOutputTypeCountCardDecksArgs
     logs?: boolean | CardCountOutputTypeCountLogsArgs
   }
 
@@ -1250,6 +1343,13 @@ export namespace Prisma {
      * Select specific fields to fetch from the CardCountOutputType
      */
     select?: CardCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * CardCountOutputType without action
+   */
+  export type CardCountOutputTypeCountCardDecksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CardDeckWhereInput
   }
 
   /**
@@ -2391,6 +2491,1033 @@ export namespace Prisma {
 
 
   /**
+   * Model CardDeck
+   */
+
+  export type AggregateCardDeck = {
+    _count: CardDeckCountAggregateOutputType | null
+    _min: CardDeckMinAggregateOutputType | null
+    _max: CardDeckMaxAggregateOutputType | null
+  }
+
+  export type CardDeckMinAggregateOutputType = {
+    cardId: string | null
+    deckId: string | null
+  }
+
+  export type CardDeckMaxAggregateOutputType = {
+    cardId: string | null
+    deckId: string | null
+  }
+
+  export type CardDeckCountAggregateOutputType = {
+    cardId: number
+    deckId: number
+    _all: number
+  }
+
+
+  export type CardDeckMinAggregateInputType = {
+    cardId?: true
+    deckId?: true
+  }
+
+  export type CardDeckMaxAggregateInputType = {
+    cardId?: true
+    deckId?: true
+  }
+
+  export type CardDeckCountAggregateInputType = {
+    cardId?: true
+    deckId?: true
+    _all?: true
+  }
+
+  export type CardDeckAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CardDeck to aggregate.
+     */
+    where?: CardDeckWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CardDecks to fetch.
+     */
+    orderBy?: CardDeckOrderByWithRelationInput | CardDeckOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: CardDeckWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CardDecks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CardDecks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned CardDecks
+    **/
+    _count?: true | CardDeckCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: CardDeckMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: CardDeckMaxAggregateInputType
+  }
+
+  export type GetCardDeckAggregateType<T extends CardDeckAggregateArgs> = {
+        [P in keyof T & keyof AggregateCardDeck]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCardDeck[P]>
+      : GetScalarType<T[P], AggregateCardDeck[P]>
+  }
+
+
+
+
+  export type CardDeckGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CardDeckWhereInput
+    orderBy?: CardDeckOrderByWithAggregationInput | CardDeckOrderByWithAggregationInput[]
+    by: CardDeckScalarFieldEnum[] | CardDeckScalarFieldEnum
+    having?: CardDeckScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: CardDeckCountAggregateInputType | true
+    _min?: CardDeckMinAggregateInputType
+    _max?: CardDeckMaxAggregateInputType
+  }
+
+  export type CardDeckGroupByOutputType = {
+    cardId: string
+    deckId: string
+    _count: CardDeckCountAggregateOutputType | null
+    _min: CardDeckMinAggregateOutputType | null
+    _max: CardDeckMaxAggregateOutputType | null
+  }
+
+  type GetCardDeckGroupByPayload<T extends CardDeckGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<CardDeckGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof CardDeckGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CardDeckGroupByOutputType[P]>
+            : GetScalarType<T[P], CardDeckGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type CardDeckSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    cardId?: boolean
+    deckId?: boolean
+    card?: boolean | CardDefaultArgs<ExtArgs>
+    deck?: boolean | DeckDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["cardDeck"]>
+
+  export type CardDeckSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    cardId?: boolean
+    deckId?: boolean
+    card?: boolean | CardDefaultArgs<ExtArgs>
+    deck?: boolean | DeckDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["cardDeck"]>
+
+  export type CardDeckSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    cardId?: boolean
+    deckId?: boolean
+    card?: boolean | CardDefaultArgs<ExtArgs>
+    deck?: boolean | DeckDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["cardDeck"]>
+
+  export type CardDeckSelectScalar = {
+    cardId?: boolean
+    deckId?: boolean
+  }
+
+  export type CardDeckOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"cardId" | "deckId", ExtArgs["result"]["cardDeck"]>
+  export type CardDeckInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    card?: boolean | CardDefaultArgs<ExtArgs>
+    deck?: boolean | DeckDefaultArgs<ExtArgs>
+  }
+  export type CardDeckIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    card?: boolean | CardDefaultArgs<ExtArgs>
+    deck?: boolean | DeckDefaultArgs<ExtArgs>
+  }
+  export type CardDeckIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    card?: boolean | CardDefaultArgs<ExtArgs>
+    deck?: boolean | DeckDefaultArgs<ExtArgs>
+  }
+
+  export type $CardDeckPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "CardDeck"
+    objects: {
+      card: Prisma.$CardPayload<ExtArgs>
+      deck: Prisma.$DeckPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      cardId: string
+      deckId: string
+    }, ExtArgs["result"]["cardDeck"]>
+    composites: {}
+  }
+
+  type CardDeckGetPayload<S extends boolean | null | undefined | CardDeckDefaultArgs> = $Result.GetResult<Prisma.$CardDeckPayload, S>
+
+  type CardDeckCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<CardDeckFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: CardDeckCountAggregateInputType | true
+    }
+
+  export interface CardDeckDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['CardDeck'], meta: { name: 'CardDeck' } }
+    /**
+     * Find zero or one CardDeck that matches the filter.
+     * @param {CardDeckFindUniqueArgs} args - Arguments to find a CardDeck
+     * @example
+     * // Get one CardDeck
+     * const cardDeck = await prisma.cardDeck.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends CardDeckFindUniqueArgs>(args: SelectSubset<T, CardDeckFindUniqueArgs<ExtArgs>>): Prisma__CardDeckClient<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one CardDeck that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {CardDeckFindUniqueOrThrowArgs} args - Arguments to find a CardDeck
+     * @example
+     * // Get one CardDeck
+     * const cardDeck = await prisma.cardDeck.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends CardDeckFindUniqueOrThrowArgs>(args: SelectSubset<T, CardDeckFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CardDeckClient<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CardDeck that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardDeckFindFirstArgs} args - Arguments to find a CardDeck
+     * @example
+     * // Get one CardDeck
+     * const cardDeck = await prisma.cardDeck.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends CardDeckFindFirstArgs>(args?: SelectSubset<T, CardDeckFindFirstArgs<ExtArgs>>): Prisma__CardDeckClient<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CardDeck that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardDeckFindFirstOrThrowArgs} args - Arguments to find a CardDeck
+     * @example
+     * // Get one CardDeck
+     * const cardDeck = await prisma.cardDeck.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends CardDeckFindFirstOrThrowArgs>(args?: SelectSubset<T, CardDeckFindFirstOrThrowArgs<ExtArgs>>): Prisma__CardDeckClient<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more CardDecks that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardDeckFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all CardDecks
+     * const cardDecks = await prisma.cardDeck.findMany()
+     * 
+     * // Get first 10 CardDecks
+     * const cardDecks = await prisma.cardDeck.findMany({ take: 10 })
+     * 
+     * // Only select the `cardId`
+     * const cardDeckWithCardIdOnly = await prisma.cardDeck.findMany({ select: { cardId: true } })
+     * 
+     */
+    findMany<T extends CardDeckFindManyArgs>(args?: SelectSubset<T, CardDeckFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a CardDeck.
+     * @param {CardDeckCreateArgs} args - Arguments to create a CardDeck.
+     * @example
+     * // Create one CardDeck
+     * const CardDeck = await prisma.cardDeck.create({
+     *   data: {
+     *     // ... data to create a CardDeck
+     *   }
+     * })
+     * 
+     */
+    create<T extends CardDeckCreateArgs>(args: SelectSubset<T, CardDeckCreateArgs<ExtArgs>>): Prisma__CardDeckClient<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many CardDecks.
+     * @param {CardDeckCreateManyArgs} args - Arguments to create many CardDecks.
+     * @example
+     * // Create many CardDecks
+     * const cardDeck = await prisma.cardDeck.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends CardDeckCreateManyArgs>(args?: SelectSubset<T, CardDeckCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many CardDecks and returns the data saved in the database.
+     * @param {CardDeckCreateManyAndReturnArgs} args - Arguments to create many CardDecks.
+     * @example
+     * // Create many CardDecks
+     * const cardDeck = await prisma.cardDeck.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many CardDecks and only return the `cardId`
+     * const cardDeckWithCardIdOnly = await prisma.cardDeck.createManyAndReturn({
+     *   select: { cardId: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends CardDeckCreateManyAndReturnArgs>(args?: SelectSubset<T, CardDeckCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a CardDeck.
+     * @param {CardDeckDeleteArgs} args - Arguments to delete one CardDeck.
+     * @example
+     * // Delete one CardDeck
+     * const CardDeck = await prisma.cardDeck.delete({
+     *   where: {
+     *     // ... filter to delete one CardDeck
+     *   }
+     * })
+     * 
+     */
+    delete<T extends CardDeckDeleteArgs>(args: SelectSubset<T, CardDeckDeleteArgs<ExtArgs>>): Prisma__CardDeckClient<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one CardDeck.
+     * @param {CardDeckUpdateArgs} args - Arguments to update one CardDeck.
+     * @example
+     * // Update one CardDeck
+     * const cardDeck = await prisma.cardDeck.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends CardDeckUpdateArgs>(args: SelectSubset<T, CardDeckUpdateArgs<ExtArgs>>): Prisma__CardDeckClient<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more CardDecks.
+     * @param {CardDeckDeleteManyArgs} args - Arguments to filter CardDecks to delete.
+     * @example
+     * // Delete a few CardDecks
+     * const { count } = await prisma.cardDeck.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends CardDeckDeleteManyArgs>(args?: SelectSubset<T, CardDeckDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CardDecks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardDeckUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many CardDecks
+     * const cardDeck = await prisma.cardDeck.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends CardDeckUpdateManyArgs>(args: SelectSubset<T, CardDeckUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CardDecks and returns the data updated in the database.
+     * @param {CardDeckUpdateManyAndReturnArgs} args - Arguments to update many CardDecks.
+     * @example
+     * // Update many CardDecks
+     * const cardDeck = await prisma.cardDeck.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more CardDecks and only return the `cardId`
+     * const cardDeckWithCardIdOnly = await prisma.cardDeck.updateManyAndReturn({
+     *   select: { cardId: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends CardDeckUpdateManyAndReturnArgs>(args: SelectSubset<T, CardDeckUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one CardDeck.
+     * @param {CardDeckUpsertArgs} args - Arguments to update or create a CardDeck.
+     * @example
+     * // Update or create a CardDeck
+     * const cardDeck = await prisma.cardDeck.upsert({
+     *   create: {
+     *     // ... data to create a CardDeck
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the CardDeck we want to update
+     *   }
+     * })
+     */
+    upsert<T extends CardDeckUpsertArgs>(args: SelectSubset<T, CardDeckUpsertArgs<ExtArgs>>): Prisma__CardDeckClient<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of CardDecks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardDeckCountArgs} args - Arguments to filter CardDecks to count.
+     * @example
+     * // Count the number of CardDecks
+     * const count = await prisma.cardDeck.count({
+     *   where: {
+     *     // ... the filter for the CardDecks we want to count
+     *   }
+     * })
+    **/
+    count<T extends CardDeckCountArgs>(
+      args?: Subset<T, CardDeckCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], CardDeckCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a CardDeck.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardDeckAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends CardDeckAggregateArgs>(args: Subset<T, CardDeckAggregateArgs>): Prisma.PrismaPromise<GetCardDeckAggregateType<T>>
+
+    /**
+     * Group by CardDeck.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardDeckGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends CardDeckGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: CardDeckGroupByArgs['orderBy'] }
+        : { orderBy?: CardDeckGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, CardDeckGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCardDeckGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the CardDeck model
+   */
+  readonly fields: CardDeckFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for CardDeck.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__CardDeckClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    card<T extends CardDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CardDefaultArgs<ExtArgs>>): Prisma__CardClient<$Result.GetResult<Prisma.$CardPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    deck<T extends DeckDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DeckDefaultArgs<ExtArgs>>): Prisma__DeckClient<$Result.GetResult<Prisma.$DeckPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the CardDeck model
+   */
+  interface CardDeckFieldRefs {
+    readonly cardId: FieldRef<"CardDeck", 'String'>
+    readonly deckId: FieldRef<"CardDeck", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * CardDeck findUnique
+   */
+  export type CardDeckFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * Filter, which CardDeck to fetch.
+     */
+    where: CardDeckWhereUniqueInput
+  }
+
+  /**
+   * CardDeck findUniqueOrThrow
+   */
+  export type CardDeckFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * Filter, which CardDeck to fetch.
+     */
+    where: CardDeckWhereUniqueInput
+  }
+
+  /**
+   * CardDeck findFirst
+   */
+  export type CardDeckFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * Filter, which CardDeck to fetch.
+     */
+    where?: CardDeckWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CardDecks to fetch.
+     */
+    orderBy?: CardDeckOrderByWithRelationInput | CardDeckOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CardDecks.
+     */
+    cursor?: CardDeckWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CardDecks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CardDecks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CardDecks.
+     */
+    distinct?: CardDeckScalarFieldEnum | CardDeckScalarFieldEnum[]
+  }
+
+  /**
+   * CardDeck findFirstOrThrow
+   */
+  export type CardDeckFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * Filter, which CardDeck to fetch.
+     */
+    where?: CardDeckWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CardDecks to fetch.
+     */
+    orderBy?: CardDeckOrderByWithRelationInput | CardDeckOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CardDecks.
+     */
+    cursor?: CardDeckWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CardDecks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CardDecks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CardDecks.
+     */
+    distinct?: CardDeckScalarFieldEnum | CardDeckScalarFieldEnum[]
+  }
+
+  /**
+   * CardDeck findMany
+   */
+  export type CardDeckFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * Filter, which CardDecks to fetch.
+     */
+    where?: CardDeckWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CardDecks to fetch.
+     */
+    orderBy?: CardDeckOrderByWithRelationInput | CardDeckOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing CardDecks.
+     */
+    cursor?: CardDeckWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CardDecks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CardDecks.
+     */
+    skip?: number
+    distinct?: CardDeckScalarFieldEnum | CardDeckScalarFieldEnum[]
+  }
+
+  /**
+   * CardDeck create
+   */
+  export type CardDeckCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * The data needed to create a CardDeck.
+     */
+    data: XOR<CardDeckCreateInput, CardDeckUncheckedCreateInput>
+  }
+
+  /**
+   * CardDeck createMany
+   */
+  export type CardDeckCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many CardDecks.
+     */
+    data: CardDeckCreateManyInput | CardDeckCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * CardDeck createManyAndReturn
+   */
+  export type CardDeckCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * The data used to create many CardDecks.
+     */
+    data: CardDeckCreateManyInput | CardDeckCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * CardDeck update
+   */
+  export type CardDeckUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * The data needed to update a CardDeck.
+     */
+    data: XOR<CardDeckUpdateInput, CardDeckUncheckedUpdateInput>
+    /**
+     * Choose, which CardDeck to update.
+     */
+    where: CardDeckWhereUniqueInput
+  }
+
+  /**
+   * CardDeck updateMany
+   */
+  export type CardDeckUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update CardDecks.
+     */
+    data: XOR<CardDeckUpdateManyMutationInput, CardDeckUncheckedUpdateManyInput>
+    /**
+     * Filter which CardDecks to update
+     */
+    where?: CardDeckWhereInput
+    /**
+     * Limit how many CardDecks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * CardDeck updateManyAndReturn
+   */
+  export type CardDeckUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * The data used to update CardDecks.
+     */
+    data: XOR<CardDeckUpdateManyMutationInput, CardDeckUncheckedUpdateManyInput>
+    /**
+     * Filter which CardDecks to update
+     */
+    where?: CardDeckWhereInput
+    /**
+     * Limit how many CardDecks to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * CardDeck upsert
+   */
+  export type CardDeckUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * The filter to search for the CardDeck to update in case it exists.
+     */
+    where: CardDeckWhereUniqueInput
+    /**
+     * In case the CardDeck found by the `where` argument doesn't exist, create a new CardDeck with this data.
+     */
+    create: XOR<CardDeckCreateInput, CardDeckUncheckedCreateInput>
+    /**
+     * In case the CardDeck was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<CardDeckUpdateInput, CardDeckUncheckedUpdateInput>
+  }
+
+  /**
+   * CardDeck delete
+   */
+  export type CardDeckDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+    /**
+     * Filter which CardDeck to delete.
+     */
+    where: CardDeckWhereUniqueInput
+  }
+
+  /**
+   * CardDeck deleteMany
+   */
+  export type CardDeckDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CardDecks to delete
+     */
+    where?: CardDeckWhereInput
+    /**
+     * Limit how many CardDecks to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * CardDeck without action
+   */
+  export type CardDeckDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardDeck
+     */
+    select?: CardDeckSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardDeck
+     */
+    omit?: CardDeckOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardDeckInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model Deck
    */
 
@@ -2404,7 +3531,9 @@ export namespace Prisma {
     id: string | null
     title: string | null
     description: string | null
+    color: string | null
     isPublic: boolean | null
+    deletedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
     userId: string | null
@@ -2414,7 +3543,9 @@ export namespace Prisma {
     id: string | null
     title: string | null
     description: string | null
+    color: string | null
     isPublic: boolean | null
+    deletedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
     userId: string | null
@@ -2424,7 +3555,9 @@ export namespace Prisma {
     id: number
     title: number
     description: number
+    color: number
     isPublic: number
+    deletedAt: number
     createdAt: number
     updatedAt: number
     userId: number
@@ -2436,7 +3569,9 @@ export namespace Prisma {
     id?: true
     title?: true
     description?: true
+    color?: true
     isPublic?: true
+    deletedAt?: true
     createdAt?: true
     updatedAt?: true
     userId?: true
@@ -2446,7 +3581,9 @@ export namespace Prisma {
     id?: true
     title?: true
     description?: true
+    color?: true
     isPublic?: true
+    deletedAt?: true
     createdAt?: true
     updatedAt?: true
     userId?: true
@@ -2456,7 +3593,9 @@ export namespace Prisma {
     id?: true
     title?: true
     description?: true
+    color?: true
     isPublic?: true
+    deletedAt?: true
     createdAt?: true
     updatedAt?: true
     userId?: true
@@ -2539,7 +3678,9 @@ export namespace Prisma {
     id: string
     title: string
     description: string | null
+    color: string | null
     isPublic: boolean
+    deletedAt: Date | null
     createdAt: Date
     updatedAt: Date
     userId: string
@@ -2566,12 +3707,14 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    color?: boolean
     isPublic?: boolean
+    deletedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     userId?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
-    cards?: boolean | Deck$cardsArgs<ExtArgs>
+    cardDecks?: boolean | Deck$cardDecksArgs<ExtArgs>
     _count?: boolean | DeckCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["deck"]>
 
@@ -2579,7 +3722,9 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    color?: boolean
     isPublic?: boolean
+    deletedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     userId?: boolean
@@ -2590,7 +3735,9 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    color?: boolean
     isPublic?: boolean
+    deletedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     userId?: boolean
@@ -2601,16 +3748,18 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    color?: boolean
     isPublic?: boolean
+    deletedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     userId?: boolean
   }
 
-  export type DeckOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "isPublic" | "createdAt" | "updatedAt" | "userId", ExtArgs["result"]["deck"]>
+  export type DeckOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "color" | "isPublic" | "deletedAt" | "createdAt" | "updatedAt" | "userId", ExtArgs["result"]["deck"]>
   export type DeckInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
-    cards?: boolean | Deck$cardsArgs<ExtArgs>
+    cardDecks?: boolean | Deck$cardDecksArgs<ExtArgs>
     _count?: boolean | DeckCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type DeckIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2624,13 +3773,15 @@ export namespace Prisma {
     name: "Deck"
     objects: {
       user: Prisma.$UserPayload<ExtArgs>
-      cards: Prisma.$CardPayload<ExtArgs>[]
+      cardDecks: Prisma.$CardDeckPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       title: string
       description: string | null
+      color: string | null
       isPublic: boolean
+      deletedAt: Date | null
       createdAt: Date
       updatedAt: Date
       userId: string
@@ -3029,7 +4180,7 @@ export namespace Prisma {
   export interface Prisma__DeckClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    cards<T extends Deck$cardsArgs<ExtArgs> = {}>(args?: Subset<T, Deck$cardsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    cardDecks<T extends Deck$cardDecksArgs<ExtArgs> = {}>(args?: Subset<T, Deck$cardDecksArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3062,7 +4213,9 @@ export namespace Prisma {
     readonly id: FieldRef<"Deck", 'String'>
     readonly title: FieldRef<"Deck", 'String'>
     readonly description: FieldRef<"Deck", 'String'>
+    readonly color: FieldRef<"Deck", 'String'>
     readonly isPublic: FieldRef<"Deck", 'Boolean'>
+    readonly deletedAt: FieldRef<"Deck", 'DateTime'>
     readonly createdAt: FieldRef<"Deck", 'DateTime'>
     readonly updatedAt: FieldRef<"Deck", 'DateTime'>
     readonly userId: FieldRef<"Deck", 'String'>
@@ -3462,27 +4615,27 @@ export namespace Prisma {
   }
 
   /**
-   * Deck.cards
+   * Deck.cardDecks
    */
-  export type Deck$cardsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Deck$cardDecksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Card
+     * Select specific fields to fetch from the CardDeck
      */
-    select?: CardSelect<ExtArgs> | null
+    select?: CardDeckSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Card
+     * Omit specific fields from the CardDeck
      */
-    omit?: CardOmit<ExtArgs> | null
+    omit?: CardDeckOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: CardInclude<ExtArgs> | null
-    where?: CardWhereInput
-    orderBy?: CardOrderByWithRelationInput | CardOrderByWithRelationInput[]
-    cursor?: CardWhereUniqueInput
+    include?: CardDeckInclude<ExtArgs> | null
+    where?: CardDeckWhereInput
+    orderBy?: CardDeckOrderByWithRelationInput | CardDeckOrderByWithRelationInput[]
+    cursor?: CardDeckWhereUniqueInput
     take?: number
     skip?: number
-    distinct?: CardScalarFieldEnum | CardScalarFieldEnum[]
+    distinct?: CardDeckScalarFieldEnum | CardDeckScalarFieldEnum[]
   }
 
   /**
@@ -3538,7 +4691,6 @@ export namespace Prisma {
     easeFactor: number | null
     repetitions: number | null
     state: $Enums.CardState | null
-    deckId: string | null
     userId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -3554,7 +4706,6 @@ export namespace Prisma {
     easeFactor: number | null
     repetitions: number | null
     state: $Enums.CardState | null
-    deckId: string | null
     userId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -3570,7 +4721,6 @@ export namespace Prisma {
     easeFactor: number
     repetitions: number
     state: number
-    deckId: number
     userId: number
     createdAt: number
     updatedAt: number
@@ -3600,7 +4750,6 @@ export namespace Prisma {
     easeFactor?: true
     repetitions?: true
     state?: true
-    deckId?: true
     userId?: true
     createdAt?: true
     updatedAt?: true
@@ -3616,7 +4765,6 @@ export namespace Prisma {
     easeFactor?: true
     repetitions?: true
     state?: true
-    deckId?: true
     userId?: true
     createdAt?: true
     updatedAt?: true
@@ -3632,7 +4780,6 @@ export namespace Prisma {
     easeFactor?: true
     repetitions?: true
     state?: true
-    deckId?: true
     userId?: true
     createdAt?: true
     updatedAt?: true
@@ -3735,7 +4882,6 @@ export namespace Prisma {
     easeFactor: number
     repetitions: number
     state: $Enums.CardState
-    deckId: string | null
     userId: string
     createdAt: Date
     updatedAt: Date
@@ -3770,11 +4916,10 @@ export namespace Prisma {
     easeFactor?: boolean
     repetitions?: boolean
     state?: boolean
-    deckId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deck?: boolean | Card$deckArgs<ExtArgs>
+    cardDecks?: boolean | Card$cardDecksArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
     logs?: boolean | Card$logsArgs<ExtArgs>
     _count?: boolean | CardCountOutputTypeDefaultArgs<ExtArgs>
@@ -3790,11 +4935,9 @@ export namespace Prisma {
     easeFactor?: boolean
     repetitions?: boolean
     state?: boolean
-    deckId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["card"]>
 
@@ -3808,11 +4951,9 @@ export namespace Prisma {
     easeFactor?: boolean
     repetitions?: boolean
     state?: boolean
-    deckId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["card"]>
 
@@ -3826,32 +4967,29 @@ export namespace Prisma {
     easeFactor?: boolean
     repetitions?: boolean
     state?: boolean
-    deckId?: boolean
     userId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type CardOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "front" | "back" | "note" | "nextReviewAt" | "interval" | "easeFactor" | "repetitions" | "state" | "deckId" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["card"]>
+  export type CardOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "front" | "back" | "note" | "nextReviewAt" | "interval" | "easeFactor" | "repetitions" | "state" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["card"]>
   export type CardInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    deck?: boolean | Card$deckArgs<ExtArgs>
+    cardDecks?: boolean | Card$cardDecksArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
     logs?: boolean | Card$logsArgs<ExtArgs>
     _count?: boolean | CardCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type CardIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
   export type CardIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    deck?: boolean | Card$deckArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
 
   export type $CardPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Card"
     objects: {
-      deck: Prisma.$DeckPayload<ExtArgs> | null
+      cardDecks: Prisma.$CardDeckPayload<ExtArgs>[]
       user: Prisma.$UserPayload<ExtArgs>
       logs: Prisma.$ReviewLogPayload<ExtArgs>[]
     }
@@ -3865,7 +5003,6 @@ export namespace Prisma {
       easeFactor: number
       repetitions: number
       state: $Enums.CardState
-      deckId: string | null
       userId: string
       createdAt: Date
       updatedAt: Date
@@ -4263,7 +5400,7 @@ export namespace Prisma {
    */
   export interface Prisma__CardClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    deck<T extends Card$deckArgs<ExtArgs> = {}>(args?: Subset<T, Card$deckArgs<ExtArgs>>): Prisma__DeckClient<$Result.GetResult<Prisma.$DeckPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    cardDecks<T extends Card$cardDecksArgs<ExtArgs> = {}>(args?: Subset<T, Card$cardDecksArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardDeckPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     logs<T extends Card$logsArgs<ExtArgs> = {}>(args?: Subset<T, Card$logsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReviewLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -4304,7 +5441,6 @@ export namespace Prisma {
     readonly easeFactor: FieldRef<"Card", 'Float'>
     readonly repetitions: FieldRef<"Card", 'Int'>
     readonly state: FieldRef<"Card", 'CardState'>
-    readonly deckId: FieldRef<"Card", 'String'>
     readonly userId: FieldRef<"Card", 'String'>
     readonly createdAt: FieldRef<"Card", 'DateTime'>
     readonly updatedAt: FieldRef<"Card", 'DateTime'>
@@ -4704,22 +5840,27 @@ export namespace Prisma {
   }
 
   /**
-   * Card.deck
+   * Card.cardDecks
    */
-  export type Card$deckArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type Card$cardDecksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Deck
+     * Select specific fields to fetch from the CardDeck
      */
-    select?: DeckSelect<ExtArgs> | null
+    select?: CardDeckSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Deck
+     * Omit specific fields from the CardDeck
      */
-    omit?: DeckOmit<ExtArgs> | null
+    omit?: CardDeckOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: DeckInclude<ExtArgs> | null
-    where?: DeckWhereInput
+    include?: CardDeckInclude<ExtArgs> | null
+    where?: CardDeckWhereInput
+    orderBy?: CardDeckOrderByWithRelationInput | CardDeckOrderByWithRelationInput[]
+    cursor?: CardDeckWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CardDeckScalarFieldEnum | CardDeckScalarFieldEnum[]
   }
 
   /**
@@ -5975,11 +7116,21 @@ export namespace Prisma {
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+  export const CardDeckScalarFieldEnum: {
+    cardId: 'cardId',
+    deckId: 'deckId'
+  };
+
+  export type CardDeckScalarFieldEnum = (typeof CardDeckScalarFieldEnum)[keyof typeof CardDeckScalarFieldEnum]
+
+
   export const DeckScalarFieldEnum: {
     id: 'id',
     title: 'title',
     description: 'description',
+    color: 'color',
     isPublic: 'isPublic',
+    deletedAt: 'deletedAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
     userId: 'userId'
@@ -5998,7 +7149,6 @@ export namespace Prisma {
     easeFactor: 'easeFactor',
     repetitions: 'repetitions',
     state: 'state',
-    deckId: 'deckId',
     userId: 'userId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -6193,6 +7343,50 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
 
+  export type CardDeckWhereInput = {
+    AND?: CardDeckWhereInput | CardDeckWhereInput[]
+    OR?: CardDeckWhereInput[]
+    NOT?: CardDeckWhereInput | CardDeckWhereInput[]
+    cardId?: StringFilter<"CardDeck"> | string
+    deckId?: StringFilter<"CardDeck"> | string
+    card?: XOR<CardScalarRelationFilter, CardWhereInput>
+    deck?: XOR<DeckScalarRelationFilter, DeckWhereInput>
+  }
+
+  export type CardDeckOrderByWithRelationInput = {
+    cardId?: SortOrder
+    deckId?: SortOrder
+    card?: CardOrderByWithRelationInput
+    deck?: DeckOrderByWithRelationInput
+  }
+
+  export type CardDeckWhereUniqueInput = Prisma.AtLeast<{
+    cardId_deckId?: CardDeckCardIdDeckIdCompoundUniqueInput
+    AND?: CardDeckWhereInput | CardDeckWhereInput[]
+    OR?: CardDeckWhereInput[]
+    NOT?: CardDeckWhereInput | CardDeckWhereInput[]
+    cardId?: StringFilter<"CardDeck"> | string
+    deckId?: StringFilter<"CardDeck"> | string
+    card?: XOR<CardScalarRelationFilter, CardWhereInput>
+    deck?: XOR<DeckScalarRelationFilter, DeckWhereInput>
+  }, "cardId_deckId">
+
+  export type CardDeckOrderByWithAggregationInput = {
+    cardId?: SortOrder
+    deckId?: SortOrder
+    _count?: CardDeckCountOrderByAggregateInput
+    _max?: CardDeckMaxOrderByAggregateInput
+    _min?: CardDeckMinOrderByAggregateInput
+  }
+
+  export type CardDeckScalarWhereWithAggregatesInput = {
+    AND?: CardDeckScalarWhereWithAggregatesInput | CardDeckScalarWhereWithAggregatesInput[]
+    OR?: CardDeckScalarWhereWithAggregatesInput[]
+    NOT?: CardDeckScalarWhereWithAggregatesInput | CardDeckScalarWhereWithAggregatesInput[]
+    cardId?: StringWithAggregatesFilter<"CardDeck"> | string
+    deckId?: StringWithAggregatesFilter<"CardDeck"> | string
+  }
+
   export type DeckWhereInput = {
     AND?: DeckWhereInput | DeckWhereInput[]
     OR?: DeckWhereInput[]
@@ -6200,24 +7394,28 @@ export namespace Prisma {
     id?: StringFilter<"Deck"> | string
     title?: StringFilter<"Deck"> | string
     description?: StringNullableFilter<"Deck"> | string | null
+    color?: StringNullableFilter<"Deck"> | string | null
     isPublic?: BoolFilter<"Deck"> | boolean
+    deletedAt?: DateTimeNullableFilter<"Deck"> | Date | string | null
     createdAt?: DateTimeFilter<"Deck"> | Date | string
     updatedAt?: DateTimeFilter<"Deck"> | Date | string
     userId?: StringFilter<"Deck"> | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    cards?: CardListRelationFilter
+    cardDecks?: CardDeckListRelationFilter
   }
 
   export type DeckOrderByWithRelationInput = {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrderInput | SortOrder
+    color?: SortOrderInput | SortOrder
     isPublic?: SortOrder
+    deletedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     userId?: SortOrder
     user?: UserOrderByWithRelationInput
-    cards?: CardOrderByRelationAggregateInput
+    cardDecks?: CardDeckOrderByRelationAggregateInput
   }
 
   export type DeckWhereUniqueInput = Prisma.AtLeast<{
@@ -6228,19 +7426,23 @@ export namespace Prisma {
     NOT?: DeckWhereInput | DeckWhereInput[]
     title?: StringFilter<"Deck"> | string
     description?: StringNullableFilter<"Deck"> | string | null
+    color?: StringNullableFilter<"Deck"> | string | null
     isPublic?: BoolFilter<"Deck"> | boolean
+    deletedAt?: DateTimeNullableFilter<"Deck"> | Date | string | null
     createdAt?: DateTimeFilter<"Deck"> | Date | string
     updatedAt?: DateTimeFilter<"Deck"> | Date | string
     userId?: StringFilter<"Deck"> | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    cards?: CardListRelationFilter
+    cardDecks?: CardDeckListRelationFilter
   }, "id" | "userId_title">
 
   export type DeckOrderByWithAggregationInput = {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrderInput | SortOrder
+    color?: SortOrderInput | SortOrder
     isPublic?: SortOrder
+    deletedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     userId?: SortOrder
@@ -6256,7 +7458,9 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Deck"> | string
     title?: StringWithAggregatesFilter<"Deck"> | string
     description?: StringNullableWithAggregatesFilter<"Deck"> | string | null
+    color?: StringNullableWithAggregatesFilter<"Deck"> | string | null
     isPublic?: BoolWithAggregatesFilter<"Deck"> | boolean
+    deletedAt?: DateTimeNullableWithAggregatesFilter<"Deck"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Deck"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Deck"> | Date | string
     userId?: StringWithAggregatesFilter<"Deck"> | string
@@ -6275,11 +7479,10 @@ export namespace Prisma {
     easeFactor?: FloatFilter<"Card"> | number
     repetitions?: IntFilter<"Card"> | number
     state?: EnumCardStateFilter<"Card"> | $Enums.CardState
-    deckId?: StringNullableFilter<"Card"> | string | null
     userId?: StringFilter<"Card"> | string
     createdAt?: DateTimeFilter<"Card"> | Date | string
     updatedAt?: DateTimeFilter<"Card"> | Date | string
-    deck?: XOR<DeckNullableScalarRelationFilter, DeckWhereInput> | null
+    cardDecks?: CardDeckListRelationFilter
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     logs?: ReviewLogListRelationFilter
   }
@@ -6294,11 +7497,10 @@ export namespace Prisma {
     easeFactor?: SortOrder
     repetitions?: SortOrder
     state?: SortOrder
-    deckId?: SortOrderInput | SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    deck?: DeckOrderByWithRelationInput
+    cardDecks?: CardDeckOrderByRelationAggregateInput
     user?: UserOrderByWithRelationInput
     logs?: ReviewLogOrderByRelationAggregateInput
   }
@@ -6316,11 +7518,10 @@ export namespace Prisma {
     easeFactor?: FloatFilter<"Card"> | number
     repetitions?: IntFilter<"Card"> | number
     state?: EnumCardStateFilter<"Card"> | $Enums.CardState
-    deckId?: StringNullableFilter<"Card"> | string | null
     userId?: StringFilter<"Card"> | string
     createdAt?: DateTimeFilter<"Card"> | Date | string
     updatedAt?: DateTimeFilter<"Card"> | Date | string
-    deck?: XOR<DeckNullableScalarRelationFilter, DeckWhereInput> | null
+    cardDecks?: CardDeckListRelationFilter
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     logs?: ReviewLogListRelationFilter
   }, "id">
@@ -6335,7 +7536,6 @@ export namespace Prisma {
     easeFactor?: SortOrder
     repetitions?: SortOrder
     state?: SortOrder
-    deckId?: SortOrderInput | SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -6359,7 +7559,6 @@ export namespace Prisma {
     easeFactor?: FloatWithAggregatesFilter<"Card"> | number
     repetitions?: IntWithAggregatesFilter<"Card"> | number
     state?: EnumCardStateWithAggregatesFilter<"Card"> | $Enums.CardState
-    deckId?: StringNullableWithAggregatesFilter<"Card"> | string | null
     userId?: StringWithAggregatesFilter<"Card"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Card"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Card"> | Date | string
@@ -6518,55 +7717,99 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type CardDeckCreateInput = {
+    card: CardCreateNestedOneWithoutCardDecksInput
+    deck: DeckCreateNestedOneWithoutCardDecksInput
+  }
+
+  export type CardDeckUncheckedCreateInput = {
+    cardId: string
+    deckId: string
+  }
+
+  export type CardDeckUpdateInput = {
+    card?: CardUpdateOneRequiredWithoutCardDecksNestedInput
+    deck?: DeckUpdateOneRequiredWithoutCardDecksNestedInput
+  }
+
+  export type CardDeckUncheckedUpdateInput = {
+    cardId?: StringFieldUpdateOperationsInput | string
+    deckId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type CardDeckCreateManyInput = {
+    cardId: string
+    deckId: string
+  }
+
+  export type CardDeckUpdateManyMutationInput = {
+
+  }
+
+  export type CardDeckUncheckedUpdateManyInput = {
+    cardId?: StringFieldUpdateOperationsInput | string
+    deckId?: StringFieldUpdateOperationsInput | string
+  }
+
   export type DeckCreateInput = {
     id?: string
     title: string
     description?: string | null
+    color?: string | null
     isPublic?: boolean
+    deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutDecksInput
-    cards?: CardCreateNestedManyWithoutDeckInput
+    cardDecks?: CardDeckCreateNestedManyWithoutDeckInput
   }
 
   export type DeckUncheckedCreateInput = {
     id?: string
     title: string
     description?: string | null
+    color?: string | null
     isPublic?: boolean
+    deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     userId: string
-    cards?: CardUncheckedCreateNestedManyWithoutDeckInput
+    cardDecks?: CardDeckUncheckedCreateNestedManyWithoutDeckInput
   }
 
   export type DeckUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
     isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutDecksNestedInput
-    cards?: CardUpdateManyWithoutDeckNestedInput
+    cardDecks?: CardDeckUpdateManyWithoutDeckNestedInput
   }
 
   export type DeckUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
     isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     userId?: StringFieldUpdateOperationsInput | string
-    cards?: CardUncheckedUpdateManyWithoutDeckNestedInput
+    cardDecks?: CardDeckUncheckedUpdateManyWithoutDeckNestedInput
   }
 
   export type DeckCreateManyInput = {
     id?: string
     title: string
     description?: string | null
+    color?: string | null
     isPublic?: boolean
+    deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     userId: string
@@ -6576,7 +7819,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
     isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -6585,7 +7830,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
     isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     userId?: StringFieldUpdateOperationsInput | string
@@ -6603,7 +7850,7 @@ export namespace Prisma {
     state?: $Enums.CardState
     createdAt?: Date | string
     updatedAt?: Date | string
-    deck?: DeckCreateNestedOneWithoutCardsInput
+    cardDecks?: CardDeckCreateNestedManyWithoutCardInput
     user: UserCreateNestedOneWithoutCardsInput
     logs?: ReviewLogCreateNestedManyWithoutCardInput
   }
@@ -6618,10 +7865,10 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId?: string | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    cardDecks?: CardDeckUncheckedCreateNestedManyWithoutCardInput
     logs?: ReviewLogUncheckedCreateNestedManyWithoutCardInput
   }
 
@@ -6637,7 +7884,7 @@ export namespace Prisma {
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deck?: DeckUpdateOneWithoutCardsNestedInput
+    cardDecks?: CardDeckUpdateManyWithoutCardNestedInput
     user?: UserUpdateOneRequiredWithoutCardsNestedInput
     logs?: ReviewLogUpdateManyWithoutCardNestedInput
   }
@@ -6652,10 +7899,10 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    cardDecks?: CardDeckUncheckedUpdateManyWithoutCardNestedInput
     logs?: ReviewLogUncheckedUpdateManyWithoutCardNestedInput
   }
 
@@ -6669,7 +7916,6 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId?: string | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -6699,7 +7945,6 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6944,14 +8189,65 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type CardScalarRelationFilter = {
+    is?: CardWhereInput
+    isNot?: CardWhereInput
+  }
+
+  export type DeckScalarRelationFilter = {
+    is?: DeckWhereInput
+    isNot?: DeckWhereInput
+  }
+
+  export type CardDeckCardIdDeckIdCompoundUniqueInput = {
+    cardId: string
+    deckId: string
+  }
+
+  export type CardDeckCountOrderByAggregateInput = {
+    cardId?: SortOrder
+    deckId?: SortOrder
+  }
+
+  export type CardDeckMaxOrderByAggregateInput = {
+    cardId?: SortOrder
+    deckId?: SortOrder
+  }
+
+  export type CardDeckMinOrderByAggregateInput = {
+    cardId?: SortOrder
+    deckId?: SortOrder
+  }
+
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
   export type UserScalarRelationFilter = {
     is?: UserWhereInput
     isNot?: UserWhereInput
+  }
+
+  export type CardDeckListRelationFilter = {
+    every?: CardDeckWhereInput
+    some?: CardDeckWhereInput
+    none?: CardDeckWhereInput
+  }
+
+  export type CardDeckOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type DeckUserIdTitleCompoundUniqueInput = {
@@ -6963,7 +8259,9 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrder
+    color?: SortOrder
     isPublic?: SortOrder
+    deletedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     userId?: SortOrder
@@ -6973,7 +8271,9 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrder
+    color?: SortOrder
     isPublic?: SortOrder
+    deletedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     userId?: SortOrder
@@ -6983,7 +8283,9 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrder
+    color?: SortOrder
     isPublic?: SortOrder
+    deletedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     userId?: SortOrder
@@ -6995,6 +8297,20 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedBoolFilter<$PrismaModel>
     _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -7026,11 +8342,6 @@ export namespace Prisma {
     not?: NestedEnumCardStateFilter<$PrismaModel> | $Enums.CardState
   }
 
-  export type DeckNullableScalarRelationFilter = {
-    is?: DeckWhereInput | null
-    isNot?: DeckWhereInput | null
-  }
-
   export type CardCountOrderByAggregateInput = {
     id?: SortOrder
     front?: SortOrder
@@ -7041,7 +8352,6 @@ export namespace Prisma {
     easeFactor?: SortOrder
     repetitions?: SortOrder
     state?: SortOrder
-    deckId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -7063,7 +8373,6 @@ export namespace Prisma {
     easeFactor?: SortOrder
     repetitions?: SortOrder
     state?: SortOrder
-    deckId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -7079,7 +8388,6 @@ export namespace Prisma {
     easeFactor?: SortOrder
     repetitions?: SortOrder
     state?: SortOrder
-    deckId?: SortOrder
     userId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -7131,11 +8439,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumCardStateFilter<$PrismaModel>
     _max?: NestedEnumCardStateFilter<$PrismaModel>
-  }
-
-  export type CardScalarRelationFilter = {
-    is?: CardWhereInput
-    isNot?: CardWhereInput
   }
 
   export type ReviewLogCountOrderByAggregateInput = {
@@ -7333,28 +8636,60 @@ export namespace Prisma {
     deleteMany?: ReviewLogScalarWhereInput | ReviewLogScalarWhereInput[]
   }
 
+  export type CardCreateNestedOneWithoutCardDecksInput = {
+    create?: XOR<CardCreateWithoutCardDecksInput, CardUncheckedCreateWithoutCardDecksInput>
+    connectOrCreate?: CardCreateOrConnectWithoutCardDecksInput
+    connect?: CardWhereUniqueInput
+  }
+
+  export type DeckCreateNestedOneWithoutCardDecksInput = {
+    create?: XOR<DeckCreateWithoutCardDecksInput, DeckUncheckedCreateWithoutCardDecksInput>
+    connectOrCreate?: DeckCreateOrConnectWithoutCardDecksInput
+    connect?: DeckWhereUniqueInput
+  }
+
+  export type CardUpdateOneRequiredWithoutCardDecksNestedInput = {
+    create?: XOR<CardCreateWithoutCardDecksInput, CardUncheckedCreateWithoutCardDecksInput>
+    connectOrCreate?: CardCreateOrConnectWithoutCardDecksInput
+    upsert?: CardUpsertWithoutCardDecksInput
+    connect?: CardWhereUniqueInput
+    update?: XOR<XOR<CardUpdateToOneWithWhereWithoutCardDecksInput, CardUpdateWithoutCardDecksInput>, CardUncheckedUpdateWithoutCardDecksInput>
+  }
+
+  export type DeckUpdateOneRequiredWithoutCardDecksNestedInput = {
+    create?: XOR<DeckCreateWithoutCardDecksInput, DeckUncheckedCreateWithoutCardDecksInput>
+    connectOrCreate?: DeckCreateOrConnectWithoutCardDecksInput
+    upsert?: DeckUpsertWithoutCardDecksInput
+    connect?: DeckWhereUniqueInput
+    update?: XOR<XOR<DeckUpdateToOneWithWhereWithoutCardDecksInput, DeckUpdateWithoutCardDecksInput>, DeckUncheckedUpdateWithoutCardDecksInput>
+  }
+
   export type UserCreateNestedOneWithoutDecksInput = {
     create?: XOR<UserCreateWithoutDecksInput, UserUncheckedCreateWithoutDecksInput>
     connectOrCreate?: UserCreateOrConnectWithoutDecksInput
     connect?: UserWhereUniqueInput
   }
 
-  export type CardCreateNestedManyWithoutDeckInput = {
-    create?: XOR<CardCreateWithoutDeckInput, CardUncheckedCreateWithoutDeckInput> | CardCreateWithoutDeckInput[] | CardUncheckedCreateWithoutDeckInput[]
-    connectOrCreate?: CardCreateOrConnectWithoutDeckInput | CardCreateOrConnectWithoutDeckInput[]
-    createMany?: CardCreateManyDeckInputEnvelope
-    connect?: CardWhereUniqueInput | CardWhereUniqueInput[]
+  export type CardDeckCreateNestedManyWithoutDeckInput = {
+    create?: XOR<CardDeckCreateWithoutDeckInput, CardDeckUncheckedCreateWithoutDeckInput> | CardDeckCreateWithoutDeckInput[] | CardDeckUncheckedCreateWithoutDeckInput[]
+    connectOrCreate?: CardDeckCreateOrConnectWithoutDeckInput | CardDeckCreateOrConnectWithoutDeckInput[]
+    createMany?: CardDeckCreateManyDeckInputEnvelope
+    connect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
   }
 
-  export type CardUncheckedCreateNestedManyWithoutDeckInput = {
-    create?: XOR<CardCreateWithoutDeckInput, CardUncheckedCreateWithoutDeckInput> | CardCreateWithoutDeckInput[] | CardUncheckedCreateWithoutDeckInput[]
-    connectOrCreate?: CardCreateOrConnectWithoutDeckInput | CardCreateOrConnectWithoutDeckInput[]
-    createMany?: CardCreateManyDeckInputEnvelope
-    connect?: CardWhereUniqueInput | CardWhereUniqueInput[]
+  export type CardDeckUncheckedCreateNestedManyWithoutDeckInput = {
+    create?: XOR<CardDeckCreateWithoutDeckInput, CardDeckUncheckedCreateWithoutDeckInput> | CardDeckCreateWithoutDeckInput[] | CardDeckUncheckedCreateWithoutDeckInput[]
+    connectOrCreate?: CardDeckCreateOrConnectWithoutDeckInput | CardDeckCreateOrConnectWithoutDeckInput[]
+    createMany?: CardDeckCreateManyDeckInputEnvelope
+    connect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
   }
 
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
+  }
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
   }
 
   export type UserUpdateOneRequiredWithoutDecksNestedInput = {
@@ -7365,38 +8700,39 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDecksInput, UserUpdateWithoutDecksInput>, UserUncheckedUpdateWithoutDecksInput>
   }
 
-  export type CardUpdateManyWithoutDeckNestedInput = {
-    create?: XOR<CardCreateWithoutDeckInput, CardUncheckedCreateWithoutDeckInput> | CardCreateWithoutDeckInput[] | CardUncheckedCreateWithoutDeckInput[]
-    connectOrCreate?: CardCreateOrConnectWithoutDeckInput | CardCreateOrConnectWithoutDeckInput[]
-    upsert?: CardUpsertWithWhereUniqueWithoutDeckInput | CardUpsertWithWhereUniqueWithoutDeckInput[]
-    createMany?: CardCreateManyDeckInputEnvelope
-    set?: CardWhereUniqueInput | CardWhereUniqueInput[]
-    disconnect?: CardWhereUniqueInput | CardWhereUniqueInput[]
-    delete?: CardWhereUniqueInput | CardWhereUniqueInput[]
-    connect?: CardWhereUniqueInput | CardWhereUniqueInput[]
-    update?: CardUpdateWithWhereUniqueWithoutDeckInput | CardUpdateWithWhereUniqueWithoutDeckInput[]
-    updateMany?: CardUpdateManyWithWhereWithoutDeckInput | CardUpdateManyWithWhereWithoutDeckInput[]
-    deleteMany?: CardScalarWhereInput | CardScalarWhereInput[]
+  export type CardDeckUpdateManyWithoutDeckNestedInput = {
+    create?: XOR<CardDeckCreateWithoutDeckInput, CardDeckUncheckedCreateWithoutDeckInput> | CardDeckCreateWithoutDeckInput[] | CardDeckUncheckedCreateWithoutDeckInput[]
+    connectOrCreate?: CardDeckCreateOrConnectWithoutDeckInput | CardDeckCreateOrConnectWithoutDeckInput[]
+    upsert?: CardDeckUpsertWithWhereUniqueWithoutDeckInput | CardDeckUpsertWithWhereUniqueWithoutDeckInput[]
+    createMany?: CardDeckCreateManyDeckInputEnvelope
+    set?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    disconnect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    delete?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    connect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    update?: CardDeckUpdateWithWhereUniqueWithoutDeckInput | CardDeckUpdateWithWhereUniqueWithoutDeckInput[]
+    updateMany?: CardDeckUpdateManyWithWhereWithoutDeckInput | CardDeckUpdateManyWithWhereWithoutDeckInput[]
+    deleteMany?: CardDeckScalarWhereInput | CardDeckScalarWhereInput[]
   }
 
-  export type CardUncheckedUpdateManyWithoutDeckNestedInput = {
-    create?: XOR<CardCreateWithoutDeckInput, CardUncheckedCreateWithoutDeckInput> | CardCreateWithoutDeckInput[] | CardUncheckedCreateWithoutDeckInput[]
-    connectOrCreate?: CardCreateOrConnectWithoutDeckInput | CardCreateOrConnectWithoutDeckInput[]
-    upsert?: CardUpsertWithWhereUniqueWithoutDeckInput | CardUpsertWithWhereUniqueWithoutDeckInput[]
-    createMany?: CardCreateManyDeckInputEnvelope
-    set?: CardWhereUniqueInput | CardWhereUniqueInput[]
-    disconnect?: CardWhereUniqueInput | CardWhereUniqueInput[]
-    delete?: CardWhereUniqueInput | CardWhereUniqueInput[]
-    connect?: CardWhereUniqueInput | CardWhereUniqueInput[]
-    update?: CardUpdateWithWhereUniqueWithoutDeckInput | CardUpdateWithWhereUniqueWithoutDeckInput[]
-    updateMany?: CardUpdateManyWithWhereWithoutDeckInput | CardUpdateManyWithWhereWithoutDeckInput[]
-    deleteMany?: CardScalarWhereInput | CardScalarWhereInput[]
+  export type CardDeckUncheckedUpdateManyWithoutDeckNestedInput = {
+    create?: XOR<CardDeckCreateWithoutDeckInput, CardDeckUncheckedCreateWithoutDeckInput> | CardDeckCreateWithoutDeckInput[] | CardDeckUncheckedCreateWithoutDeckInput[]
+    connectOrCreate?: CardDeckCreateOrConnectWithoutDeckInput | CardDeckCreateOrConnectWithoutDeckInput[]
+    upsert?: CardDeckUpsertWithWhereUniqueWithoutDeckInput | CardDeckUpsertWithWhereUniqueWithoutDeckInput[]
+    createMany?: CardDeckCreateManyDeckInputEnvelope
+    set?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    disconnect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    delete?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    connect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    update?: CardDeckUpdateWithWhereUniqueWithoutDeckInput | CardDeckUpdateWithWhereUniqueWithoutDeckInput[]
+    updateMany?: CardDeckUpdateManyWithWhereWithoutDeckInput | CardDeckUpdateManyWithWhereWithoutDeckInput[]
+    deleteMany?: CardDeckScalarWhereInput | CardDeckScalarWhereInput[]
   }
 
-  export type DeckCreateNestedOneWithoutCardsInput = {
-    create?: XOR<DeckCreateWithoutCardsInput, DeckUncheckedCreateWithoutCardsInput>
-    connectOrCreate?: DeckCreateOrConnectWithoutCardsInput
-    connect?: DeckWhereUniqueInput
+  export type CardDeckCreateNestedManyWithoutCardInput = {
+    create?: XOR<CardDeckCreateWithoutCardInput, CardDeckUncheckedCreateWithoutCardInput> | CardDeckCreateWithoutCardInput[] | CardDeckUncheckedCreateWithoutCardInput[]
+    connectOrCreate?: CardDeckCreateOrConnectWithoutCardInput | CardDeckCreateOrConnectWithoutCardInput[]
+    createMany?: CardDeckCreateManyCardInputEnvelope
+    connect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
   }
 
   export type UserCreateNestedOneWithoutCardsInput = {
@@ -7410,6 +8746,13 @@ export namespace Prisma {
     connectOrCreate?: ReviewLogCreateOrConnectWithoutCardInput | ReviewLogCreateOrConnectWithoutCardInput[]
     createMany?: ReviewLogCreateManyCardInputEnvelope
     connect?: ReviewLogWhereUniqueInput | ReviewLogWhereUniqueInput[]
+  }
+
+  export type CardDeckUncheckedCreateNestedManyWithoutCardInput = {
+    create?: XOR<CardDeckCreateWithoutCardInput, CardDeckUncheckedCreateWithoutCardInput> | CardDeckCreateWithoutCardInput[] | CardDeckUncheckedCreateWithoutCardInput[]
+    connectOrCreate?: CardDeckCreateOrConnectWithoutCardInput | CardDeckCreateOrConnectWithoutCardInput[]
+    createMany?: CardDeckCreateManyCardInputEnvelope
+    connect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
   }
 
   export type ReviewLogUncheckedCreateNestedManyWithoutCardInput = {
@@ -7439,14 +8782,18 @@ export namespace Prisma {
     set?: $Enums.CardState
   }
 
-  export type DeckUpdateOneWithoutCardsNestedInput = {
-    create?: XOR<DeckCreateWithoutCardsInput, DeckUncheckedCreateWithoutCardsInput>
-    connectOrCreate?: DeckCreateOrConnectWithoutCardsInput
-    upsert?: DeckUpsertWithoutCardsInput
-    disconnect?: DeckWhereInput | boolean
-    delete?: DeckWhereInput | boolean
-    connect?: DeckWhereUniqueInput
-    update?: XOR<XOR<DeckUpdateToOneWithWhereWithoutCardsInput, DeckUpdateWithoutCardsInput>, DeckUncheckedUpdateWithoutCardsInput>
+  export type CardDeckUpdateManyWithoutCardNestedInput = {
+    create?: XOR<CardDeckCreateWithoutCardInput, CardDeckUncheckedCreateWithoutCardInput> | CardDeckCreateWithoutCardInput[] | CardDeckUncheckedCreateWithoutCardInput[]
+    connectOrCreate?: CardDeckCreateOrConnectWithoutCardInput | CardDeckCreateOrConnectWithoutCardInput[]
+    upsert?: CardDeckUpsertWithWhereUniqueWithoutCardInput | CardDeckUpsertWithWhereUniqueWithoutCardInput[]
+    createMany?: CardDeckCreateManyCardInputEnvelope
+    set?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    disconnect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    delete?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    connect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    update?: CardDeckUpdateWithWhereUniqueWithoutCardInput | CardDeckUpdateWithWhereUniqueWithoutCardInput[]
+    updateMany?: CardDeckUpdateManyWithWhereWithoutCardInput | CardDeckUpdateManyWithWhereWithoutCardInput[]
+    deleteMany?: CardDeckScalarWhereInput | CardDeckScalarWhereInput[]
   }
 
   export type UserUpdateOneRequiredWithoutCardsNestedInput = {
@@ -7469,6 +8816,20 @@ export namespace Prisma {
     update?: ReviewLogUpdateWithWhereUniqueWithoutCardInput | ReviewLogUpdateWithWhereUniqueWithoutCardInput[]
     updateMany?: ReviewLogUpdateManyWithWhereWithoutCardInput | ReviewLogUpdateManyWithWhereWithoutCardInput[]
     deleteMany?: ReviewLogScalarWhereInput | ReviewLogScalarWhereInput[]
+  }
+
+  export type CardDeckUncheckedUpdateManyWithoutCardNestedInput = {
+    create?: XOR<CardDeckCreateWithoutCardInput, CardDeckUncheckedCreateWithoutCardInput> | CardDeckCreateWithoutCardInput[] | CardDeckUncheckedCreateWithoutCardInput[]
+    connectOrCreate?: CardDeckCreateOrConnectWithoutCardInput | CardDeckCreateOrConnectWithoutCardInput[]
+    upsert?: CardDeckUpsertWithWhereUniqueWithoutCardInput | CardDeckUpsertWithWhereUniqueWithoutCardInput[]
+    createMany?: CardDeckCreateManyCardInputEnvelope
+    set?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    disconnect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    delete?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    connect?: CardDeckWhereUniqueInput | CardDeckWhereUniqueInput[]
+    update?: CardDeckUpdateWithWhereUniqueWithoutCardInput | CardDeckUpdateWithWhereUniqueWithoutCardInput[]
+    updateMany?: CardDeckUpdateManyWithWhereWithoutCardInput | CardDeckUpdateManyWithWhereWithoutCardInput[]
+    deleteMany?: CardDeckScalarWhereInput | CardDeckScalarWhereInput[]
   }
 
   export type ReviewLogUncheckedUpdateManyWithoutCardNestedInput = {
@@ -7627,12 +8988,37 @@ export namespace Prisma {
     not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
   export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedBoolFilter<$PrismaModel>
     _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type NestedFloatFilter<$PrismaModel = never> = {
@@ -7699,20 +9085,24 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    color?: string | null
     isPublic?: boolean
+    deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    cards?: CardCreateNestedManyWithoutDeckInput
+    cardDecks?: CardDeckCreateNestedManyWithoutDeckInput
   }
 
   export type DeckUncheckedCreateWithoutUserInput = {
     id?: string
     title: string
     description?: string | null
+    color?: string | null
     isPublic?: boolean
+    deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    cards?: CardUncheckedCreateNestedManyWithoutDeckInput
+    cardDecks?: CardDeckUncheckedCreateNestedManyWithoutDeckInput
   }
 
   export type DeckCreateOrConnectWithoutUserInput = {
@@ -7737,7 +9127,7 @@ export namespace Prisma {
     state?: $Enums.CardState
     createdAt?: Date | string
     updatedAt?: Date | string
-    deck?: DeckCreateNestedOneWithoutCardsInput
+    cardDecks?: CardDeckCreateNestedManyWithoutCardInput
     logs?: ReviewLogCreateNestedManyWithoutCardInput
   }
 
@@ -7751,9 +9141,9 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    cardDecks?: CardDeckUncheckedCreateNestedManyWithoutCardInput
     logs?: ReviewLogUncheckedCreateNestedManyWithoutCardInput
   }
 
@@ -7824,7 +9214,9 @@ export namespace Prisma {
     id?: StringFilter<"Deck"> | string
     title?: StringFilter<"Deck"> | string
     description?: StringNullableFilter<"Deck"> | string | null
+    color?: StringNullableFilter<"Deck"> | string | null
     isPublic?: BoolFilter<"Deck"> | boolean
+    deletedAt?: DateTimeNullableFilter<"Deck"> | Date | string | null
     createdAt?: DateTimeFilter<"Deck"> | Date | string
     updatedAt?: DateTimeFilter<"Deck"> | Date | string
     userId?: StringFilter<"Deck"> | string
@@ -7859,7 +9251,6 @@ export namespace Prisma {
     easeFactor?: FloatFilter<"Card"> | number
     repetitions?: IntFilter<"Card"> | number
     state?: EnumCardStateFilter<"Card"> | $Enums.CardState
-    deckId?: StringNullableFilter<"Card"> | string | null
     userId?: StringFilter<"Card"> | string
     createdAt?: DateTimeFilter<"Card"> | Date | string
     updatedAt?: DateTimeFilter<"Card"> | Date | string
@@ -7897,6 +9288,150 @@ export namespace Prisma {
     userId?: StringFilter<"ReviewLog"> | string
   }
 
+  export type CardCreateWithoutCardDecksInput = {
+    id?: string
+    front: string
+    back: string
+    note?: string | null
+    nextReviewAt?: Date | string
+    interval?: number
+    easeFactor?: number
+    repetitions?: number
+    state?: $Enums.CardState
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutCardsInput
+    logs?: ReviewLogCreateNestedManyWithoutCardInput
+  }
+
+  export type CardUncheckedCreateWithoutCardDecksInput = {
+    id?: string
+    front: string
+    back: string
+    note?: string | null
+    nextReviewAt?: Date | string
+    interval?: number
+    easeFactor?: number
+    repetitions?: number
+    state?: $Enums.CardState
+    userId: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    logs?: ReviewLogUncheckedCreateNestedManyWithoutCardInput
+  }
+
+  export type CardCreateOrConnectWithoutCardDecksInput = {
+    where: CardWhereUniqueInput
+    create: XOR<CardCreateWithoutCardDecksInput, CardUncheckedCreateWithoutCardDecksInput>
+  }
+
+  export type DeckCreateWithoutCardDecksInput = {
+    id?: string
+    title: string
+    description?: string | null
+    color?: string | null
+    isPublic?: boolean
+    deletedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutDecksInput
+  }
+
+  export type DeckUncheckedCreateWithoutCardDecksInput = {
+    id?: string
+    title: string
+    description?: string | null
+    color?: string | null
+    isPublic?: boolean
+    deletedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    userId: string
+  }
+
+  export type DeckCreateOrConnectWithoutCardDecksInput = {
+    where: DeckWhereUniqueInput
+    create: XOR<DeckCreateWithoutCardDecksInput, DeckUncheckedCreateWithoutCardDecksInput>
+  }
+
+  export type CardUpsertWithoutCardDecksInput = {
+    update: XOR<CardUpdateWithoutCardDecksInput, CardUncheckedUpdateWithoutCardDecksInput>
+    create: XOR<CardCreateWithoutCardDecksInput, CardUncheckedCreateWithoutCardDecksInput>
+    where?: CardWhereInput
+  }
+
+  export type CardUpdateToOneWithWhereWithoutCardDecksInput = {
+    where?: CardWhereInput
+    data: XOR<CardUpdateWithoutCardDecksInput, CardUncheckedUpdateWithoutCardDecksInput>
+  }
+
+  export type CardUpdateWithoutCardDecksInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    front?: StringFieldUpdateOperationsInput | string
+    back?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    nextReviewAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    interval?: IntFieldUpdateOperationsInput | number
+    easeFactor?: FloatFieldUpdateOperationsInput | number
+    repetitions?: IntFieldUpdateOperationsInput | number
+    state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutCardsNestedInput
+    logs?: ReviewLogUpdateManyWithoutCardNestedInput
+  }
+
+  export type CardUncheckedUpdateWithoutCardDecksInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    front?: StringFieldUpdateOperationsInput | string
+    back?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    nextReviewAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    interval?: IntFieldUpdateOperationsInput | number
+    easeFactor?: FloatFieldUpdateOperationsInput | number
+    repetitions?: IntFieldUpdateOperationsInput | number
+    state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
+    userId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    logs?: ReviewLogUncheckedUpdateManyWithoutCardNestedInput
+  }
+
+  export type DeckUpsertWithoutCardDecksInput = {
+    update: XOR<DeckUpdateWithoutCardDecksInput, DeckUncheckedUpdateWithoutCardDecksInput>
+    create: XOR<DeckCreateWithoutCardDecksInput, DeckUncheckedCreateWithoutCardDecksInput>
+    where?: DeckWhereInput
+  }
+
+  export type DeckUpdateToOneWithWhereWithoutCardDecksInput = {
+    where?: DeckWhereInput
+    data: XOR<DeckUpdateWithoutCardDecksInput, DeckUncheckedUpdateWithoutCardDecksInput>
+  }
+
+  export type DeckUpdateWithoutCardDecksInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutDecksNestedInput
+  }
+
+  export type DeckUncheckedUpdateWithoutCardDecksInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    userId?: StringFieldUpdateOperationsInput | string
+  }
+
   export type UserCreateWithoutDecksInput = {
     id?: string
     email: string
@@ -7922,45 +9457,21 @@ export namespace Prisma {
     create: XOR<UserCreateWithoutDecksInput, UserUncheckedCreateWithoutDecksInput>
   }
 
-  export type CardCreateWithoutDeckInput = {
-    id?: string
-    front: string
-    back: string
-    note?: string | null
-    nextReviewAt?: Date | string
-    interval?: number
-    easeFactor?: number
-    repetitions?: number
-    state?: $Enums.CardState
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    user: UserCreateNestedOneWithoutCardsInput
-    logs?: ReviewLogCreateNestedManyWithoutCardInput
+  export type CardDeckCreateWithoutDeckInput = {
+    card: CardCreateNestedOneWithoutCardDecksInput
   }
 
-  export type CardUncheckedCreateWithoutDeckInput = {
-    id?: string
-    front: string
-    back: string
-    note?: string | null
-    nextReviewAt?: Date | string
-    interval?: number
-    easeFactor?: number
-    repetitions?: number
-    state?: $Enums.CardState
-    userId: string
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    logs?: ReviewLogUncheckedCreateNestedManyWithoutCardInput
+  export type CardDeckUncheckedCreateWithoutDeckInput = {
+    cardId: string
   }
 
-  export type CardCreateOrConnectWithoutDeckInput = {
-    where: CardWhereUniqueInput
-    create: XOR<CardCreateWithoutDeckInput, CardUncheckedCreateWithoutDeckInput>
+  export type CardDeckCreateOrConnectWithoutDeckInput = {
+    where: CardDeckWhereUniqueInput
+    create: XOR<CardDeckCreateWithoutDeckInput, CardDeckUncheckedCreateWithoutDeckInput>
   }
 
-  export type CardCreateManyDeckInputEnvelope = {
-    data: CardCreateManyDeckInput | CardCreateManyDeckInput[]
+  export type CardDeckCreateManyDeckInputEnvelope = {
+    data: CardDeckCreateManyDeckInput | CardDeckCreateManyDeckInput[]
     skipDuplicates?: boolean
   }
 
@@ -7995,45 +9506,46 @@ export namespace Prisma {
     logs?: ReviewLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
-  export type CardUpsertWithWhereUniqueWithoutDeckInput = {
-    where: CardWhereUniqueInput
-    update: XOR<CardUpdateWithoutDeckInput, CardUncheckedUpdateWithoutDeckInput>
-    create: XOR<CardCreateWithoutDeckInput, CardUncheckedCreateWithoutDeckInput>
+  export type CardDeckUpsertWithWhereUniqueWithoutDeckInput = {
+    where: CardDeckWhereUniqueInput
+    update: XOR<CardDeckUpdateWithoutDeckInput, CardDeckUncheckedUpdateWithoutDeckInput>
+    create: XOR<CardDeckCreateWithoutDeckInput, CardDeckUncheckedCreateWithoutDeckInput>
   }
 
-  export type CardUpdateWithWhereUniqueWithoutDeckInput = {
-    where: CardWhereUniqueInput
-    data: XOR<CardUpdateWithoutDeckInput, CardUncheckedUpdateWithoutDeckInput>
+  export type CardDeckUpdateWithWhereUniqueWithoutDeckInput = {
+    where: CardDeckWhereUniqueInput
+    data: XOR<CardDeckUpdateWithoutDeckInput, CardDeckUncheckedUpdateWithoutDeckInput>
   }
 
-  export type CardUpdateManyWithWhereWithoutDeckInput = {
-    where: CardScalarWhereInput
-    data: XOR<CardUpdateManyMutationInput, CardUncheckedUpdateManyWithoutDeckInput>
+  export type CardDeckUpdateManyWithWhereWithoutDeckInput = {
+    where: CardDeckScalarWhereInput
+    data: XOR<CardDeckUpdateManyMutationInput, CardDeckUncheckedUpdateManyWithoutDeckInput>
   }
 
-  export type DeckCreateWithoutCardsInput = {
-    id?: string
-    title: string
-    description?: string | null
-    isPublic?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    user: UserCreateNestedOneWithoutDecksInput
+  export type CardDeckScalarWhereInput = {
+    AND?: CardDeckScalarWhereInput | CardDeckScalarWhereInput[]
+    OR?: CardDeckScalarWhereInput[]
+    NOT?: CardDeckScalarWhereInput | CardDeckScalarWhereInput[]
+    cardId?: StringFilter<"CardDeck"> | string
+    deckId?: StringFilter<"CardDeck"> | string
   }
 
-  export type DeckUncheckedCreateWithoutCardsInput = {
-    id?: string
-    title: string
-    description?: string | null
-    isPublic?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    userId: string
+  export type CardDeckCreateWithoutCardInput = {
+    deck: DeckCreateNestedOneWithoutCardDecksInput
   }
 
-  export type DeckCreateOrConnectWithoutCardsInput = {
-    where: DeckWhereUniqueInput
-    create: XOR<DeckCreateWithoutCardsInput, DeckUncheckedCreateWithoutCardsInput>
+  export type CardDeckUncheckedCreateWithoutCardInput = {
+    deckId: string
+  }
+
+  export type CardDeckCreateOrConnectWithoutCardInput = {
+    where: CardDeckWhereUniqueInput
+    create: XOR<CardDeckCreateWithoutCardInput, CardDeckUncheckedCreateWithoutCardInput>
+  }
+
+  export type CardDeckCreateManyCardInputEnvelope = {
+    data: CardDeckCreateManyCardInput | CardDeckCreateManyCardInput[]
+    skipDuplicates?: boolean
   }
 
   export type UserCreateWithoutCardsInput = {
@@ -8095,35 +9607,20 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type DeckUpsertWithoutCardsInput = {
-    update: XOR<DeckUpdateWithoutCardsInput, DeckUncheckedUpdateWithoutCardsInput>
-    create: XOR<DeckCreateWithoutCardsInput, DeckUncheckedCreateWithoutCardsInput>
-    where?: DeckWhereInput
+  export type CardDeckUpsertWithWhereUniqueWithoutCardInput = {
+    where: CardDeckWhereUniqueInput
+    update: XOR<CardDeckUpdateWithoutCardInput, CardDeckUncheckedUpdateWithoutCardInput>
+    create: XOR<CardDeckCreateWithoutCardInput, CardDeckUncheckedCreateWithoutCardInput>
   }
 
-  export type DeckUpdateToOneWithWhereWithoutCardsInput = {
-    where?: DeckWhereInput
-    data: XOR<DeckUpdateWithoutCardsInput, DeckUncheckedUpdateWithoutCardsInput>
+  export type CardDeckUpdateWithWhereUniqueWithoutCardInput = {
+    where: CardDeckWhereUniqueInput
+    data: XOR<CardDeckUpdateWithoutCardInput, CardDeckUncheckedUpdateWithoutCardInput>
   }
 
-  export type DeckUpdateWithoutCardsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    isPublic?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutDecksNestedInput
-  }
-
-  export type DeckUncheckedUpdateWithoutCardsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    isPublic?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    userId?: StringFieldUpdateOperationsInput | string
+  export type CardDeckUpdateManyWithWhereWithoutCardInput = {
+    where: CardDeckScalarWhereInput
+    data: XOR<CardDeckUpdateManyMutationInput, CardDeckUncheckedUpdateManyWithoutCardInput>
   }
 
   export type UserUpsertWithoutCardsInput = {
@@ -8185,7 +9682,7 @@ export namespace Prisma {
     state?: $Enums.CardState
     createdAt?: Date | string
     updatedAt?: Date | string
-    deck?: DeckCreateNestedOneWithoutCardsInput
+    cardDecks?: CardDeckCreateNestedManyWithoutCardInput
     user: UserCreateNestedOneWithoutCardsInput
   }
 
@@ -8199,10 +9696,10 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId?: string | null
     userId: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    cardDecks?: CardDeckUncheckedCreateNestedManyWithoutCardInput
   }
 
   export type CardCreateOrConnectWithoutLogsInput = {
@@ -8258,7 +9755,7 @@ export namespace Prisma {
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deck?: DeckUpdateOneWithoutCardsNestedInput
+    cardDecks?: CardDeckUpdateManyWithoutCardNestedInput
     user?: UserUpdateOneRequiredWithoutCardsNestedInput
   }
 
@@ -8272,10 +9769,10 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    cardDecks?: CardDeckUncheckedUpdateManyWithoutCardNestedInput
   }
 
   export type UserUpsertWithoutLogsInput = {
@@ -8313,7 +9810,9 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    color?: string | null
     isPublic?: boolean
+    deletedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -8328,7 +9827,6 @@ export namespace Prisma {
     easeFactor?: number
     repetitions?: number
     state?: $Enums.CardState
-    deckId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -8349,27 +9847,33 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
     isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    cards?: CardUpdateManyWithoutDeckNestedInput
+    cardDecks?: CardDeckUpdateManyWithoutDeckNestedInput
   }
 
   export type DeckUncheckedUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
     isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    cards?: CardUncheckedUpdateManyWithoutDeckNestedInput
+    cardDecks?: CardDeckUncheckedUpdateManyWithoutDeckNestedInput
   }
 
   export type DeckUncheckedUpdateManyWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
     isPublic?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8386,7 +9890,7 @@ export namespace Prisma {
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deck?: DeckUpdateOneWithoutCardsNestedInput
+    cardDecks?: CardDeckUpdateManyWithoutCardNestedInput
     logs?: ReviewLogUpdateManyWithoutCardNestedInput
   }
 
@@ -8400,9 +9904,9 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    cardDecks?: CardDeckUncheckedUpdateManyWithoutCardNestedInput
     logs?: ReviewLogUncheckedUpdateManyWithoutCardNestedInput
   }
 
@@ -8416,7 +9920,6 @@ export namespace Prisma {
     easeFactor?: FloatFieldUpdateOperationsInput | number
     repetitions?: IntFieldUpdateOperationsInput | number
     state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    deckId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8457,66 +9960,24 @@ export namespace Prisma {
     cardId?: StringFieldUpdateOperationsInput | string
   }
 
-  export type CardCreateManyDeckInput = {
-    id?: string
-    front: string
-    back: string
-    note?: string | null
-    nextReviewAt?: Date | string
-    interval?: number
-    easeFactor?: number
-    repetitions?: number
-    state?: $Enums.CardState
-    userId: string
-    createdAt?: Date | string
-    updatedAt?: Date | string
+  export type CardDeckCreateManyDeckInput = {
+    cardId: string
   }
 
-  export type CardUpdateWithoutDeckInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    front?: StringFieldUpdateOperationsInput | string
-    back?: StringFieldUpdateOperationsInput | string
-    note?: NullableStringFieldUpdateOperationsInput | string | null
-    nextReviewAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    interval?: IntFieldUpdateOperationsInput | number
-    easeFactor?: FloatFieldUpdateOperationsInput | number
-    repetitions?: IntFieldUpdateOperationsInput | number
-    state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutCardsNestedInput
-    logs?: ReviewLogUpdateManyWithoutCardNestedInput
+  export type CardDeckUpdateWithoutDeckInput = {
+    card?: CardUpdateOneRequiredWithoutCardDecksNestedInput
   }
 
-  export type CardUncheckedUpdateWithoutDeckInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    front?: StringFieldUpdateOperationsInput | string
-    back?: StringFieldUpdateOperationsInput | string
-    note?: NullableStringFieldUpdateOperationsInput | string | null
-    nextReviewAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    interval?: IntFieldUpdateOperationsInput | number
-    easeFactor?: FloatFieldUpdateOperationsInput | number
-    repetitions?: IntFieldUpdateOperationsInput | number
-    state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    userId?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    logs?: ReviewLogUncheckedUpdateManyWithoutCardNestedInput
+  export type CardDeckUncheckedUpdateWithoutDeckInput = {
+    cardId?: StringFieldUpdateOperationsInput | string
   }
 
-  export type CardUncheckedUpdateManyWithoutDeckInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    front?: StringFieldUpdateOperationsInput | string
-    back?: StringFieldUpdateOperationsInput | string
-    note?: NullableStringFieldUpdateOperationsInput | string | null
-    nextReviewAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    interval?: IntFieldUpdateOperationsInput | number
-    easeFactor?: FloatFieldUpdateOperationsInput | number
-    repetitions?: IntFieldUpdateOperationsInput | number
-    state?: EnumCardStateFieldUpdateOperationsInput | $Enums.CardState
-    userId?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  export type CardDeckUncheckedUpdateManyWithoutDeckInput = {
+    cardId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type CardDeckCreateManyCardInput = {
+    deckId: string
   }
 
   export type ReviewLogCreateManyCardInput = {
@@ -8529,6 +9990,18 @@ export namespace Prisma {
     lastEaseFactor: number
     newEaseFactor: number
     userId: string
+  }
+
+  export type CardDeckUpdateWithoutCardInput = {
+    deck?: DeckUpdateOneRequiredWithoutCardDecksNestedInput
+  }
+
+  export type CardDeckUncheckedUpdateWithoutCardInput = {
+    deckId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type CardDeckUncheckedUpdateManyWithoutCardInput = {
+    deckId?: StringFieldUpdateOperationsInput | string
   }
 
   export type ReviewLogUpdateWithoutCardInput = {

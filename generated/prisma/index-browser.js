@@ -128,11 +128,18 @@ exports.Prisma.UserScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.CardDeckScalarFieldEnum = {
+  cardId: 'cardId',
+  deckId: 'deckId'
+};
+
 exports.Prisma.DeckScalarFieldEnum = {
   id: 'id',
   title: 'title',
   description: 'description',
+  color: 'color',
   isPublic: 'isPublic',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   userId: 'userId'
@@ -148,7 +155,6 @@ exports.Prisma.CardScalarFieldEnum = {
   easeFactor: 'easeFactor',
   repetitions: 'repetitions',
   state: 'state',
-  deckId: 'deckId',
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -190,6 +196,7 @@ exports.CardState = exports.$Enums.CardState = {
 
 exports.Prisma.ModelName = {
   User: 'User',
+  CardDeck: 'CardDeck',
   Deck: 'Deck',
   Card: 'Card',
   ReviewLog: 'ReviewLog'
