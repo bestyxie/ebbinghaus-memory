@@ -11,7 +11,7 @@ const createDeckSchema = z.object({
 });
 
 // GET - Fetch all user's decks with card counts
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { PlusIcon } from '../../components/ui/icons';
-import { TagsModal, Tag } from '../../components/tags-modal';
+import { TagsModal, Tag, TagColor } from '../../components/tags-modal';
 
 interface DeckResponse {
   decks: Array<{
@@ -31,7 +31,7 @@ export function SidebarTagsSection() {
         const convertedTags: Tag[] = data.decks.map(deck => ({
           id: deck.id,
           name: deck.title,
-          color: (deck.color || '#137fec') as any,
+          color: (deck.color || '#137fec') as TagColor,
         }));
 
         setTags(convertedTags);

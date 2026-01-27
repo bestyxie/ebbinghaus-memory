@@ -88,7 +88,7 @@ export async function createCard(prevState: any, formData: FormData) {
 
   // 创建卡片
   try {
-    const card = await prisma.card.create({
+    await prisma.card.create({
       data: {
         front,
         back,
