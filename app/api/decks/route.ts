@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { title, description, color, isPublic } = createDeckSchema.parse(body);
 
+    // Check for existing active deck
     const existing = await prisma.deck.findFirst({
       where: {
         userId: session.user.id,
@@ -68,6 +69,16 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
+
+    // Permanently delete any soft-deleted deck with the same name
+    // This will cascade delete CardDeck relations (cards are preserved)
+    await prisma.deck.deleteMany({
+      where: {
+        userId: session.user.id,
+        title: title,
+        deletedAt: { not: null },
+      },
+    });
 
     const deck = await prisma.deck.create({
       data: {
