@@ -19,7 +19,8 @@ interface Card {
   updatedAt: Date;
   deck: {
     id: string;
-    name: string;
+    title: string;
+    color?: string | null;
   } | null;
 }
 
@@ -105,7 +106,7 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
       <td className="py-6 px-6">
         {card.deck ? (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-            {card.deck.name}
+            {card.deck.title}
           </span>
         ) : (
           <span className="text-sm text-gray-400">No deck</span>
