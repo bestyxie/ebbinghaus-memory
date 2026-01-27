@@ -20,11 +20,18 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
     const skip = (page - 1) * limit;
 
-    const where: { userId: string; deckId?: string } = { userId };
+    const where: { userId: string; cardDecks?: { some: { deckId: string; deck?: { deletedAt: null } } } } = { userId };
 
     // Add deck filter if provided
     if (deckId) {
-      where.deckId = deckId;
+      where.cardDecks = {
+        some: {
+          deckId,
+          deck: {
+            deletedAt: null,
+          },
+        },
+      };
     }
 
     // Build orderBy object based on sortBy parameter
@@ -45,10 +52,20 @@ export async function GET(request: NextRequest) {
       take: limit,
       orderBy,
       include: {
-        deck: {
-          select: {
-            id: true,
-            title: true,
+        cardDecks: {
+          where: {
+            deck: {
+              deletedAt: null, // Only include non-deleted decks
+            },
+          },
+          include: {
+            deck: {
+              select: {
+                id: true,
+                title: true,
+                color: true,
+              },
+            },
           },
         },
       },
@@ -56,8 +73,14 @@ export async function GET(request: NextRequest) {
 
     const total = await prisma.card.count({ where });
 
+    // Transform cardDecks to deck (single deck per card for now)
+    const transformedCards = cards.map(card => ({
+      ...card,
+      deck: card.cardDecks[0]?.deck || null, // Take first deck, or null
+    }));
+
     return NextResponse.json({
-      cards,
+      cards: transformedCards,
       total,
       page,
       limit,

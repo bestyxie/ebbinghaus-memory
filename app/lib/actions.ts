@@ -72,30 +72,40 @@ export async function createCard(prevState: any, formData: FormData) {
   const { front, back, note, deckId, quality } = validated.data;
   const userId = session.user.id;
 
-  // 如果选择了 deckId，验证该 deck 属于当前用户
+  // 如果选择了 deckId，验证该 deck 属于当前用户且未被删除
   if (deckId) {
-    const deck = await prisma.deck.findUnique({
-      where: { id: deckId },
+    const deck = await prisma.deck.findFirst({
+      where: {
+        id: deckId,
+        userId,
+        deletedAt: null,
+      },
     });
-    if (!deck || deck.userId !== userId) {
+    if (!deck) {
       return { error: "Invalid deck" };
     }
   }
 
   // 创建卡片
   try {
-    await prisma.card.create({
+    const card = await prisma.card.create({
       data: {
         front,
         back,
         note: note || null,
-        deckId: deckId || undefined,
         userId,
         nextReviewAt: new Date(),
         interval: 0,
         easeFactor: calculateInitialEaseFactor(parseInt(quality)),
         repetitions: 0,
         state: "NEW",
+        ...(deckId && {
+          cardDecks: {
+            create: {
+              deckId,
+            },
+          },
+        }),
       },
     });
     return { success: true };
@@ -111,7 +121,10 @@ export async function getUserDecks() {
   if (!session?.user?.id) return [];
 
   return prisma.deck.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      deletedAt: null,
+    },
     orderBy: { createdAt: "asc" },
   });
 }
