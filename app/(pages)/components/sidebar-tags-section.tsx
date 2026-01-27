@@ -1,0 +1,137 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { PlusIcon } from '../../components/ui/icons';
+import { TagsModal, Tag } from '../../components/tags-modal';
+
+interface DeckResponse {
+  decks: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    color: string | null;
+    _count: {
+      cardDecks: number;
+    };
+  }>;
+}
+
+export function SidebarTagsSection() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchDecks() {
+      try {
+        const response = await fetch('/api/decks');
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data: DeckResponse = await response.json();
+
+        const convertedTags: Tag[] = data.decks.map(deck => ({
+          id: deck.id,
+          name: deck.title,
+          color: (deck.color || '#137fec') as any,
+        }));
+
+        setTags(convertedTags);
+      } catch (error) {
+        console.error('Error fetching decks:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDecks();
+  }, []);
+
+  const handleUpdateTags = async (newTags: Tag[]) => {
+    const currentIds = new Set(tags.map(t => t.id));
+    const newIds = new Set(newTags.map(t => t.id));
+
+    const addedTags = newTags.filter(t => !currentIds.has(t.id));
+
+    for (const tag of addedTags) {
+      try {
+        const response = await fetch('/api/decks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: tag.name,
+            description: '',
+            color: tag.color,
+            isPublic: false,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTags(prev => prev.map(t =>
+            t.id === tag.id ? { ...t, id: data.deck.id } : t
+          ));
+        }
+      } catch (error) {
+        console.error('Error creating deck:', error);
+      }
+    }
+
+    const removedTags = tags.filter(t => !newIds.has(t.id));
+
+    for (const tag of removedTags) {
+      if (tag.id.startsWith('deck-temp-')) continue;
+
+      try {
+        await fetch(`/api/decks/${tag.id}`, { method: 'DELETE' });
+      } catch (error) {
+        console.error('Error deleting deck:', error);
+      }
+    }
+
+    setTags(newTags);
+  };
+
+  return (
+    <>
+      <div className="px-5 py-4">
+        <div className="text-sm font-semibold text-gray-700 mb-4">
+          Tags ({tags.length})
+        </div>
+
+        {loading ? (
+          <div className="text-sm text-gray-400">Loading tags...</div>
+        ) : (
+          <div>
+            {tags.map((tag) => (
+              <button
+                key={tag.id}
+                className="flex items-center w-full h-10 px-3 rounded-md mb-2 text-left hover:bg-gray-50 transition-colors group"
+              >
+                <div
+                  className="w-3 h-3 rounded-full mr-2 shrink-0"
+                  style={{ backgroundColor: tag.color }}
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  {tag.name}
+                </span>
+              </button>
+            ))}
+            <button
+              onClick={() => setIsOpen(true)}
+              className="flex items-center w-full h-10 px-3 rounded-md text-left text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              <PlusIcon className="w-[18px] h-[22px] shrink-0 text-gray-400" />
+              <span className="ml-2 text-sm font-medium">New Tag</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <TagsModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        tags={tags}
+        onUpdateTags={handleUpdateTags}
+      />
+    </>
+  );
+}
