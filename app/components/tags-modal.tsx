@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CloseIcon, TagIcon, PlusIcon, EditIcon, TrashIcon } from "./ui/icons";
+import { CloseIcon, TagIcon, PlusIcon, TrashIcon } from "./ui/icons";
 
 export type TagColor =
   | "#137fec"
@@ -22,7 +22,8 @@ interface TagsModalProps {
   isOpen: boolean;
   onClose: () => void;
   tags: Tag[];
-  onUpdateTags: (tags: Tag[]) => void;
+  onCreate: (tag: Tag) => void;
+  onDelete: (tagId: string) => void;
 }
 
 const TAG_COLORS: TagColor[] = [
@@ -35,7 +36,7 @@ const TAG_COLORS: TagColor[] = [
   "#10b981",
 ];
 
-export function TagsModal({ isOpen, onClose, tags, onUpdateTags }: TagsModalProps) {
+export function TagsModal({ isOpen, onClose, tags, onCreate: onUpdateTags, onDelete }: TagsModalProps) {
   const [newTagName, setNewTagName] = useState("");
   const [selectedColor, setSelectedColor] = useState<TagColor>("#137fec");
 
@@ -45,21 +46,13 @@ export function TagsModal({ isOpen, onClose, tags, onUpdateTags }: TagsModalProp
     if (!newTagName.trim()) return;
 
     const newTag: Tag = {
-      id: `tag-${Date.now()}`,
+      id: `deck-temp-${Date.now()}`,
       name: newTagName.trim(),
       color: selectedColor,
     };
 
-    onUpdateTags([...tags, newTag]);
+    onUpdateTags(newTag);
     setNewTagName("");
-  };
-
-  const handleDeleteTag = (tagId: string) => {
-    onUpdateTags(tags.filter((tag) => tag.id !== tagId));
-  };
-
-  const handleSave = () => {
-    onClose();
   };
 
   return (
@@ -170,7 +163,7 @@ export function TagsModal({ isOpen, onClose, tags, onUpdateTags }: TagsModalProp
                   {/* Action Buttons - Visible on hover */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={() => handleDeleteTag(tag.id)}
+                      onClick={() => onDelete(tag.id)}
                       className="p-1.5 rounded-md hover:bg-slate-200 transition-colors"
                       aria-label="Delete tag"
                     >
@@ -195,13 +188,7 @@ export function TagsModal({ isOpen, onClose, tags, onUpdateTags }: TagsModalProp
             onClick={onClose}
             className="px-5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
           >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-5 py-2 rounded-lg bg-[#137fec] text-sm font-bold text-white shadow-sm hover:bg-blue-600 transition-colors"
-          >
-            Save Changes
+            Close
           </button>
         </div>
       </div>
