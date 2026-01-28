@@ -45,49 +45,55 @@ export function SidebarTagsSection() {
     fetchDecks();
   }, []);
 
-  const handleUpdateTags = async (newTags: Tag[]) => {
-    const currentIds = new Set(tags.map(t => t.id));
-    const newIds = new Set(newTags.map(t => t.id));
+  const handleUpdateTags = async (addedTag: Tag) => {
+    try {
+      const response = await fetch('/api/decks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: addedTag.name,
+          description: '',
+          color: addedTag.color,
+          isPublic: false,
+        }),
+      });
 
-    const addedTags = newTags.filter(t => !currentIds.has(t.id));
-
-    for (const tag of addedTags) {
-      try {
-        const response = await fetch('/api/decks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: tag.name,
-            description: '',
-            color: tag.color,
-            isPublic: false,
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setTags(prev => prev.map(t =>
-            t.id === tag.id ? { ...t, id: data.deck.id } : t
-          ));
-        }
-      } catch (error) {
-        console.error('Error creating deck:', error);
+      if (response.ok) {
+        // Refetch all decks from database to get fresh state
+        await refreshDecks();
+        return;
       }
+    } catch (error) {
+      console.error('Error creating deck:', error);
     }
+  };
 
-    const removedTags = tags.filter(t => !newIds.has(t.id));
+  const handleDeleteTags = async (tagId: string) => {
+    try {
+      await fetch(`/api/decks/${tagId}`, { method: 'DELETE' });
+      // Refetch all decks from database to get fresh state
+      await refreshDecks();
+      return;
+    } catch (error) {
+      console.error('Error deleting deck:', error);
+    }
+  }
 
-    for (const tag of removedTags) {
-      if (tag.id.startsWith('deck-temp-')) continue;
-
-      try {
-        await fetch(`/api/decks/${tag.id}`, { method: 'DELETE' });
-      } catch (error) {
-        console.error('Error deleting deck:', error);
+  const refreshDecks = async () => {
+    try {
+      const response = await fetch('/api/decks');
+      if (response.ok) {
+        const data: DeckResponse = await response.json();
+        const convertedTags: Tag[] = data.decks.map(deck => ({
+          id: deck.id,
+          name: deck.title,
+          color: (deck.color || '#137fec') as TagColor,
+        }));
+        setTags(convertedTags);
       }
+    } catch (error) {
+      console.error('Error refetching decks:', error);
     }
-
-    setTags(newTags);
   };
 
   return (
@@ -128,9 +134,13 @@ export function SidebarTagsSection() {
 
       <TagsModal
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={() => {
+          refreshDecks()
+          setIsOpen(false)
+        }}
         tags={tags}
-        onUpdateTags={handleUpdateTags}
+        onCreate={handleUpdateTags}
+        onDelete={handleDeleteTags}
       />
     </>
   );
