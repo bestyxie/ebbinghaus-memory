@@ -22,7 +22,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
 
     const userId = session.user.id;
 
-    let where: { userId: string; deckId?: string; nextReviewAt?: any } = { userId };
+    let where: { userId: string; cardDecks?: any; nextReviewAt?: any } = { userId };
 
     if (mode === 'all-due') {
       // Fetch all cards that are due for review
@@ -30,7 +30,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
     } else if (mode === 'filtered') {
       // Fetch cards based on filters (from card list)
       if (deckId) {
-        where.deckId = deckId;
+        where.cardDecks = {
+          some: {
+            deckId,
+            deck: {
+              deletedAt: null,
+            },
+          },
+        };
       }
     }
 
@@ -47,34 +54,41 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
     const cards = await prisma.card.findMany({
       where,
       orderBy,
-      select: {
-        id: true,
-        front: true,
-        back: true,
-        note: true,
-        interval: true,
-        easeFactor: true,
-        repetitions: true,
-        state: true,
-        nextReviewAt: true,
-        deck: {
-          select: {
-            id: true,
-            title: true,
+      include: {
+        cardDecks: {
+          where: {
+            deck: {
+              deletedAt: null, // Only include non-deleted decks
+            },
+          },
+          include: {
+            deck: {
+              select: {
+                id: true,
+                title: true,
+                color: true,
+              },
+            },
           },
         },
       },
     });
 
+    // Transform cardDecks to deck (single deck per card for now)
+    const transformedCards = cards.map(card => ({
+      ...card,
+      deck: card.cardDecks[0]?.deck || null, // Take first deck, or null
+    }));
+
     // If startCardId is provided, reorder to start from that card
-    let sessionCards = cards;
+    let sessionCards = transformedCards;
     if (startCardId) {
-      const startIndex = cards.findIndex(c => c.id === startCardId);
+      const startIndex = transformedCards.findIndex(c => c.id === startCardId);
       if (startIndex !== -1) {
         sessionCards = [
-          cards[startIndex],
-          ...cards.slice(0, startIndex),
-          ...cards.slice(startIndex + 1)
+          transformedCards[startIndex],
+          ...transformedCards.slice(0, startIndex),
+          ...transformedCards.slice(startIndex + 1)
         ];
       }
     }
