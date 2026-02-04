@@ -5,7 +5,7 @@ import { calculateReview } from '@/app/lib/srs-algorithm';
 import { ReviewSession, CardWithDeck } from '@/app/lib/types';
 
 // GET - Fetch cards for review session
-export async function GET(request: NextRequest): Promise<NextResponse<ReviewSession>> {
+export async function GET(request: NextRequest): Promise<NextResponse<ReviewSession | { error: string }>> {
   const session = await auth();
 
   if (!session?.user?.id) {

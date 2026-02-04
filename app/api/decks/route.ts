@@ -6,7 +6,7 @@ import { createDeckSchema } from '@/app/lib/zod';
 import { DecksResponse } from '@/app/lib/types';
 
 // GET - Fetch all user's decks with card counts
-export async function GET(): Promise<NextResponse<DecksResponse>> {
+export async function GET(): Promise<NextResponse<DecksResponse | { error: string }>> {
   const session = await auth();
 
   if (!session?.user?.id) {
