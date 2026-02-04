@@ -13,14 +13,16 @@ import {
 } from "../../../components/ui/icons";
 import { DeckSelector } from "./deck-selector";
 import { DifficultySelector } from "./difficulty-selector";
+import { Card } from '@/app/lib/types';
 
 interface CreateCardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  card?: Card;
 }
 
-export function CreateCardModal({ isOpen, onClose, onSuccess }: CreateCardModalProps) {
+export function CreateCardModal({ isOpen, onClose, onSuccess, card }: CreateCardModalProps) {
   const [state, formAction, isPending] = useActionState(createCard, null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<"5" | "4" | "3">("4");
   const hasHandledSuccess = useRef(false);

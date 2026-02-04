@@ -69,7 +69,7 @@ export const deckBaseSchema = z.object({
   id: z.string().cuid(),
   title: z.string().min(1).max(100),
   description: z.string().max(500).nullable(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/), // 必填字段
   isPublic: z.boolean(),
   deletedAt: z.date().nullable(),
   userId: z.string().cuid(),

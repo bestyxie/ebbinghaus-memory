@@ -44,7 +44,7 @@ model Deck {
   id          String   @id @default(cuid())
   title       String
   description String?
-  color       String?  @default("#137fec") // 标签颜色 (hex)
+  color       String   @default("#137fec") // 标签颜色 (hex) - 必填
   isPublic    Boolean  @default(false) // 是否公开给其他人使用
   deletedAt   DateTime? // 软删除时间戳 (null = 未删除)
   createdAt   DateTime @default(now())
