@@ -41,3 +41,53 @@ export function calculateInitialEaseFactor(quality: number): number {
   const baseEF = 2.5;
   return baseEF + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
 }
+
+// Card schemas
+export const cardBaseSchema = z.object({
+  id: z.string().cuid(),
+  front: z.string().min(1),
+  back: z.string().min(1),
+  note: z.string().nullable(),
+  nextReviewAt: z.date(),
+  interval: z.number().int().min(0),
+  easeFactor: z.number().min(1.3),
+  repetitions: z.number().int().min(0),
+  state: z.enum(['NEW', 'LEARNING', 'REVIEW', 'RELEARNING']),
+  userId: z.string().cuid(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export const updateCardSchema = z.object({
+  front: z.string().min(1).optional(),
+  back: z.string().min(1).optional(),
+  note: z.string().nullable().optional(),
+  deckId: z.string().cuid().nullable().optional(),
+})
+
+// Deck schemas
+export const deckBaseSchema = z.object({
+  id: z.string().cuid(),
+  title: z.string().min(1).max(100),
+  description: z.string().max(500).nullable(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  isPublic: z.boolean(),
+  deletedAt: z.date().nullable(),
+  userId: z.string().cuid(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export const createDeckSchema = z.object({
+  title: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  isPublic: z.boolean().optional().default(false),
+})
+
+export const updateDeckSchema = z.object({
+  title: z.string().min(1).max(100).optional(),
+  description: z.string().max(500).nullable().optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  isPublic: z.boolean().optional(),
+})
