@@ -6,28 +6,7 @@ import { FlashCard } from './components/flash-card';
 import { RatingButtons } from './components/rating-buttons';
 import { ProgressBar } from './components/progress-bar';
 import { CompletionScreen } from './components/completion-screen';
-
-interface Card {
-  id: string;
-  front: string;
-  back: string;
-  note: string | null;
-  interval: number;
-  easeFactor: number;
-  repetitions: number;
-  state: string;
-  nextReviewAt: Date;
-  deck: {
-    id: string;
-    title: string;
-  } | null;
-}
-
-interface ReviewSession {
-  cards: Card[];
-  total: number;
-  mode: string;
-}
+import { CardWithDeck, ReviewSession } from '@/app/lib/types';
 
 export default function ReviewPage() {
   const searchParams = useSearchParams();

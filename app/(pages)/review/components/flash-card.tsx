@@ -1,20 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-
-interface Card {
-  id: string;
-  front: string;
-  back: string;
-  note: string | null;
-  deck: {
-    id: string;
-    title: string;
-  } | null;
-}
+import { CardWithDeck } from '@/app/lib/types';
 
 interface FlashCardProps {
-  card: Card;
+  card: CardWithDeck;
   isFlipped: boolean;
   onFlip: () => void;
 }
