@@ -4,6 +4,7 @@ import { AuthError } from 'next-auth'
 import { prisma } from './prisma'
 import { auth } from '@/auth'
 import { createCardSchema, calculateInitialEaseFactor } from './zod'
+import { Deck } from './types'
 
 export async function authenticate(
   prevState: string | undefined,
@@ -116,7 +117,7 @@ export async function createCard(prevState: any, formData: FormData) {
 }
 
 // 获取用户的 Decks
-export async function getUserDecks() {
+export async function getUserDecks(): Promise<Deck[]> {
   const session = await auth();
   if (!session?.user?.id) return [];
 
