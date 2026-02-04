@@ -62,7 +62,6 @@ export const updateCardSchema = z.object({
   front: z.string().min(1).optional(),
   back: z.string().min(1).optional(),
   note: z.string().nullable().optional(),
-  deckId: z.string().cuid().nullable().optional(),
 })
 
 // Deck schemas
