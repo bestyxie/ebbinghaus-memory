@@ -3,18 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PlusIcon } from '../../components/ui/icons';
 import { TagsModal, Tag, TagColor } from '../../components/tags-modal';
-
-interface DeckResponse {
-  decks: Array<{
-    id: string;
-    title: string;
-    description: string | null;
-    color: string | null;
-    _count: {
-      cardDecks: number;
-    };
-  }>;
-}
+import { DecksResponse } from '@/app/lib/types';
 
 export function SidebarTagsSection() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,7 +15,7 @@ export function SidebarTagsSection() {
       try {
         const response = await fetch('/api/decks');
         if (!response.ok) throw new Error('Failed to fetch');
-        const data: DeckResponse = await response.json();
+        const data: DecksResponse = await response.json();
 
         const convertedTags: Tag[] = data.decks.map(deck => ({
           id: deck.id,
@@ -83,7 +72,7 @@ export function SidebarTagsSection() {
     try {
       const response = await fetch('/api/decks');
       if (response.ok) {
-        const data: DeckResponse = await response.json();
+        const data: DecksResponse = await response.json();
         const convertedTags: Tag[] = data.decks.map(deck => ({
           id: deck.id,
           name: deck.title,
