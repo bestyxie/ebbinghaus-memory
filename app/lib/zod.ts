@@ -80,7 +80,7 @@ export const deckBaseSchema = z.object({
 export const createDeckSchema = z.object({
   title: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   isPublic: z.boolean().optional().default(false),
 })
 
