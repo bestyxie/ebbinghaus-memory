@@ -2,16 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { z } from 'zod';
-
-const createDeckSchema = z.object({
-  title: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  isPublic: z.boolean().optional().default(false),
-});
+import { createDeckSchema } from '@/app/lib/zod';
+import { DecksResponse } from '@/app/lib/types';
 
 // GET - Fetch all user's decks with card counts
-export async function GET() {
+export async function GET(): Promise<NextResponse<DecksResponse>> {
   const session = await auth();
 
   if (!session?.user?.id) {
