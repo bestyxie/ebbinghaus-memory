@@ -3,11 +3,7 @@
 import { useState, useEffect } from "react";
 import { getUserDecks } from "@/app/lib/actions";
 import { PlusIcon } from "../../../components/ui/icons";
-
-interface Deck {
-  id: string;
-  title: string;
-}
+import { Deck } from "@/app/lib/types";
 
 export function DeckSelector() {
   const [decks, setDecks] = useState<Deck[]>([]);

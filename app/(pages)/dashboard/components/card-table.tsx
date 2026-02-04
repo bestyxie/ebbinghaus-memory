@@ -2,31 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { CardRow } from './card-row';
-
-interface Card {
-  id: string;
-  front: string;
-  back: string;
-  nextReviewAt: Date | null;
-  interval: number;
-  easeFactor: number;
-  repetitions: number;
-  state: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deck: {
-    id: string;
-    name: string;
-  } | null;
-}
-
-interface CardsResponse {
-  cards: Card[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+import { CardsResponse } from '@/app/lib/types';
 
 interface CardTableProps {
   sortBy?: string;

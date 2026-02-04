@@ -5,27 +5,10 @@ import Link from 'next/link';
 import { CardStatusBadge } from './card-status-badge';
 import { FamiliarityProgress } from './familiarity-progress';
 import { Pencil, Trash, Play } from 'lucide-react';
-
-interface Card {
-  id: string;
-  front: string;
-  back: string;
-  nextReviewAt: Date | null;
-  interval: number;
-  easeFactor: number;
-  repetitions: number;
-  state: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deck: {
-    id: string;
-    title: string;
-    color?: string | null;
-  } | null;
-}
+import { CardWithDeck } from '@/app/lib/types';
 
 interface CardRowProps {
-  card: Card;
+  card: CardWithDeck;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   deckId?: string | null;
