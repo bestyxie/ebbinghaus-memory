@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { calculateReview } from '@/app/lib/srs-algorithm';
+import { ReviewSession, CardWithDeck } from '@/app/lib/types';
 
 // GET - Fetch cards for review session
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<ReviewSession>> {
   const session = await auth();
 
   if (!session?.user?.id) {
