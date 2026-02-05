@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { DashboardContent } from './dashboard-content';
 import CreateBtn from './createBtn';
