@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
-import { CardsResponse, CardWithDeck } from '@/app/lib/types';
+import { CardsResponse } from '@/app/lib/types';
 
 export async function GET(request: NextRequest): Promise<NextResponse<CardsResponse | { error: string }>> {
   const session = await auth();
