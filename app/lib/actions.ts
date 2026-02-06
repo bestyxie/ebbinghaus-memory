@@ -5,6 +5,7 @@ import { prisma } from './prisma'
 import { auth } from '@/auth'
 import { createCardSchema, calculateInitialEaseFactor } from './zod'
 import { Deck } from './types'
+import { revalidatePath } from 'next/cache'
 
 export async function authenticate(
   prevState: string | undefined,
@@ -109,6 +110,10 @@ export async function createCard(prevState: any, formData: FormData) {
         }),
       },
     });
+
+    // Revalidate dashboard page to refresh server components
+    revalidatePath('/dashboard');
+
     return { success: true };
   } catch (error) {
     console.error("createCard error:", error);

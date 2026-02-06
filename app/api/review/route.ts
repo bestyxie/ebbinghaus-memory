@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { calculateReview } from '@/app/lib/srs-algorithm';
 import { ReviewSession, CardWithDeck } from '@/app/lib/types';
+import { revalidatePath } from 'next/cache';
 
 // GET - Fetch cards for review session
 export async function GET(request: NextRequest): Promise<NextResponse<ReviewSession | { error: string }>> {
@@ -158,6 +159,9 @@ export async function POST(req: Request) {
         },
       }),
     ]);
+
+    // Revalidate dashboard to refresh stats (retention rate, due cards)
+    revalidatePath('/dashboard');
 
     return NextResponse.json({ success: true, nextReview: result.nextReviewDate });
 
