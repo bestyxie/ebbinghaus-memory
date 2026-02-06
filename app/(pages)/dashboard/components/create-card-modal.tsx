@@ -18,23 +18,21 @@ import { Card } from '@/app/lib/types';
 interface CreateCardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
   card?: Card;
 }
 
-export function CreateCardModal({ isOpen, onClose, onSuccess, card }: CreateCardModalProps) {
+export function CreateCardModal({ isOpen, onClose, card }: CreateCardModalProps) {
   const [state, formAction, isPending] = useActionState(createCard, null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<"5" | "4" | "3">("4");
   const hasHandledSuccess = useRef(false);
 
-  // Close modal and trigger refresh on success (after render)
+  // Close modal on success (revalidatePath handles data refresh automatically)
   useEffect(() => {
     if (state?.success && !isPending && !hasHandledSuccess.current) {
       hasHandledSuccess.current = true;
-      onSuccess?.();
       onClose();
     }
-  }, [state?.success, isPending, onSuccess, onClose]);
+  }, [state?.success, isPending, onClose]);
 
   // Reset the success handler when modal closes
   useEffect(() => {

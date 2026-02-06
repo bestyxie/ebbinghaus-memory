@@ -3,35 +3,29 @@
 import { useState, useCallback, useRef } from 'react';
 import { CardTable } from './card-table';
 import { FiltersBar } from './filters-bar';
-import { StatsGrid } from './stats-grid';
 import { CardRefreshContext } from './card-refresh-context';
 
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 
 interface DashboardContentProps {
   header: React.ReactNode;
+  statsGrid: React.ReactNode;
 }
 
-export function DashboardContent({ header }: DashboardContentProps) {
+export function DashboardContent({ header, statsGrid }: DashboardContentProps) {
   const [sortBy, setSortBy] = useState<SortOption>('nextReviewAt');
   const [deckId, setDeckId] = useState<string | null>(null);
 
-  // Store refetch functions
-  const statsRefetchRef = useRef<(() => void) | null>(null);
+  // Store refetch function for cards
   const cardsRefetchRef = useRef<(() => void) | null>(null);
 
-  // Stable callbacks for registering refetch functions
-  const registerStatsRefetch = useCallback((refetch: () => void) => {
-    statsRefetchRef.current = refetch;
-  }, []);
-
+  // Stable callback for registering card refetch function
   const registerCardsRefetch = useCallback((refetch: () => void) => {
     cardsRefetchRef.current = refetch;
   }, []);
 
-  // Unified refresh function that calls both refetch functions
+  // Refresh function for cards
   const handleRefresh = useCallback(() => {
-    statsRefetchRef.current?.();
     cardsRefetchRef.current?.();
   }, []);
 
@@ -43,9 +37,7 @@ export function DashboardContent({ header }: DashboardContentProps) {
           {header}
 
           {/* Stats Grid */}
-          <div className="mb-12">
-            <StatsGrid onFetch={registerStatsRefetch} />
-          </div>
+          {statsGrid}
 
           {/* Filters and Card Table */}
           <FiltersBar
