@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { prisma } from './prisma';
 import { CardsResponse, CardWithDeck } from './types';
 
@@ -12,13 +13,13 @@ interface GetCardsOptions {
 
 /**
  * Get paginated cards for dashboard
- * Server-side data fetching function
+ * Server-side data fetching function with React.cache for request deduplication
  * Extracted from app/api/dashboard/cards/route.ts
  */
-export async function getCardsData(
+export const getCardsData = cache(async (
   userId: string,
   { sortBy, deckId, page, limit = 10 }: GetCardsOptions
-): Promise<CardsResponse> {
+): Promise<CardsResponse> => {
   const skip = (page - 1) * limit;
 
   const where: {
@@ -48,33 +49,46 @@ export async function getCardsData(
     orderBy = { nextReviewAt: 'asc' };
   }
 
-  // Run queries sequentially to avoid PrismaPg connection pool issue
-  const cards = await prisma.card.findMany({
-    where,
-    skip,
-    take: limit,
-    orderBy,
-    include: {
-      cardDecks: {
-        where: {
-          deck: {
-            deletedAt: null,
+  // Run queries in parallel for better performance
+  const [cards, total] = await Promise.all([
+    prisma.card.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      select: {
+        id: true,
+        front: true,
+        note: true,
+        // Exclude 'back' field to reduce payload size (not needed in list view)
+        nextReviewAt: true,
+        interval: true,
+        easeFactor: true,
+        repetitions: true,
+        state: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
+        cardDecks: {
+          where: {
+            deck: {
+              deletedAt: null,
+            },
           },
-        },
-        include: {
-          deck: {
-            select: {
-              id: true,
-              title: true,
-              color: true,
+          include: {
+            deck: {
+              select: {
+                id: true,
+                title: true,
+                color: true,
+              },
             },
           },
         },
       },
-    },
-  });
-
-  const total = await prisma.card.count({ where });
+    }),
+    prisma.card.count({ where }),
+  ]);
 
   // Transform cardDecks to deck (single deck per card for now)
   const transformedCards: CardWithDeck[] = cards.map((card) => ({
@@ -89,4 +103,4 @@ export async function getCardsData(
     limit,
     totalPages: Math.ceil(total / limit),
   };
-}
+});
