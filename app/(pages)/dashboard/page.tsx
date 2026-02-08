@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import CreateBtn from './components/createBtn';
 import { Plus, Play } from 'lucide-react';
 import { auth } from '@/auth';
@@ -12,11 +13,25 @@ import { getUserDecks } from '@/app/lib/actions';
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 
 interface DashboardPageProps {
-  searchParams: {
+  searchParams: Promise<{
     sortBy?: string;
     deckId?: string;
     page?: string;
-  };
+  }>;
+}
+
+function StatsGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-3 animate-pulse" />
+          <div className="h-8 bg-gray-200 rounded w-3/4 mb-2 animate-pulse" />
+          <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default async function DashboardPage(props: DashboardPageProps) {
@@ -70,7 +85,9 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
         {/* Stats Grid */}
         <div className="mb-12">
-          <StatsGridServer />
+          <Suspense fallback={<StatsGridSkeleton />}>
+            <StatsGridServer />
+          </Suspense>
         </div>
 
         {/* Filters Bar */}

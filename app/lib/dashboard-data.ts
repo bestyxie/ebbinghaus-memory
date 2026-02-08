@@ -93,6 +93,7 @@ export const getCardsData = cache(async (
   // Transform cardDecks to deck (single deck per card for now)
   const transformedCards: CardWithDeck[] = cards.map((card) => ({
     ...card,
+    back: '',
     deck: card.cardDecks[0]?.deck || null,
   }));
 

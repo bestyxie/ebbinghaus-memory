@@ -110,20 +110,23 @@ model ReviewLog {
   id           String   @id @default(cuid())
   rating       Int      // 用户评分：1(忘记), 2(困难), 3(一般), 4(简单)
   reviewTime   Int      // 用户思考耗时（毫秒），用于分析卡片难度
-  
+
   reviewedAt   DateTime @default(now()) // 实际复习时间
-  
+
   // 记录复习时的算法状态（快照），方便后续分析算法优劣
   scheduledDays Int     // 计划间隔
   elapsedDays   Int     // 实际间隔（用户可能拖延了几天才复习）
   lastEaseFactor Float
   newEaseFactor  Float
-  
+
   cardId       String
   card         Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  
+
   userId       String
   user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId]) // 索引：统计用户复习记录
+  @@index([userId, rating]) // 索引：计算用户留存率
 }
 
 // 枚举：卡片状态

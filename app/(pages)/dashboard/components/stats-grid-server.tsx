@@ -3,36 +3,44 @@ import { prisma } from '@/app/lib/prisma';
 import { StatsCard } from './stats-card';
 
 async function getStats(userId: string) {
-  // Get total cards count
-  const totalCards = await prisma.card.count({
-    where: { userId },
-  });
-
-  // Get cards due for review today
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const dueToday = await prisma.card.count({
-    where: {
-      userId,
-      nextReviewAt: {
-        lte: tomorrow,
+  // Run all queries in parallel for better performance
+  const [totalCards, dueToday, totalReviews, successfulReviews] = await Promise.all([
+    // Get total cards count
+    prisma.card.count({
+      where: { userId },
+    }),
+
+    // Get cards due for review today
+    prisma.card.count({
+      where: {
+        userId,
+        nextReviewAt: {
+          lte: tomorrow,
+        },
       },
-    },
-  });
+    }),
 
-  // Calculate retention rate from review logs
-  const reviewLogs = await prisma.reviewLog.findMany({
-    where: { userId },
-    select: { rating: true },
-  });
+    // Get total review count
+    prisma.reviewLog.count({
+      where: { userId },
+    }),
 
-  const retentionRate = reviewLogs.length > 0
-    ? Math.round(
-        (reviewLogs.filter((log) => log.rating >= 3).length / reviewLogs.length) * 100
-      )
+    // Get successful reviews count (rating >= 3) using aggregation
+    prisma.reviewLog.count({
+      where: {
+        userId,
+        rating: { gte: 3 },
+      },
+    }),
+  ]);
+
+  const retentionRate = totalReviews > 0
+    ? Math.round((successfulReviews / totalReviews) * 100)
     : 100;
 
   return {

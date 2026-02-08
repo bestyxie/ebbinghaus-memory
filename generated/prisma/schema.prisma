@@ -101,6 +101,8 @@ model Card {
   updatedAt DateTime @updatedAt
 
   @@index([userId, nextReviewAt]) // 建立索引，加速查询"今天需要复习的卡片"
+  @@index([userId, createdAt]) // 索引：按创建时间排序
+  @@index([userId, easeFactor]) // 索引：按熟悉度排序
 }
 
 // 5. 复习日志表 (ReviewLog) - 用于生成"热力图"或分析记忆情况
@@ -122,6 +124,9 @@ model ReviewLog {
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId]) // 索引：统计用户复习记录
+  @@index([userId, rating]) // 索引：计算用户留存率
 }
 
 // 枚举：卡片状态
