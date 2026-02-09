@@ -1,34 +1,20 @@
-import { cache } from 'react';
-import { prisma } from './prisma';
-import { CardsResponse, CardWithDeck } from './types';
-
-type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
-
-interface GetCardsOptions {
-  sortBy: SortOption;
-  deckId: string | null;
-  page: number;
-  limit?: number;
-}
-
 /**
- * Get paginated cards for dashboard
- * Server-side data fetching function with React.cache for request deduplication
- * ULTRA-OPTIMIZED: Uses raw SQL with window function to get all data in a single query
- * Performance: 444x faster than Prisma approach (10s → 23ms)
+ * Test optimized getCardsData function
+ * Run with: npx tsx scripts/test-optimized-cards.ts
  */
-export const getCardsData = cache(async (
+
+import { prisma } from '../app/lib/prisma';
+
+// Simulated optimized getCardsData (without React.cache)
+async function getCardsDataOptimized(
   userId: string,
-  { sortBy, deckId, page, limit = 10 }: GetCardsOptions
-): Promise<CardsResponse> => {
+  sortBy: 'nextReviewAt' | 'createdAt' | 'easeFactor',
+  deckId: string | null,
+  page: number,
+  limit: number = 10
+) {
   const startTime = performance.now();
   const skip = (page - 1) * limit;
-
-  const queryStart = performance.now();
-
-  // ULTRA-OPTIMIZED: Single raw SQL query with window function
-  // Gets paginated cards + total count in one database round-trip
-  // Uses LEFT JOIN to get deck info efficiently
 
   type RawCardResult = {
     id: string;
@@ -143,50 +129,76 @@ export const getCardsData = cache(async (
     }
   }
 
-  const queryTime = performance.now() - queryStart;
-  const totalTime = performance.now() - startTime;
-
+  const elapsed = performance.now() - startTime;
   const total = rawCards[0]?.total_count ?? 0;
 
-  // Log performance metrics for debugging
-  console.log('📊 Dashboard Cards Performance (Ultra-Optimized):', {
-    userId,
-    page,
-    sortBy,
-    deckFilter: deckId ? 'yes' : 'no',
-    totalTime: `${totalTime.toFixed(2)}ms`,
-    queryTime: `${queryTime.toFixed(2)}ms`,
-    results: `${rawCards.length} cards, ${total} total`,
-  });
+  return { cards: rawCards, total, elapsed };
+}
 
-  // Transform to CardWithDeck format
-  const transformedCards: CardWithDeck[] = rawCards.map((card) => ({
-    id: card.id,
-    front: card.front,
-    back: '', // Excluded for performance
-    note: card.note,
-    nextReviewAt: card.nextReviewAt,
-    interval: card.interval,
-    easeFactor: card.easeFactor,
-    repetitions: card.repetitions,
-    state: card.state as 'NEW' | 'LEARNING' | 'REVIEW' | 'RELEARNING',
-    userId: card.userId,
-    createdAt: card.createdAt,
-    updatedAt: card.updatedAt,
-    deck: card.deckId
-      ? {
-          id: card.deckId,
-          title: card.deckTitle!,
-          color: card.deckColor!,
-        }
-      : null,
-  }));
+async function test() {
+  console.log('🧪 Testing optimized getCardsData...\n');
 
-  return {
-    cards: transformedCards,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
-  };
-});
+  const user = await prisma.user.findFirst();
+  if (!user) {
+    console.log('❌ No users found');
+    return;
+  }
+
+  const userId = user.id;
+  console.log(`Testing with user: ${user.email}\n`);
+
+  // Test 1: Default sort (nextReviewAt)
+  console.log('📋 Test 1: Sort by nextReviewAt (default)');
+  const result1 = await getCardsDataOptimized(userId, 'nextReviewAt', null, 1, 10);
+  console.log(`  ✅ ${result1.cards.length} cards, total ${result1.total}`);
+  console.log(`  ⏱️  Time: ${result1.elapsed.toFixed(2)}ms\n`);
+
+  // Test 2: Sort by createdAt
+  console.log('📋 Test 2: Sort by createdAt');
+  const result2 = await getCardsDataOptimized(userId, 'createdAt', null, 1, 10);
+  console.log(`  ✅ ${result2.cards.length} cards, total ${result2.total}`);
+  console.log(`  ⏱️  Time: ${result2.elapsed.toFixed(2)}ms\n`);
+
+  // Test 3: Sort by easeFactor
+  console.log('📋 Test 3: Sort by easeFactor');
+  const result3 = await getCardsDataOptimized(userId, 'easeFactor', null, 1, 10);
+  console.log(`  ✅ ${result3.cards.length} cards, total ${result3.total}`);
+  console.log(`  ⏱️  Time: ${result3.elapsed.toFixed(2)}ms\n`);
+
+  // Test 4: With deck filter (if decks exist)
+  const deck = await prisma.deck.findFirst({ where: { userId } });
+  if (deck) {
+    console.log('📋 Test 4: Filter by deck');
+    const result4 = await getCardsDataOptimized(userId, 'nextReviewAt', deck.id, 1, 10);
+    console.log(`  ✅ ${result4.cards.length} cards, total ${result4.total}`);
+    console.log(`  ⏱️  Time: ${result4.elapsed.toFixed(2)}ms\n`);
+  }
+
+  // Test 5: Page 2
+  if (result1.total > 10) {
+    console.log('📋 Test 5: Page 2');
+    const result5 = await getCardsDataOptimized(userId, 'nextReviewAt', null, 2, 10);
+    console.log(`  ✅ ${result5.cards.length} cards, total ${result5.total}`);
+    console.log(`  ⏱️  Time: ${result5.elapsed.toFixed(2)}ms\n`);
+  }
+
+  // Summary
+  const avgTime = (result1.elapsed + result2.elapsed + result3.elapsed) / 3;
+  console.log('📊 Performance Summary:');
+  console.log(`  Average query time: ${avgTime.toFixed(2)}ms`);
+
+  if (avgTime < 50) {
+    console.log('  ✅ Excellent performance (<50ms)');
+  } else if (avgTime < 100) {
+    console.log('  ✅ Good performance (<100ms)');
+  } else if (avgTime < 500) {
+    console.log('  ⚠️  Acceptable performance (<500ms)');
+  } else {
+    console.log('  ❌ Needs further optimization (>500ms)');
+  }
+
+  console.log('\n✨ Test completed!');
+  await prisma.$disconnect();
+}
+
+test().catch(console.error);
