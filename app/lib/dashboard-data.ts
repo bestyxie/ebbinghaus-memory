@@ -20,6 +20,7 @@ export const getCardsData = cache(async (
   userId: string,
   { sortBy, deckId, page, limit = 10 }: GetCardsOptions
 ): Promise<CardsResponse> => {
+  const startTime = performance.now();
   const skip = (page - 1) * limit;
 
   const where: {
@@ -49,6 +50,7 @@ export const getCardsData = cache(async (
     orderBy = { nextReviewAt: 'asc' };
   }
 
+  const queryStart = performance.now();
   // Run queries in parallel for better performance
   const [cards, total] = await Promise.all([
     prisma.card.findMany({
@@ -89,6 +91,14 @@ export const getCardsData = cache(async (
     }),
     prisma.card.count({ where }),
   ]);
+  const queryTime = performance.now() - queryStart;
+  const totalTime = performance.now() - startTime;
+  // Log performance metrics for debugging
+  console.log('📊 Dashboard Stats Performance (Single Query):', {
+    userId,
+    totalTime: `${totalTime.toFixed(2)}ms`,
+    queryTime: `${queryTime.toFixed(2)}ms`,
+  });
 
   // Transform cardDecks to deck (single deck per card for now)
   const transformedCards: CardWithDeck[] = cards.map((card) => ({

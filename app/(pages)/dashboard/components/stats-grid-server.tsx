@@ -1,47 +1,53 @@
 import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { StatsCard } from './stats-card';
+import { unstable_cache } from 'next/cache';
 
-async function getStats(userId: string) {
+// Internal function that performs the actual database queries
+async function getStatsUncached(userId: string) {
+  const startTime = performance.now();
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Run all queries in parallel for better performance
-  const [totalCards, dueToday, totalReviews, successfulReviews] = await Promise.all([
-    // Get total cards count
-    prisma.card.count({
-      where: { userId },
-    }),
+  // ULTRA-OPTIMIZED: Use a single raw SQL query to get all stats in one database round-trip
+  const queryStart = performance.now();
 
-    // Get cards due for review today
-    prisma.card.count({
-      where: {
-        userId,
-        nextReviewAt: {
-          lte: tomorrow,
-        },
-      },
-    }),
+  const result = await prisma.$queryRaw<Array<{
+    total_cards: number;
+    due_today: number;
+    total_reviews: number;
+    successful_reviews: number;
+  }>>`
+    SELECT
+      (SELECT COUNT(*)::int FROM "Card" WHERE "userId" = ${userId}) as total_cards,
+      (SELECT COUNT(*)::int FROM "Card" WHERE "userId" = ${userId} AND "nextReviewAt" <= ${tomorrow}) as due_today,
+      (SELECT COUNT(*)::int FROM "ReviewLog" WHERE "userId" = ${userId}) as total_reviews,
+      (SELECT COUNT(*)::int FROM "ReviewLog" WHERE "userId" = ${userId} AND rating >= 3) as successful_reviews
+  `;
 
-    // Get total review count
-    prisma.reviewLog.count({
-      where: { userId },
-    }),
+  const queryTime = performance.now() - queryStart;
+  const totalTime = performance.now() - startTime;
 
-    // Get successful reviews count (rating >= 3) using aggregation
-    prisma.reviewLog.count({
-      where: {
-        userId,
-        rating: { gte: 3 },
-      },
-    }),
-  ]);
+  const stats = result[0];
+  const totalCards = stats?.total_cards ?? 0;
+  const dueToday = stats?.due_today ?? 0;
+  const totalReviews = stats?.total_reviews ?? 0;
+  const successfulReviews = stats?.successful_reviews ?? 0;
 
   const retentionRate = totalReviews > 0
     ? Math.round((successfulReviews / totalReviews) * 100)
     : 100;
+
+  // Log performance metrics for debugging
+  console.log('📊 Dashboard CardList Performance (Single Query):', {
+    userId,
+    totalTime: `${totalTime.toFixed(2)}ms`,
+    queryTime: `${queryTime.toFixed(2)}ms`,
+    results: { totalCards, dueToday, totalReviews, successfulReviews },
+  });
 
   return {
     totalCards,
@@ -49,6 +55,17 @@ async function getStats(userId: string) {
     retentionRate,
   };
 }
+
+// Cached version with 5-minute revalidation
+// unstable_cache will automatically differentiate cache entries by userId parameter
+const getStats = unstable_cache(
+  async (userId: string) => getStatsUncached(userId),
+  ['dashboard-stats'], // Cache key prefix
+  {
+    revalidate: 300, // Cache for 5 minutes (300 seconds)
+    tags: ['dashboard-stats'], // Tag for cache invalidation
+  }
+);
 
 export async function StatsGridServer() {
   const session = await auth();
