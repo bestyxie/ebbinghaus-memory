@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { calculateReview } from '@/app/lib/srs-algorithm';
-import { ReviewSession, CardWithDeck } from '@/app/lib/types';
+import { ReviewSession } from '@/app/lib/types';
 import { revalidatePath } from 'next/cache';
 
 // GET - Fetch cards for review session
@@ -23,7 +23,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
 
     const userId = session.user.id;
 
-    let where: { userId: string; cardDecks?: any; nextReviewAt?: any } = { userId };
+    type WhereType = {
+      userId: string;
+      cardDecks?: {
+        some: {
+          deckId: string;
+          deck?: {
+            deletedAt: null;
+          };
+        };
+      };
+      nextReviewAt?: { lte: Date };
+    };
+    const where: WhereType = { userId };
 
     if (mode === 'all-due') {
       // Fetch all cards that are due for review

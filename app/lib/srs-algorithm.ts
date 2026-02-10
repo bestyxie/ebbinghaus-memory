@@ -20,7 +20,8 @@ export interface ReviewOutput {
  * @returns 更新后的卡片状态
  */
 export function calculateReview(input: ReviewInput): ReviewOutput {
-  let { interval, repetitions, easeFactor, quality } = input;
+  const { quality } = input;
+  let { interval, repetitions, easeFactor } = input;
 
   // --- 1. 处理评分逻辑 ---
   // SM-2 标准评分是 0-5 分：

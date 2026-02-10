@@ -11,7 +11,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
 
   const action = mode === 'login' ? authenticate : register
-  const [errorMessage, formAction, isPending] = useActionState(action, undefined)
+  const [errorMessage, formAction, isPending] = useActionState<string | undefined, FormData>(action, undefined)
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

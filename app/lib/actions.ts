@@ -11,7 +11,7 @@ import { cache } from 'react'
 export async function authenticate(
   prevState: string | undefined,
   formData: FormData
-) {
+): Promise<string | undefined> {
   try {
     await signIn('credentials', formData)
   } catch (error) {
@@ -21,11 +21,11 @@ export async function authenticate(
         case 'CredentialsSignin':
           // 获取 cause 中的错误消息
           console.log('error.cause:', error.cause)
-          const errorMessage = error.cause?.message || 'Invalid credentials.'
+          const errorMessage = (error.cause as { message?: string })?.message || 'Invalid credentials.'
           return errorMessage
         // 兜底：多数回调/验证错误也提示为凭证错误，避免总是 "Something went wrong"
         case 'CallbackRouteError':
-          const callbackMessage = error.cause?.message || 'Invalid credentials.'
+          const callbackMessage = (error.cause as { message?: string })?.message || 'Invalid credentials.'
           return callbackMessage
         default:
           return 'Something went wrong.'
@@ -38,7 +38,7 @@ export async function authenticate(
 export async function register(
   prevState: string|undefined,
   formData: FormData
-) {
+): Promise<string | undefined> {
   try {
     await signIn('credentials', formData)
   } catch (error) {
@@ -46,10 +46,10 @@ export async function register(
       switch (error.type) {
         case 'CredentialsSignin':
           // 获取 cause 中的错误消息
-          const errorMessage = (error.cause as any)?.message || 'Invalid credentials.'
+          const errorMessage = error.cause?.err?.message || 'Invalid credentials.'
           return errorMessage
         case 'CallbackRouteError':
-          const callbackMessage = (error.cause as any)?.message || 'Invalid credentials.'
+          const callbackMessage = error.cause?.err?.message || 'Invalid credentials.'
           return callbackMessage
         default:
           return 'Something went wrong.'
@@ -60,7 +60,7 @@ export async function register(
 }
 
 // 创建卡片
-export async function createCard(prevState: any, formData: FormData) {
+export async function createCard(prevState: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) {
     return { error: "Unauthorized" };
