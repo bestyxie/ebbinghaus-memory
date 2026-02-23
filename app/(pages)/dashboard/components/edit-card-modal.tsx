@@ -21,7 +21,7 @@ interface EditCardModalProps {
 
 export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
   const [state, formAction, isPending] = useActionState(updateCard, null);
-  const hasHandledSuccess = useRef(false);
+  const previousIsPending = useRef(false);
   const [decks, setDecks] = useState<Deck[]>([]);
 
   // Fetch all decks for the dropdown
@@ -31,26 +31,22 @@ export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
     }
   }, [isOpen]);
 
-  // Close modal on success (revalidatePath handles data refresh automatically)
+  // Close modal on success when pending transitions from true to false
   useEffect(() => {
-    if (state?.success && !isPending && !hasHandledSuccess.current) {
-      hasHandledSuccess.current = true;
+    if (previousIsPending.current && !isPending && state?.success) {
       onClose();
     }
-  }, [state?.success, isPending, onClose]);
-
-  // Reset the success handler when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      hasHandledSuccess.current = false;
-    }
-  }, [isOpen]);
+    previousIsPending.current = isPending;
+  }, [isPending, state?.success, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <form action={formAction} className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-[720px] max-h-[90vh] flex flex-col">
+      <form
+        action={formAction}
+        className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-[720px] max-h-[90vh] flex flex-col"
+      >
         {/* Header */}
         <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div>
