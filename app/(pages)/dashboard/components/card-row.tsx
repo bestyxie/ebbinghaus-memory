@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { CardStatusBadge } from './card-status-badge';
 import { FamiliarityProgress } from './familiarity-progress';
+import { EditCardModal } from './edit-card-modal';
 import { Pencil, Trash, Play } from 'lucide-react';
 import { CardWithDeck } from '@/app/lib/types';
 
@@ -15,6 +16,8 @@ interface CardRowProps {
 }
 
 export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deckId }: CardRowProps) {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   // Build review URL with current filters
   const buildReviewUrl = () => {
     const params = new URLSearchParams({
@@ -76,7 +79,8 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
   const { status, daysUntil } = getCardStatus();
 
   return (
-    <tr className="border-b border-gray-200 hover:bg-gray-50">
+    <>
+      <tr className="border-b border-gray-200 hover:bg-gray-50">
       {/* Knowledge Point */}
       <td className="py-6 px-6">
         <div>
@@ -117,14 +121,14 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
           >
             <Play className="h-4 w-4" />
           </Link>
-          <Link
-            href={`/cards/${card.id}/edit`}
+          <button
+            onClick={() => setIsEditModalOpen(true)}
             className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             aria-label={`Edit ${card.front}`}
             title="Edit card"
           >
             <Pencil className="h-4 w-4" />
-          </Link>
+          </button>
           <button
             className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             aria-label={`Delete ${card.front}`}
@@ -139,5 +143,12 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
         </div>
       </td>
     </tr>
+
+    <EditCardModal
+      card={card}
+      isOpen={isEditModalOpen}
+      onClose={() => setIsEditModalOpen(false)}
+    />
+  </>
   );
 }
