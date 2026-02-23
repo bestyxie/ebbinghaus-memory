@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useEffect, useRef } from "react";
-import { updateCard } from "@/app/lib/actions";
+import { updateCard, getUserDecks } from "@/app/lib/actions";
 import {
   CloseIcon,
   CheckIcon,
@@ -12,7 +12,7 @@ import {
   ListIcon,
 } from "../../../components/ui/icons";
 import { DeckSelector } from "./deck-selector";
-import { CardWithDeck } from "@/app/lib/types";
+import { CardWithDeck, Deck } from "@/app/lib/types";
 
 interface EditCardModalProps {
   card: CardWithDeck;
@@ -23,6 +23,12 @@ interface EditCardModalProps {
 export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
   const [state, formAction, isPending] = useActionState(updateCard, null);
   const hasHandledSuccess = useRef(false);
+  const [decks, setDecks] = useState<Deck[]>([]);
+
+  // Fetch all decks for the dropdown
+  useEffect(() => {
+    getUserDecks().then(setDecks);
+  }, []);
 
   // Close modal on success (revalidatePath handles data refresh automatically)
   useEffect(() => {
@@ -127,12 +133,11 @@ export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
                 className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">No deck</option>
-                {/* Options will be populated by DeckSelector */}
-                {card.deck && (
-                  <option key={card.deck.id} value={card.deck.id}>
-                    {card.deck.title}
+                {decks.map(deck => (
+                  <option key={deck.id} value={deck.id}>
+                    {deck.title}
                   </option>
-                )}
+                ))}
               </select>
               {/* Note: We'll use inline deck options here instead of component to avoid double mounting */}
             </div>
