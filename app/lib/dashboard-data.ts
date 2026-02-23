@@ -33,6 +33,7 @@ export const getCardsData = cache(async (
   type RawCardResult = {
     id: string;
     front: string;
+    back: string;
     note: string | null;
     nextReviewAt: Date;
     interval: number;
@@ -56,7 +57,7 @@ export const getCardsData = cache(async (
     if (sortBy === 'createdAt') {
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
-          c.id, c.front, c.note, c."nextReviewAt", c.interval, c."easeFactor",
+          c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
           c.repetitions, c.state, c."userId", c."createdAt", c."updatedAt",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
@@ -70,7 +71,7 @@ export const getCardsData = cache(async (
     } else if (sortBy === 'easeFactor') {
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
-          c.id, c.front, c.note, c."nextReviewAt", c.interval, c."easeFactor",
+          c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
           c.repetitions, c.state, c."userId", c."createdAt", c."updatedAt",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
@@ -84,7 +85,7 @@ export const getCardsData = cache(async (
     } else {
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
-          c.id, c.front, c.note, c."nextReviewAt", c.interval, c."easeFactor",
+          c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
           c.repetitions, c.state, c."userId", c."createdAt", c."updatedAt",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
@@ -101,7 +102,7 @@ export const getCardsData = cache(async (
     if (sortBy === 'createdAt') {
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
-          c.id, c.front, c.note, c."nextReviewAt", c.interval, c."easeFactor",
+          c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
           c.repetitions, c.state, c."userId", c."createdAt", c."updatedAt",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
@@ -115,7 +116,7 @@ export const getCardsData = cache(async (
     } else if (sortBy === 'easeFactor') {
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
-          c.id, c.front, c.note, c."nextReviewAt", c.interval, c."easeFactor",
+          c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
           c.repetitions, c.state, c."userId", c."createdAt", c."updatedAt",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
@@ -129,7 +130,7 @@ export const getCardsData = cache(async (
     } else {
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
-          c.id, c.front, c.note, c."nextReviewAt", c.interval, c."easeFactor",
+          c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
           c.repetitions, c.state, c."userId", c."createdAt", c."updatedAt",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
@@ -163,7 +164,7 @@ export const getCardsData = cache(async (
   const transformedCards: CardWithDeck[] = rawCards.map((card) => ({
     id: card.id,
     front: card.front,
-    back: '', // Excluded for performance
+    back: card.back, // Excluded for performance
     note: card.note,
     nextReviewAt: card.nextReviewAt,
     interval: card.interval,
