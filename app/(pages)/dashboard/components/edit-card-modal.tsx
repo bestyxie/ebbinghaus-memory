@@ -26,8 +26,10 @@ export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
 
   // Fetch all decks for the dropdown
   useEffect(() => {
-    getUserDecks().then(setDecks);
-  }, []);
+    if (isOpen) {
+      getUserDecks().then(setDecks);
+    }
+  }, [isOpen]);
 
   // Close modal on success (revalidatePath handles data refresh automatically)
   useEffect(() => {
