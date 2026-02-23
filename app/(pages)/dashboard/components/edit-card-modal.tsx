@@ -11,7 +11,6 @@ import {
   LinkIcon,
   ListIcon,
 } from "../../../components/ui/icons";
-import { DeckSelector } from "./deck-selector";
 import { CardWithDeck, Deck } from "@/app/lib/types";
 
 interface EditCardModalProps {
