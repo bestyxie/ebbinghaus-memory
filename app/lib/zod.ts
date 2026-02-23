@@ -33,6 +33,15 @@ export const createCardSchema = z.object({
   quality: z.enum(["5", "4", "3"]),
 })
 
+// 卡片编辑验证
+export const editCardSchema = z.object({
+  cardId: z.string().min(1, "Card ID required"),
+  front: z.string().min(1, "Title required"),
+  back: z.string().min(1, "Content required"),
+  note: z.string().optional(),
+  deckId: z.string().optional(),
+})
+
 // 根据 SM-2 算法计算初始 easeFactor
 // quality 5 (Easy) → 2.6
 // quality 4 (Medium) → 2.5

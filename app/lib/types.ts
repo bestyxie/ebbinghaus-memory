@@ -6,6 +6,7 @@ import {
   createDeckSchema,
   updateCardSchema,
   updateDeckSchema,
+  editCardSchema,
 } from './zod'
 
 // === 基础类型 (从 Zod 派生) ===
@@ -15,6 +16,7 @@ export type Deck = z.infer<typeof deckBaseSchema>
 // === 输入类型 (用于创建/更新) ===
 export type CreateCardInput = z.infer<typeof createCardSchema>
 export type UpdateCardInput = z.infer<typeof updateCardSchema>
+export type EditCardInput = z.infer<typeof editCardSchema>
 export type CreateDeckInput = z.infer<typeof createDeckSchema>
 export type UpdateDeckInput = z.infer<typeof updateDeckSchema>
 
