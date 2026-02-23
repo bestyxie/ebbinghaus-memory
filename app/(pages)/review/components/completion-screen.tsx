@@ -34,7 +34,7 @@ export function CompletionScreen({ stats, onBackToDashboard, onStartNewSession }
             Review Complete!
           </h1>
           <p className="text-lg text-gray-600">
-            Great job! You've completed this review session.
+            Great job! You&apos;ve completed this review session.
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export function CompletionScreen({ stats, onBackToDashboard, onStartNewSession }
         {/* Motivational Message */}
         <div className="mt-12 text-center">
           <p className="text-gray-500 italic">
-            "Repetition is the mother of learning."
+            &quot;Repetition is the mother of learning.&quot;
           </p>
         </div>
       </div>

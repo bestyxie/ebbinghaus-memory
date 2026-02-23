@@ -6,9 +6,12 @@ import { FlashCard } from './components/flash-card';
 import { RatingButtons } from './components/rating-buttons';
 import { ProgressBar } from './components/progress-bar';
 import { CompletionScreen } from './components/completion-screen';
-import { CardWithDeck, ReviewSession } from '@/app/lib/types';
+import { ReviewSession } from '@/app/lib/types';
+import { Suspense } from 'react';
 
-export default function ReviewPage() {
+export const dynamic = 'force-dynamic';
+
+function ReviewPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [session, setSession] = useState<ReviewSession | null>(null);
@@ -66,22 +69,6 @@ export default function ReviewPage() {
     fetchSession();
   }, [searchParams]);
 
-  // Keyboard shortcuts for rating
-  useEffect(() => {
-    if (!isFlipped || isComplete || isSubmitting) return;
-
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === '1') handleRating(1);
-      if (e.key === '2') handleRating(2);
-      if (e.key === '3') handleRating(3);
-      if (e.key === '4') handleRating(4);
-      if (e.key === ' ') setIsFlipped(false); // Space to flip back
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isFlipped, isComplete, isSubmitting]);
-
   const handleFlip = useCallback(() => {
     if (isFlipped) return; // Can't flip back once answer is shown
     setIsFlipped(true);
@@ -130,6 +117,22 @@ export default function ReviewPage() {
       setIsSubmitting(false);
     }
   }, [currentCard, currentIndex, reviewedCount, session, isSubmitting]);
+
+  // Keyboard shortcuts for rating
+  useEffect(() => {
+    if (!isFlipped || isComplete || isSubmitting) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === '1') handleRating(1);
+      if (e.key === '2') handleRating(2);
+      if (e.key === '3') handleRating(3);
+      if (e.key === '4') handleRating(4);
+      if (e.key === ' ') setIsFlipped(false); // Space to flip back
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isFlipped, isComplete, isSubmitting, handleRating]);
 
   const handleBackToDashboard = () => {
     router.push('/dashboard');
@@ -210,5 +213,20 @@ export default function ReviewPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ReviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading review session...</p>
+        </div>
+      </div>
+    }>
+      <ReviewPageContent />
+    </Suspense>
   );
 }

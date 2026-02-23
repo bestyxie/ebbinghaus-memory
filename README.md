@@ -39,3 +39,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## 测试账号
 test@test.com
 1234567890
+
+
+## 命令行进入数据库
+psql "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
