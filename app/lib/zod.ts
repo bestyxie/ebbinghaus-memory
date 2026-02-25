@@ -99,3 +99,8 @@ export const updateDeckSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   isPublic: z.boolean().optional(),
 })
+
+// AI Memory Text Generation schemas
+export const generateMemoryTextSchema = z.object({
+  cardFronts: z.array(z.string().min(1)).min(1, 'At least one card front is required').max(20, 'Maximum 20 card fronts allowed'),
+})

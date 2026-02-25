@@ -15,8 +15,6 @@ export async function GET(): Promise<NextResponse<DecksResponse | { error: strin
   }
 
   try {
-    // Test 2: Database query time
-    const queryStart = performance.now();
     const decks = await prisma.deck.findMany({
       where: {
         userId: session.user.id,

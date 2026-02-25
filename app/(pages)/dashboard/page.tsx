@@ -7,6 +7,7 @@ import { auth } from '@/auth';
 import { StatsGridServer } from './components/stats-grid';
 import { FiltersBarServer } from './components/filters-bar-server';
 import { CardTableServer } from './components/card-table-server';
+import { AIMemoryButton } from './components/ai-memory-button';
 import { getCardsData } from '@/app/lib/dashboard-data';
 import { getUserDecks } from '@/app/lib/actions';
 
@@ -73,6 +74,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
               <Plus className="h-5 w-5" />
               New Point
             </CreateBtn>
+            <AIMemoryButton />
             <Link
               href="/review"
               className="flex items-center gap-2 px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
