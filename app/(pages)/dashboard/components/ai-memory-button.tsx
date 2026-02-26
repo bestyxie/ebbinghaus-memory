@@ -27,7 +27,8 @@ export function AIMemoryButton() {
         throw new Error('Failed to fetch decks');
       }
 
-      const decks: Deck[] = await decksResponse.json();
+      const resData = await decksResponse.json();
+      const decks: Deck[] = resData.decks;
       const vocabularyDeck = decks.find(deck => deck.title === 'vocabulary');
 
       if (!vocabularyDeck) {

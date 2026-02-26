@@ -52,10 +52,10 @@ ${wordsList}
 1. 将这些单词按照语义或用法进行分组
 2. 为每个单词提供记忆技巧或联想方法
 3. 创造一个简短的故事或场景来帮助记忆
-4. 输出格式清晰，易于阅读
+4. 输出，格式清晰，易于阅读
 5. 使用markdown格式进行排版，包含适当的标题、列表和强调
 
-请用中文回答。`,
+请用英文回答回答。`,
       temperature: 0.7,
     });
 
@@ -80,11 +80,11 @@ ${wordsList}
 export async function getOverdueVocabularyCards(userId: string) {
   try {
     // First, find the "vocabulary" deck for the user
-    const vocabularyDeck = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/decks`, {
+    const vocabularyDeckData = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/decks`, {
       cache: 'no-store',
     }).then(res => res.json());
 
-    const deck = vocabularyDeck.find((d: { title: string }) => d.title === 'vocabulary');
+    const deck = vocabularyDeckData.decks.find((d: { title: string }) => d.title === 'vocabulary');
 
     if (!deck) {
       return { cards: [], error: 'No vocabulary deck found. Please create a deck named "vocabulary" first.' };
