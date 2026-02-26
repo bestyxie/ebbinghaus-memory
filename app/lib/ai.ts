@@ -72,59 +72,6 @@ ${wordsList}
 }
 
 /**
- * Fetch overdue vocabulary cards for AI memory assistance
- *
- * @param userId - Current user ID
- * @returns Array of overdue cards from vocabulary deck (max 10)
- */
-export async function getOverdueVocabularyCards(userId: string) {
-  try {
-    // First, find the "vocabulary" deck for the user
-    const vocabularyDeckData = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/decks`, {
-      cache: 'no-store',
-    }).then(res => res.json());
-
-    const deck = vocabularyDeckData.decks.find((d: { title: string }) => d.title === 'vocabulary');
-
-    if (!deck) {
-      return { cards: [], error: 'No vocabulary deck found. Please create a deck named "vocabulary" first.' };
-    }
-
-    // Fetch overdue cards for the vocabulary deck
-    const response = await fetch(
-      `/api/dashboard/cards?deckId=${deck.id}&sortBy=nextReviewAt&page=1`,
-      { cache: 'no-store' }
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch cards');
-    }
-
-    const data = await response.json();
-
-    // Filter overdue cards and limit to 10
-    const overdueCards = data.cards
-      .filter((card: { nextReviewAt: string }) => new Date(card.nextReviewAt) <= new Date())
-      .slice(0, 10);
-
-    if (overdueCards.length === 0) {
-      return {
-        cards: [],
-        error: 'No overdue cards found in the vocabulary deck. Cards that are not yet due will not be included.',
-      };
-    }
-
-    return { cards: overdueCards };
-  } catch (error) {
-    console.error('Error fetching overdue vocabulary cards:', error);
-    return {
-      cards: [],
-      error: error instanceof Error ? error.message : 'Failed to fetch overdue vocabulary cards',
-    };
-  }
-}
-
-/**
  * Card type for AI memory modal
  */
 export interface AIMemoryCard {
