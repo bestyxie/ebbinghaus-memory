@@ -3,37 +3,37 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  DashboardIcon,
-  TodayReviewIcon,
-  InsightsIcon,
-  ErrorIcon,
-} from "../../components/ui/icons";
+  LayoutDashboard,
+  ClipboardCheck,
+  BarChart3,
+  AlertTriangle,
+} from "lucide-react";
 
 export function Navigation() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: "DashboardIcon", badge: undefined },
+    { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard", badge: undefined },
     {
       href: "/today-review",
       label: "Today's Review",
-      icon: "TodayReviewIcon",
+      icon: "ClipboardCheck",
       badge: 14,
     },
-    { href: "/insights", label: "Insights", icon: "InsightsIcon", badge: undefined },
+    { href: "/insights", label: "Insights", icon: "BarChart3", badge: undefined },
     {
       href: "/high-frequency-errors",
       label: "High Frequency Errors",
-      icon: "ErrorIcon",
+      icon: "AlertTriangle",
       badge: 8,
     },
   ];
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    DashboardIcon,
-    TodayReviewIcon,
-    InsightsIcon,
-    ErrorIcon,
+    LayoutDashboard,
+    ClipboardCheck,
+    BarChart3,
+    AlertTriangle,
   };
 
   return (

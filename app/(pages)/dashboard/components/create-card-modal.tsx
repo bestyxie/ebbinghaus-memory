@@ -3,14 +3,14 @@
 import { useActionState, useState, useEffect, useRef } from "react";
 import { createCard } from "@/app/lib/actions";
 import {
-  CloseIcon,
-  PlusIcon,
-  BoldIcon,
-  ItalicIcon,
-  UnderlineIcon,
-  LinkIcon,
-  ListIcon,
-} from "../../../components/ui/icons";
+  X,
+  Plus,
+  Bold,
+  Italic,
+  Underline,
+  Link,
+  List,
+} from "lucide-react";
 import { DeckSelector } from "./deck-selector";
 import { DifficultySelector } from "./difficulty-selector";
 
@@ -53,7 +53,7 @@ export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
             </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
-            <CloseIcon className="w-6 h-6 text-slate-500" />
+            <X className="w-6 h-6 text-slate-500" />
           </button>
         </div>
 
@@ -86,20 +86,20 @@ export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
             <div className="border border-slate-300 rounded-lg overflow-hidden">
               <div className="flex gap-1 p-2 border-b border-slate-200 bg-slate-50">
                 <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <BoldIcon />
+                  <Bold />
                 </button>
                 <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <ItalicIcon />
+                  <Italic />
                 </button>
                 <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <UnderlineIcon />
+                  <Underline />
                 </button>
                 <div className="w-px h-6 bg-slate-300 mx-1" />
                 <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <LinkIcon />
+                  <Link />
                 </button>
                 <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <ListIcon />
+                  <List />
                 </button>
               </div>
               <textarea
@@ -146,7 +146,7 @@ export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
             disabled={isPending}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
           >
-            <PlusIcon />
+            <Plus />
             {isPending ? "Creating..." : "Save Knowledge Point"}
           </button>
         </div>

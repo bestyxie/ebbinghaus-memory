@@ -1,10 +1,10 @@
 import { auth } from "@/auth";
 import { signOut } from "@/auth";
 import {
-  MindFlowLogo,
-  SearchIcon,
-  LogoutIcon,
-} from "../../components/ui/icons";
+  Brain,
+  Search,
+  LogOut,
+} from "lucide-react";
 import { Navigation } from "./navigation";
 import { SidebarTagsSection } from "./sidebar-tags-section";
 
@@ -18,7 +18,7 @@ export default async function Sidebar() {
       <div className="h-[68px] px-4 flex items-center">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 flex items-center justify-center">
-            <MindFlowLogo className="w-[18px] h-[22px] text-blue-500" />
+            <Brain className="w-[18px] h-[22px] text-blue-500" />
           </div>
           <span className="text-lg font-semibold">MindFlow</span>
         </div>
@@ -27,7 +27,7 @@ export default async function Sidebar() {
       {/* Search */}
       <div className="h-[46px] px-3 flex items-center">
         <div className="w-full h-[30px] bg-gray-100 rounded-md flex items-center px-2 gap-2">
-          <SearchIcon className="w-[18px] h-[22px] text-gray-400 shrink-0" />
+          <Search className="w-[18px] h-[22px] text-gray-400 shrink-0" />
           <span className="text-sm text-gray-400">Search</span>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default async function Sidebar() {
               type="submit"
               className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
             >
-              <LogoutIcon className="w-[18px] h-[22px] text-gray-500" />
+              <LogOut className="w-[18px] h-[22px] text-gray-500" />
             </button>
           </form>
         </div>

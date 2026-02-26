@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getUserDecks } from "@/app/lib/actions";
-import { PlusIcon } from "../../../components/ui/icons";
+import { Plus } from "lucide-react";
 import { Deck } from "@/app/lib/types";
 
 export function DeckSelector() {
@@ -26,7 +26,7 @@ export function DeckSelector() {
           ))}
         </select>
         <button type="button" className="px-4 py-3 border border-slate-300 rounded-lg hover:bg-slate-50">
-          <PlusIcon />
+          <Plus />
         </button>
       </div>
     </div>

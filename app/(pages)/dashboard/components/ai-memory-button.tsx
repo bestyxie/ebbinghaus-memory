@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SparklesIcon } from "../../../components/ui/icons";
+import { Sparkles } from "lucide-react";
 import { AIMemoryModal } from "./ai-memory-modal";
 import { AIMemoryCard } from "@/app/lib/ai";
 import { Deck } from "@/app/lib/types";
@@ -83,7 +83,7 @@ export function AIMemoryButton() {
         disabled={isLoading}
         className="flex items-center gap-2 px-5 py-3 text-base font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
       >
-        <SparklesIcon className="w-5 h-5" />
+        <Sparkles className="w-5 h-5" />
         {isLoading ? 'Loading...' : 'AI 辅助记忆'}
       </button>
 

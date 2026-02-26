@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon } from '../../components/ui/icons';
+import { Plus } from 'lucide-react';
 import { TagsModal, Tag, TagColor } from '../../components/tags-modal';
 import { DecksResponse } from '@/app/lib/types';
 
@@ -114,7 +114,7 @@ export function SidebarTagsSection() {
               onClick={() => setIsOpen(true)}
               className="flex items-center w-full h-10 px-3 rounded-md text-left text-gray-500 hover:bg-gray-50 transition-colors"
             >
-              <PlusIcon className="w-[18px] h-[22px] shrink-0 text-gray-400" />
+              <Plus className="w-[18px] h-[22px] shrink-0 text-gray-400" />
               <span className="ml-2 text-sm font-medium">New Tag</span>
             </button>
           </div>
