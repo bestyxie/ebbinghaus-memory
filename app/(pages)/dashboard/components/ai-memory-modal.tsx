@@ -3,118 +3,13 @@
 import { X, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AIMemoryCard } from "@/app/lib/ai";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface AIMemoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   cards: AIMemoryCard[];
-}
-
-/**
- * Simple markdown renderer component
- * Handles basic markdown: headings, bold, italic, lists
- */
-function MarkdownRenderer({ content }: { content: string }) {
-  if (!content) return null;
-
-  const lines = content.split('\n');
-  const elements: React.ReactElement[] = [];
-
-  lines.forEach((line, index) => {
-    const trimmedLine = line.trim();
-
-    if (!trimmedLine) {
-      // Empty line
-      elements.push(<br key={`empty-${index}`} />);
-      return;
-    }
-
-    // Heading level 1 (##)
-    if (trimmedLine.startsWith('## ')) {
-      elements.push(
-        <h3 key={`h2-${index}`} className="text-lg font-bold text-slate-900 mt-6 mb-3">
-          {trimmedLine.slice(3)}
-        </h3>
-      );
-    }
-    // Heading level 3 (###)
-    else if (trimmedLine.startsWith('### ')) {
-      elements.push(
-        <h4 key={`h3-${index}`} className="text-base font-semibold text-slate-900 mt-5 mb-2">
-          {trimmedLine.slice(4)}
-        </h4>
-      );
-    }
-    // Unordered list item (- or *)
-    else if (trimmedLine.match(/^[-*]\s/)) {
-      const itemContent = trimmedLine.replace(/^[-*]\s/, '');
-      elements.push(
-        <li key={`li-${index}`} className="text-slate-700 ml-4 mb-1">
-          <MarkdownInline content={itemContent} />
-        </li>
-      );
-    }
-    // Ordered list item (1. 2. etc)
-    else if (trimmedLine.match(/^\d+\.\s/)) {
-      const itemContent = trimmedLine.replace(/^\d+\.\s/, '');
-      elements.push(
-        <li key={`oli-${index}`} className="text-slate-700 ml-4 mb-1">
-          <MarkdownInline content={itemContent} />
-        </li>
-      );
-    }
-    // Regular paragraph
-    else {
-      elements.push(
-        <p key={`p-${index}`} className="text-slate-700 mb-3 leading-relaxed">
-          <MarkdownInline content={trimmedLine} />
-        </p>
-      );
-    }
-  });
-
-  return <div className="markdown-content">{elements}</div>;
-}
-
-/**
- * Inline markdown renderer for text within elements
- * Handles bold (**text**) and italic (*text*)
- */
-function MarkdownInline({ content }: { content: string }) {
-  if (!content) return null;
-
-  // Split by ** for bold
-  const parts = content.split(/\*\*/g);
-  const rendered: React.ReactElement[] = [];
-
-  parts.forEach((part, index) => {
-    const isBold = index % 2 === 1;
-
-    if (isBold) {
-      rendered.push(
-        <strong key={`bold-${index}`} className="font-semibold text-slate-900">
-          {part}
-        </strong>
-      );
-    } else {
-      // Split by * for italic
-      const subParts = part.split(/\*(?=[^*])/g);
-      subParts.forEach((subPart, subIndex) => {
-        const isItalic = subIndex % 2 === 1;
-        if (isItalic) {
-          rendered.push(
-            <em key={`italic-${index}-${subIndex}`} className="italic text-slate-600">
-              {subPart}
-            </em>
-          );
-        } else {
-          rendered.push(<span key={`text-${index}-${subIndex}`}>{subPart}</span>);
-        }
-      });
-    }
-  });
-
-  return <span>{rendered}</span>;
 }
 
 export function AIMemoryModal({ isOpen, onClose, cards }: AIMemoryModalProps) {
@@ -246,7 +141,23 @@ export function AIMemoryModal({ isOpen, onClose, cards }: AIMemoryModalProps) {
               </div>
             ) : generatedText ? (
               <div className="prose prose-slate max-w-none">
-                <MarkdownRenderer content={generatedText} />
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => <h1 className="text-2xl font-bold text-slate-900 mt-6 mb-3">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-xl font-bold text-slate-900 mt-6 mb-3">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-lg font-bold text-slate-900 mt-6 mb-3">{children}</h3>,
+                    h4: ({ children }) => <h4 className="text-base font-semibold text-slate-900 mt-5 mb-2">{children}</h4>,
+                    p: ({ children }) => <p className="text-slate-700 mb-3 leading-relaxed">{children}</p>,
+                    ul: ({ children }) => <ul className="text-slate-700 mb-3 ml-4">{children}</ul>,
+                    ol: ({ children }) => <ol className="text-slate-700 mb-3 ml-4">{children}</ol>,
+                    li: ({ children }) => <li className="mb-1">{children}</li>,
+                    strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
+                    em: ({ children }) => <em className="italic text-slate-600">{children}</em>,
+                  }}
+                >
+                  {generatedText}
+                </ReactMarkdown>
               </div>
             ) : (
               <div className="text-center py-12 text-slate-500">

@@ -40,7 +40,7 @@ export function AIMemoryButton() {
 
       // Fetch overdue cards for the vocabulary deck
       const cardsResponse = await fetch(
-        `/api/dashboard/cards?deckId=${vocabularyDeck.id}&sortBy=nextReviewAt&page=1`,
+        `/api/dashboard/cards?deckId=${vocabularyDeck.id}&sortBy=nextReviewAt&page=1&limit=10`,
         { cache: 'no-store' }
       );
 
@@ -50,13 +50,14 @@ export function AIMemoryButton() {
 
       const data = await cardsResponse.json();
 
-      // Filter overdue cards and limit to 10
+      // Filter overdue cards (same as dashboard table with nextReviewAt sorting)
+      // This ensures cards are due for review according to the SM-2 algorithm
       const overdueCards = data.cards
         .filter((card: { nextReviewAt: string }) => new Date(card.nextReviewAt) <= new Date())
         .slice(0, 10) as AIMemoryCard[];
 
       if (overdueCards.length === 0) {
-        setError('No overdue cards found in the vocabulary deck. Cards that are not yet due will not be included.');
+        setError('No overdue cards found in the vocabulary tag.');
         setIsLoading(false);
         setIsOpen(true);
         return;
