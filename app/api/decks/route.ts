@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { z } from 'zod';
 import { createDeckSchema } from '@/app/lib/zod';
 import { DecksResponse } from '@/app/lib/types';
+import { requireAuth } from '@/app/lib/api-helpers';
 
 // GET - Fetch all user's decks with card counts
 export async function GET(): Promise<NextResponse<DecksResponse | { error: string }>> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    console.log('⚠️  GET /api/decks: Unauthorized (no session)');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const userId = await requireAuth();
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const decks = await prisma.deck.findMany({
       where: {
-        userId: session.user.id,
+        userId,
         deletedAt: null,
       },
       include: {
@@ -43,13 +39,8 @@ export async function GET(): Promise<NextResponse<DecksResponse | { error: strin
 // POST - Create new deck
 // OPTIMIZED: Uses transaction to ensure atomicity and improve performance
 export async function POST(request: NextRequest) {
-  const startTime = performance.now();
-  const session = await auth();
-  const userId = session?.user?.id
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const userId = await requireAuth();
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const body = await request.json();

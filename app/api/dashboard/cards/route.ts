@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { CardsResponse } from '@/app/lib/types';
+import { requireAuth } from '@/app/lib/api-helpers';
 
 export async function GET(request: NextRequest): Promise<NextResponse<CardsResponse | { error: string }>> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const userId = await requireAuth();
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -18,7 +15,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<CardsRespo
     const sortOrder = searchParams.get('sortOrder') || 'asc';
     const deckId = searchParams.get('deckId');
 
-    const userId = session.user.id;
     const skip = (page - 1) * limit;
 
     const where: { userId: string; cardDecks?: { some: { deckId: string; deck?: { deletedAt: null } } } } = { userId };

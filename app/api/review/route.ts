@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { calculateReview } from '@/app/lib/srs-algorithm';
 import { ReviewSession } from '@/app/lib/types';
 import { revalidatePath } from 'next/cache';
+import { requireAuth } from '@/app/lib/api-helpers';
 
 // GET - Fetch cards for review session
 export async function GET(request: NextRequest): Promise<NextResponse<ReviewSession | { error: string }>> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const userId = await requireAuth();
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -20,8 +17,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
     const deckId = searchParams.get('deckId');
     const sortBy = searchParams.get('sortBy') || 'nextReviewAt';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
-
-    const userId = session.user.id;
 
     type WhereType = {
       userId: string;
@@ -121,7 +116,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
 }
 
 // POST - Submit a card rating
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const userId = await requireAuth();
+  if (userId instanceof NextResponse) return userId;
+
   try {
     const body = await req.json();
     const { cardId, quality } = body;
@@ -133,6 +131,11 @@ export async function POST(req: Request) {
 
     if (!card) {
       return NextResponse.json({ error: 'Card not found' }, { status: 404 });
+    }
+
+    // Verify card belongs to user
+    if (card.userId !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // 2. 运行核心算法

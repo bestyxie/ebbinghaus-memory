@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { generateMemoryText } from '@/app/lib/ai';
+import { requireAuth } from '@/app/lib/api-helpers';
 
 /**
  * POST /api/ai/generate-memory-text
@@ -19,11 +19,8 @@ import { generateMemoryText } from '@/app/lib/ai';
  * }
  */
 export async function POST(req: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const userId = await requireAuth();
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const body = await req.json();

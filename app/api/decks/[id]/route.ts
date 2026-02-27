@@ -1,25 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
+import { requireAuth } from '@/app/lib/api-helpers';
 
 // DELETE - Soft delete a deck
 // BENEFIT: Prisma automatically cascades delete to CardDeck relations
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
+  const userId = await requireAuth();
+  if (userId instanceof NextResponse) return userId;
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const params = await context.params;
 
   try {
     // Verify deck exists and belongs to user
     const deck = await prisma.deck.findFirst({
       where: {
         id: params.id,
-        userId: session.user.id,
+        userId,
         deletedAt: null,
       },
       include: {

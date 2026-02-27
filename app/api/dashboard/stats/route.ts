@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
+import { requireAuth } from '@/app/lib/api-helpers';
 
 export async function GET() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const userId = await requireAuth();
+  if (userId instanceof NextResponse) return userId;
 
   try {
-    const userId = session.user.id;
-
     // Get total cards count
     const totalCards = await prisma.card.count({
       where: { userId },
