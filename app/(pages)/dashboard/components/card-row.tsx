@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { CardStatusBadge } from './card-status-badge';
 import { FamiliarityProgress } from './familiarity-progress';
 import { EditCardModal } from './edit-card-modal';
+import { PopConfirm } from '@/app/components/ui/popconfirm';
 import { Pencil, Trash, Play } from 'lucide-react';
 import { CardWithDeck } from '@/app/lib/types';
 
@@ -16,7 +18,29 @@ interface CardRowProps {
 }
 
 export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deckId }: CardRowProps) {
+  const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Delete card handler
+  const handleDeleteCard = async () => {
+    try {
+      const response = await fetch(`/api/cards/${card.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Delete failed:', error);
+        throw new Error(error.error || 'Failed to delete card');
+      }
+
+      // Refresh the page to update the card list
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      throw error; // Re-throw to let PopConfirm handle the error state
+    }
+  };
 
   // Build review URL with current filters
   const buildReviewUrl = () => {
@@ -129,17 +153,22 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
           >
             <Pencil className="h-4 w-4" />
           </button>
-          <button
-            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            aria-label={`Delete ${card.front}`}
-            title="Delete card"
-            onClick={() => {
-              // TODO: Implement delete functionality
-              console.log('Delete card:', card.id);
-            }}
+          <PopConfirm
+            title="Delete card?"
+            description="This action cannot be undone."
+            onConfirm={handleDeleteCard}
+            isDestructive={true}
+            confirmText="Delete"
+            cancelText="Cancel"
           >
-            <Trash className="h-4 w-4" />
-          </button>
+            <button
+              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              aria-label={`Delete ${card.front}`}
+              title="Delete card"
+            >
+              <Trash className="h-4 w-4" />
+            </button>
+          </PopConfirm>
         </div>
       </td>
     </tr>
