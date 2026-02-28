@@ -29,7 +29,7 @@ export interface GenerateMemoryTextResponse {
  *
  * @example
  * const result = await generateMemoryText(['abandon', 'ability', 'abnormal']);
- * console.log(result.text); // AI-generated memory text
+ * console.log(result.text);
  */
 export async function generateMemoryText(cardFronts: string[]): Promise<GenerateMemoryTextResponse> {
   if (!cardFronts || cardFronts.length === 0) {

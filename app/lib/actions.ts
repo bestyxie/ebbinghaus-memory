@@ -20,7 +20,6 @@ export async function authenticate(
       switch (error.type) {
         case 'CredentialsSignin':
           // 获取 cause 中的错误消息
-          console.log('error.cause:', error.cause)
           const errorMessage = (error.cause as { message?: string })?.message || 'Invalid credentials.'
           return errorMessage
         // 兜底：多数回调/验证错误也提示为凭证错误，避免总是 "Something went wrong"
@@ -43,6 +42,7 @@ export async function register(
     await signIn('credentials', formData)
   } catch (error) {
     if (error instanceof AuthError) {
+      console.error('AuthError in authenticate:', error.type, error.cause)
       switch (error.type) {
         case 'CredentialsSignin':
           // 获取 cause 中的错误消息

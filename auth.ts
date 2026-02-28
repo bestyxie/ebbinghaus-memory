@@ -76,7 +76,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: user.name || undefined,
           }
         } catch (e) {
-          console.log('authorize error:', e)
           if (e instanceof ZodError) {
             throw new Error('输入数据格式错误')
           }

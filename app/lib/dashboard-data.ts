@@ -149,17 +149,6 @@ export const getCardsData = cache(async (
 
   const total = rawCards[0]?.total_count ?? 0;
 
-  // Log performance metrics for debugging
-  console.log('📊 Dashboard Cards Performance (Ultra-Optimized):', {
-    userId,
-    page,
-    sortBy,
-    deckFilter: deckId ? 'yes' : 'no',
-    totalTime: `${totalTime.toFixed(2)}ms`,
-    queryTime: `${queryTime.toFixed(2)}ms`,
-    results: `${rawCards.length} cards, ${total} total`,
-  });
-
   // Transform to CardWithDeck format
   const transformedCards: CardWithDeck[] = rawCards.map((card) => ({
     id: card.id,

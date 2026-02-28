@@ -41,14 +41,6 @@ async function getStatsUncached(userId: string) {
     ? Math.round((successfulReviews / totalReviews) * 100)
     : 100;
 
-  // Log performance metrics for debugging
-  console.log('📊 Dashboard CardList Performance (Single Query):', {
-    userId,
-    totalTime: `${totalTime.toFixed(2)}ms`,
-    queryTime: `${queryTime.toFixed(2)}ms`,
-    results: { totalCards, dueToday, totalReviews, successfulReviews },
-  });
-
   return {
     totalCards,
     dueToday,

@@ -83,13 +83,13 @@ export function PopConfirm({
         {React.cloneElement(children, {
           onClick: (e: React.MouseEvent) => {
             if (React.isValidElement(children)) {
-              const originalOnClick = (children as any).props.onClick;
+              const originalOnClick = (children.props as any).onClick;
               if (originalOnClick) {
                 originalOnClick(e);
               }
             }
           },
-        })}
+        } as any)}
       </div>
 
       {/* Popconfirm popup */}
