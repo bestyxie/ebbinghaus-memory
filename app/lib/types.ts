@@ -51,6 +51,8 @@ export interface ReviewSession {
   cards: CardWithDeck[]
   total: number
   mode: string
+  hasMore: boolean
+  nextCursor?: string
 }
 
 // === 工具类型 ===

@@ -4,6 +4,7 @@ import { calculateReview } from '@/app/lib/srs-algorithm';
 import { ReviewSession } from '@/app/lib/types';
 import { revalidatePath } from 'next/cache';
 import { requireAuth } from '@/app/lib/api-helpers';
+import { REVIEW_BATCH_SIZE } from '@/app/lib/constants';
 
 // GET - Fetch cards for review session
 export async function GET(request: NextRequest): Promise<NextResponse<ReviewSession | { error: string }>> {
@@ -59,9 +60,18 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
       orderBy = { nextReviewAt: sortOrder as 'asc' | 'desc' };
     }
 
+    // Support batched fetching with pagination
+    const cursor = searchParams.get('cursor');
+    const isFirstBatch = !cursor;
+
     const cards = await prisma.card.findMany({
       where,
       orderBy,
+      take: REVIEW_BATCH_SIZE + 1, // Fetch one extra to check if there are more
+      ...(cursor && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
       include: {
         cardDecks: {
           where: {
@@ -88,23 +98,36 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
       deck: card.cardDecks[0]?.deck || null, // Take first deck, or null
     }));
 
-    // If startCardId is provided, reorder to start from that card
-    let sessionCards = transformedCards;
-    if (startCardId) {
-      const startIndex = transformedCards.findIndex(c => c.id === startCardId);
+    // Handle pagination
+    const hasMore = transformedCards.length > REVIEW_BATCH_SIZE;
+    const batchCards = hasMore ? transformedCards.slice(0, REVIEW_BATCH_SIZE) : transformedCards;
+    const nextCursor = hasMore ? batchCards[REVIEW_BATCH_SIZE - 1].id : undefined;
+
+    // If startCardId is provided and this is the first batch, reorder to start from that card
+    let sessionCards = batchCards;
+    if (isFirstBatch && startCardId) {
+      const startIndex = batchCards.findIndex(c => c.id === startCardId);
       if (startIndex !== -1) {
         sessionCards = [
-          transformedCards[startIndex],
-          ...transformedCards.slice(0, startIndex),
-          ...transformedCards.slice(startIndex + 1)
+          batchCards[startIndex],
+          ...batchCards.slice(0, startIndex),
+          ...batchCards.slice(startIndex + 1)
         ];
       }
     }
 
+    // Get total count for progress bar (only on first request)
+    let total = sessionCards.length;
+    if (isFirstBatch) {
+      total = await prisma.card.count({ where });
+    }
+
     return NextResponse.json({
       cards: sessionCards,
-      total: sessionCards.length,
+      total,
       mode,
+      hasMore,
+      nextCursor,
     });
   } catch (error) {
     console.error('Error fetching review cards:', error);

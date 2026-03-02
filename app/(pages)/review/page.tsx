@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { FlashCard } from './components/flash-card';
 import { RatingButtons } from './components/rating-buttons';
 import { ProgressBar } from './components/progress-bar';
-import { CompletionScreen } from './components/completion-screen';
 import { ReviewSession } from '@/app/lib/types';
+import { REVIEW_BATCH_SIZE } from '@/app/lib/constants';
 import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
@@ -19,55 +19,101 @@ function ReviewPageContent() {
   const [reviewedCount, setReviewedCount] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [completedStats, setCompletedStats] = useState<{
-    totalReviewed: number;
-    averageEaseFactor: number;
-  } | null>(null);
 
   const currentCard = session?.cards[currentIndex];
   const isComplete = !currentCard;
   const progress = reviewedCount + 1;
   const total = session?.total || 0;
 
-  // Fetch review session cards
-  useEffect(() => {
-    async function fetchSession() {
-      try {
+  // Load cards - can be initial load or load more
+  const loadCards = useCallback(async (cursor?: string) => {
+    // Prevent duplicate loading
+    if (cursor && (!session?.nextCursor || isLoadingMore)) return;
+
+    try {
+      if (!cursor) {
         setIsLoading(true);
-        const mode = searchParams.get('mode') || 'all-due';
-        const params = new URLSearchParams({ mode });
+      } else {
+        setIsLoadingMore(true);
+      }
 
-        if (mode === 'filtered') {
-          const startCardId = searchParams.get('startCardId');
-          const deckId = searchParams.get('deckId');
-          const sortBy = searchParams.get('sortBy') || 'nextReviewAt';
-          const sortOrder = searchParams.get('sortOrder') || 'asc';
+      const mode = searchParams.get('mode') || 'all-due';
+      const params = new URLSearchParams({ mode });
 
-          if (startCardId) params.append('startCardId', startCardId);
-          if (deckId) params.append('deckId', deckId);
-          params.append('sortBy', sortBy);
-          params.append('sortOrder', sortOrder);
-        }
+      if (mode === 'filtered') {
+        const startCardId = searchParams.get('startCardId');
+        const deckId = searchParams.get('deckId');
+        const sortBy = searchParams.get('sortBy') || 'nextReviewAt';
+        const sortOrder = searchParams.get('sortOrder') || 'asc';
 
-        const response = await fetch(`/api/review?${params}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch review session');
-        }
+        if (startCardId && !cursor) params.append('startCardId', startCardId);
+        if (deckId) params.append('deckId', deckId);
+        params.append('sortBy', sortBy);
+        params.append('sortOrder', sortOrder);
+      }
 
-        const data: ReviewSession = await response.json();
+      if (cursor) {
+        params.append('cursor', cursor);
+      }
+
+      const response = await fetch(`/api/review?${params}`);
+      if (!response.ok) {
+        throw new Error(cursor ? 'Failed to fetch more cards' : 'Failed to fetch review session');
+      }
+
+      const data: ReviewSession = await response.json();
+
+      if (!cursor) {
+        // Initial load - replace session and reset state
         setSession(data);
-      } catch (err) {
-        console.error('Error fetching session:', err);
-        setError('Failed to load review session');
-      } finally {
+        setCurrentIndex(0);
+        setReviewedCount(0);
+        setIsFlipped(false);
+      } else {
+        // Load more - append cards to existing session
+        setSession(prev => ({
+          ...prev!,
+          cards: [...(prev?.cards || []), ...data.cards],
+          hasMore: data.hasMore,
+          nextCursor: data.nextCursor,
+        }));
+      }
+    } catch (err) {
+      console.error('Error loading cards:', err);
+      setError(cursor ? 'Failed to load more cards' : 'Failed to load review session');
+    } finally {
+      if (!cursor) {
         setIsLoading(false);
+      } else {
+        setIsLoadingMore(false);
       }
     }
+  }, [searchParams, session?.nextCursor, isLoadingMore]);
 
-    fetchSession();
-  }, [searchParams]);
+  // Initial load - only run on mount
+  useEffect(() => {
+    loadCards();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load more cards when we're near the end of the current batch
+  useEffect(() => {
+    if (!session || !session.hasMore || isLoadingMore) return;
+
+    // Load more when we have 3 cards left in the current batch
+    const cardsRemainingInBatch = REVIEW_BATCH_SIZE - (currentIndex % REVIEW_BATCH_SIZE);
+    const shouldLoadMore = cardsRemainingInBatch <= 3;
+
+    // Also load if we're at the end and have more cards available
+    const needsLoad = isComplete || shouldLoadMore;
+
+    if (needsLoad) {
+      loadCards(session.nextCursor);
+    }
+  }, [currentIndex, session, isLoadingMore, loadCards, isComplete, session?.nextCursor]);
 
   const handleFlip = useCallback(() => {
     if (isFlipped) return; // Can't flip back once answer is shown
@@ -89,26 +135,28 @@ function ReviewPageContent() {
         throw new Error('Failed to submit rating');
       }
 
-      // Update progress first
+      // Update progress
       setReviewedCount(prev => prev + 1);
 
       // Move to next card
       const nextIndex = currentIndex + 1;
-      if (nextIndex >= session!.cards.length) {
-        // Session complete - calculate stats
-        const totalReviewed = reviewedCount + 1;
-        const avgEaseFactor = session!.cards.reduce((sum, card, idx) => {
-          if (idx <= currentIndex) return sum + card.easeFactor;
-          return sum;
-        }, 0) / totalReviewed;
 
-        setCompletedStats({
-          totalReviewed,
-          averageEaseFactor: avgEaseFactor,
-        });
-      } else {
+      // Check if this was the last card and there are no more cards to load
+      const isLastOverallCard = nextIndex >= total && !session!.hasMore;
+
+      if (isLastOverallCard) {
+        // Session complete - redirect to dashboard
+        router.push('/dashboard');
+      } else if (nextIndex < session!.cards.length) {
+        // Move to next card in current batch
         setCurrentIndex(nextIndex);
         setIsFlipped(false);
+      } else {
+        // We've reached the end of current batch but hasMore is true
+        // Update index to point to the first card of next batch
+        setCurrentIndex(nextIndex);
+        setIsFlipped(false);
+        // The useEffect will load more cards
       }
     } catch (err) {
       console.error('Error submitting rating:', err);
@@ -116,7 +164,7 @@ function ReviewPageContent() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentCard, currentIndex, reviewedCount, session, isSubmitting]);
+  }, [currentCard, currentIndex, session, isSubmitting, router, total]);
 
   // Keyboard shortcuts for rating
   useEffect(() => {
@@ -135,10 +183,6 @@ function ReviewPageContent() {
   }, [isFlipped, isComplete, isSubmitting, handleRating]);
 
   const handleBackToDashboard = () => {
-    router.push('/dashboard');
-  };
-
-  const handleStartNewSession = () => {
     router.push('/dashboard');
   };
 
@@ -169,15 +213,6 @@ function ReviewPageContent() {
     );
   }
 
-  if (isComplete && completedStats) {
-    return (
-      <CompletionScreen
-        stats={completedStats}
-        onBackToDashboard={handleBackToDashboard}
-        onStartNewSession={handleStartNewSession}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -192,6 +227,14 @@ function ReviewPageContent() {
             isFlipped={isFlipped}
             onFlip={handleFlip}
           />
+        )}
+
+        {/* Loading more cards */}
+        {isComplete && isLoadingMore && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-gray-600">Loading more cards...</p>
+          </div>
         )}
 
         {/* Rating Buttons - Only show when flipped */}

@@ -1,7 +1,7 @@
 "use client"
 
 import { CreateCardModal } from "./create-card-modal";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 interface CreateBtnProps {
   className?: string;
@@ -11,9 +11,9 @@ interface CreateBtnProps {
 export default function CreateMemoryItemBtn({ className = "", children }: CreateBtnProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsOpen(false);
-  };
+  }, []);
 
   return (
     <>
