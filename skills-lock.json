@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "skills": {
+    "migrate-to-vinext": {
+      "source": "cloudflare/vinext",
+      "sourceType": "github",
+      "computedHash": "b14b593094e779e0e32d1ce0175be9576366476507f7dde0c30bfeeb31e0e74e"
+    },
+    "vinext": {
+      "source": "cloudflare/vinext",
+      "sourceType": "github"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
+    }
+  }
+}
