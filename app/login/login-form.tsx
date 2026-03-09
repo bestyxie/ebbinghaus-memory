@@ -1,6 +1,6 @@
 "use client"
 
-import { authenticate, register } from '@/app/lib/actions'
+import { authenticate, register } from '@/app/lib/auth-actions'
 import { useActionState, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 

@@ -3,13 +3,14 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import CreateBtn from './components/createBtn';
 import { Plus, Play } from 'lucide-react';
-import { auth } from '@/auth';
+import { auth } from '@/app/lib/auth';
+import { headers } from 'next/headers';
 import { StatsGridServer } from './components/stats-grid';
 import { FiltersBarServer } from './components/filters-bar-server';
 import { CardTableServer } from './components/card-table-server';
 import { AIMemoryButton } from './components/ai-memory-button';
 import { getCardsData } from '@/app/lib/dashboard-data';
-import { getUserDecks } from '@/app/lib/actions';
+import { getUserDecks } from '@/app/lib/deck';
 
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 
@@ -36,7 +37,7 @@ function StatsGridSkeleton() {
 }
 
 export default async function DashboardPage(props: DashboardPageProps) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
     redirect('/login');
   }
@@ -49,8 +50,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
   // Fetch data in parallel
   const [cardsData, decks] = await Promise.all([
-    getCardsData(session.user.id, { sortBy, deckId, page }),
-    getUserDecks(),
+    getCardsData(session?.user.id || '', { sortBy, deckId, page }),
+    getUserDecks(session.user.id),
   ]);
 
   return (
@@ -88,7 +89,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
         {/* Stats Grid */}
         <div className="mb-12">
           <Suspense fallback={<StatsGridSkeleton />}>
-            <StatsGridServer />
+            <StatsGridServer user={session.user} />
           </Suspense>
         </div>
 

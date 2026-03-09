@@ -53,3 +53,4 @@ next-env.d.ts
 # Claude Code skills (if contains user-specific skills, otherwise keep)
 # .agents/skills/*/user-specific/
 # .claude/skills/user-specific/
+/dist/

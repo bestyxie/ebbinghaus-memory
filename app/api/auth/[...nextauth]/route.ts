@@ -1,6 +1,8 @@
-import { handlers } from '@/auth'
+import { auth } from "@/app/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js"
 
-// NextAuth v5 route handlers for the App Router
+// Better-auth route handler
 // /api/auth/[...nextauth]
-export const { GET, POST } = handlers;
+// export { auth as GET, auth as POST };
+export const { GET, POST } = toNextJsHandler(auth);
 

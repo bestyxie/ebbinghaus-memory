@@ -1,67 +1,13 @@
 "use server"
-import { signIn } from '@/auth'
-import { AuthError } from 'next-auth'
+import { auth } from "./auth"
+import { headers } from "next/headers"
 import { prisma } from './prisma'
-import { auth } from '@/auth'
 import { createCardSchema, editCardSchema, calculateInitialEaseFactor } from './zod'
-import { Deck } from './types'
 import { revalidatePath } from 'next/cache'
-import { cache } from 'react'
-
-export async function authenticate(
-  prevState: string | undefined,
-  formData: FormData
-): Promise<string | undefined> {
-  try {
-    await signIn('credentials', formData)
-  } catch (error) {
-    if (error instanceof AuthError) {
-      console.error('AuthError in authenticate:', error.type, error.cause)
-      switch (error.type) {
-        case 'CredentialsSignin':
-          // 获取 cause 中的错误消息
-          const errorMessage = (error.cause as { message?: string })?.message || 'Invalid credentials.'
-          return errorMessage
-        // 兜底：多数回调/验证错误也提示为凭证错误，避免总是 "Something went wrong"
-        case 'CallbackRouteError':
-          const callbackMessage = (error.cause as { message?: string })?.message || 'Invalid credentials.'
-          return callbackMessage
-        default:
-          return 'Something went wrong.'
-      }
-    }
-    throw error;
-  }
-}
-
-export async function register(
-  prevState: string|undefined,
-  formData: FormData
-): Promise<string | undefined> {
-  try {
-    await signIn('credentials', formData)
-  } catch (error) {
-    if (error instanceof AuthError) {
-      console.error('AuthError in authenticate:', error.type, error.cause)
-      switch (error.type) {
-        case 'CredentialsSignin':
-          // 获取 cause 中的错误消息
-          const errorMessage = error.cause?.err?.message || 'Invalid credentials.'
-          return errorMessage
-        case 'CallbackRouteError':
-          const callbackMessage = error.cause?.err?.message || 'Invalid credentials.'
-          return callbackMessage
-        default:
-          return 'Something went wrong.'
-      }
-    }
-    throw error;
-  }
-}
 
 // 创建卡片
 export async function createCard(prevState: unknown, formData: FormData) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
     return { error: "Unauthorized" };
   }
@@ -124,7 +70,7 @@ export async function createCard(prevState: unknown, formData: FormData) {
 
 // 更新卡片
 export async function updateCard(prevState: unknown, formData: FormData) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
     return { error: "Unauthorized" };
   }
@@ -132,7 +78,7 @@ export async function updateCard(prevState: unknown, formData: FormData) {
   // 验证表单数据
   const validated = editCardSchema.safeParse(Object.fromEntries(formData));
   if (!validated.success) {
-    return { error: validated.error.errors[0].message };
+    return { error: validated.error.message };
   }
 
   const { cardId, front, back, note, deckId } = validated.data;
@@ -206,16 +152,3 @@ export async function updateCard(prevState: unknown, formData: FormData) {
   }
 }
 
-// 获取用户的 Decks with React.cache for request deduplication
-export const getUserDecks = cache(async (): Promise<Deck[]> => {
-  const session = await auth();
-  if (!session?.user?.id) return [];
-
-  return prisma.deck.findMany({
-    where: {
-      userId: session.user.id,
-      deletedAt: null,
-    },
-    orderBy: { createdAt: "asc" },
-  });
-});

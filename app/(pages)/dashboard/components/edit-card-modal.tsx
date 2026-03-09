@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState, useEffect, useRef } from "react";
-import { updateCard, getUserDecks } from "@/app/lib/actions";
+import { updateCard } from "@/app/lib/actions";
+import { getUserDecksAction } from "@/app/lib/deck";
 import {
   X,
   Check,
@@ -27,7 +28,7 @@ export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
   // Fetch all decks for the dropdown
   useEffect(() => {
     if (isOpen) {
-      getUserDecks().then(setDecks);
+      getUserDecksAction().then(setDecks);
     }
   }, [isOpen]);
 

@@ -1,5 +1,4 @@
-import { auth } from "@/auth";
-import { signOut } from "@/auth";
+import { signOut } from "@/app/lib/auth-actions";
 import {
   Brain,
   Search,
@@ -7,11 +6,13 @@ import {
 } from "lucide-react";
 import { Navigation } from "./navigation";
 import { SidebarTagsSection } from "./sidebar-tags-section";
+import type { User } from "@/app/lib/auth";
 
-export default async function Sidebar() {
-  const session = await auth();
-  const user = session?.user;
+interface SidebarProps {
+  user: User | null;
+}
 
+export default async function Sidebar({ user }: SidebarProps) {
   return (
     <aside className="w-[256px] h-screen bg-white border-r border-gray-200 flex flex-col">
       {/* Logo */}
@@ -52,12 +53,7 @@ export default async function Sidebar() {
               {/* <div className="text-xs text-gray-500">Pro Plan</div> */}
             </div>
           </div>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
+          <form action={signOut}>
             <button
               type="submit"
               className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"

@@ -1,7 +1,7 @@
-import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 import { StatsCard } from './stats-card';
 import { unstable_cache } from 'next/cache';
+import type { User } from '@/app/lib/auth';
 
 // Internal function that performs the actual database queries
 async function getStatsUncached(userId: string) {
@@ -11,9 +11,6 @@ async function getStatsUncached(userId: string) {
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-
-  // ULTRA-OPTIMIZED: Use a single raw SQL query to get all stats in one database round-trip
-  const queryStart = performance.now();
 
   const result = await prisma.$queryRaw<Array<{
     total_cards: number;
@@ -27,9 +24,6 @@ async function getStatsUncached(userId: string) {
       (SELECT COUNT(*)::int FROM "ReviewLog" WHERE "userId" = ${userId}) as total_reviews,
       (SELECT COUNT(*)::int FROM "ReviewLog" WHERE "userId" = ${userId} AND rating >= 3) as successful_reviews
   `;
-
-  const queryTime = performance.now() - queryStart;
-  const totalTime = performance.now() - startTime;
 
   const stats = result[0];
   const totalCards = stats?.total_cards ?? 0;
@@ -59,10 +53,12 @@ const getStats = unstable_cache(
   }
 );
 
-export async function StatsGridServer() {
-  const session = await auth();
+interface StatsGridServerProps {
+  user: User;
+}
 
-  if (!session?.user?.id) {
+export async function StatsGridServer({ user }: StatsGridServerProps) {
+  if (!user?.id) {
     return (
       <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
         <p className="text-red-700">Unauthorized</p>
@@ -71,7 +67,7 @@ export async function StatsGridServer() {
   }
 
   try {
-    const stats = await getStats(session.user.id);
+    const stats = await getStats(user.id);
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

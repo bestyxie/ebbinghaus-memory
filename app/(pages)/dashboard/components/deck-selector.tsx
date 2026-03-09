@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getUserDecks } from "@/app/lib/actions";
+import { getUserDecksAction } from "@/app/lib/deck";
 import { Plus } from "lucide-react";
 import { Deck } from "@/app/lib/types";
 
@@ -9,7 +9,7 @@ export function DeckSelector() {
   const [decks, setDecks] = useState<Deck[]>([]);
 
   useEffect(() => {
-    getUserDecks().then(setDecks);
+    getUserDecksAction().then(setDecks);
   }, []);
 
   return (

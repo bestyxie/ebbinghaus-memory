@@ -21,10 +21,7 @@ export const getCardsData = cache(async (
   userId: string,
   { sortBy, deckId, page, limit = 10 }: GetCardsOptions
 ): Promise<CardsResponse> => {
-  const startTime = performance.now();
   const skip = (page - 1) * limit;
-
-  const queryStart = performance.now();
 
   // ULTRA-OPTIMIZED: Single raw SQL query with window function
   // Gets paginated cards + total count in one database round-trip
@@ -144,9 +141,6 @@ export const getCardsData = cache(async (
     }
   }
 
-  const queryTime = performance.now() - queryStart;
-  const totalTime = performance.now() - startTime;
-
   const total = rawCards[0]?.total_count ?? 0;
 
   // Transform to CardWithDeck format
@@ -165,10 +159,10 @@ export const getCardsData = cache(async (
     updatedAt: card.updatedAt,
     deck: card.deckId
       ? {
-          id: card.deckId,
-          title: card.deckTitle!,
-          color: card.deckColor!,
-        }
+        id: card.deckId,
+        title: card.deckTitle!,
+        color: card.deckColor!,
+      }
       : null,
   }));
 
