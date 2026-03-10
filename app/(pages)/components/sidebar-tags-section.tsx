@@ -2,28 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { TagsModal, Tag, TagColor } from '../../components/tags-modal';
-import { DecksResponse } from '@/app/lib/types';
+import { TagsModal, Tag } from '@/app/components/tags-modal';
+import { getUserDecksWithCountAction, DeckWithCount } from '@/app/lib/deck';
 
 export function SidebarTagsSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const [tags, setTags] = useState<Tag[]>([]);
+  const [tags, setTags] = useState<DeckWithCount[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchDecks() {
       try {
-        const response = await fetch('/api/decks');
-        if (!response.ok) throw new Error('Failed to fetch');
-        const data: DecksResponse = await response.json();
+        const decks = await getUserDecksWithCountAction();
 
-        const convertedTags: Tag[] = data.decks.map(deck => ({
-          id: deck.id,
-          name: deck.title,
-          color: (deck.color || '#137fec') as TagColor,
-        }));
-
-        setTags(convertedTags);
+        setTags(decks);
       } catch (error) {
         console.error('Error fetching decks:', error);
       } finally {
@@ -70,16 +62,8 @@ export function SidebarTagsSection() {
 
   const refreshDecks = async () => {
     try {
-      const response = await fetch('/api/decks');
-      if (response.ok) {
-        const data: DecksResponse = await response.json();
-        const convertedTags: Tag[] = data.decks.map(deck => ({
-          id: deck.id,
-          name: deck.title,
-          color: (deck.color || '#137fec') as TagColor,
-        }));
-        setTags(convertedTags);
-      }
+      const decks = await getUserDecksWithCountAction();
+      setTags(decks);
     } catch (error) {
       console.error('Error refetching decks:', error);
     }
@@ -106,8 +90,13 @@ export function SidebarTagsSection() {
                   style={{ backgroundColor: tag.color }}
                 />
                 <span className="text-sm font-medium text-gray-700">
-                  {tag.name}
+                  {tag.title}
                 </span>
+                {tag.cardCount !== undefined && (
+                  <span className="ml-auto text-xs text-gray-400">
+                    {tag.cardCount}
+                  </span>
+                )}
               </button>
             ))}
             <button
@@ -127,7 +116,11 @@ export function SidebarTagsSection() {
           refreshDecks()
           setIsOpen(false)
         }}
-        tags={tags}
+        tags={tags.map((tag) => ({
+          id: tag.id,
+          name: tag.title,
+          color: tag.color,
+        }))}
         onCreate={handleUpdateTags}
         onDelete={handleDeleteTags}
       />

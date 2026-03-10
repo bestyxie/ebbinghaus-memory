@@ -30,3 +30,32 @@ export async function getUserDecksAction(): Promise<Deck[]> {
     orderBy: { createdAt: "asc" },
   });
 }
+
+// Server Action - 获取用户 decks 并包含卡片计数
+export interface DeckWithCount extends Deck {
+  cardCount: number;
+}
+
+"use server"
+export async function getUserDecksWithCountAction(): Promise<DeckWithCount[]> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) return [];
+
+  const decks = await prisma.deck.findMany({
+    where: {
+      userId: session.user.id,
+      deletedAt: null,
+    },
+    include: {
+      _count: {
+        select: { cardDecks: true },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return decks.map(deck => ({
+    ...deck,
+    cardCount: deck._count.cardDecks,
+  }));
+}

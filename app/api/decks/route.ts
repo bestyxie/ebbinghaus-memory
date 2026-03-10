@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { z } from 'zod';
 import { createDeckSchema } from '@/app/lib/zod';
-import { DecksResponse } from '@/app/lib/types';
+import { Deck } from '@/app/lib/types';
 import { requireAuth } from '@/app/lib/api-helpers';
 
-// GET - Fetch all user's decks with card counts
-export async function GET(): Promise<NextResponse<DecksResponse | { error: string }>> {
+// GET - Fetch all user's decks
+export async function GET(): Promise<NextResponse<Deck[] | { error: string }>> {
   const userId = await requireAuth();
   if (userId instanceof NextResponse) return userId;
 
@@ -16,15 +16,10 @@ export async function GET(): Promise<NextResponse<DecksResponse | { error: strin
         userId,
         deletedAt: null,
       },
-      include: {
-        _count: {
-          select: { cardDecks: true }, // Count relations instead of cards
-        },
-      },
       orderBy: { createdAt: 'asc' },
     });
 
-    const response = NextResponse.json({ decks });
+    const response = NextResponse.json(decks);
 
     return response;
   } catch (error) {

@@ -15,7 +15,7 @@ export type TagColor =
 export interface Tag {
   id: string;
   name: string;
-  color: TagColor;
+  color: string;
 }
 
 interface TagsModalProps {
