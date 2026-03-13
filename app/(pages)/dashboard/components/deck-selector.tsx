@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getUserDecksAction } from "@/app/lib/deck";
 import { Plus } from "lucide-react";
 import { Deck } from "@/app/lib/types";
 
@@ -9,7 +8,19 @@ export function DeckSelector() {
   const [decks, setDecks] = useState<Deck[]>([]);
 
   useEffect(() => {
-    getUserDecksAction().then(setDecks);
+    const fetchDecks = async () => {
+      try {
+        const response = await fetch('/api/decks');
+        if (response.ok) {
+          const data = await response.json();
+          setDecks(data);
+        }
+      } catch (error) {
+        console.error('Error fetching decks:', error);
+      }
+    };
+
+    fetchDecks()
   }, []);
 
   return (

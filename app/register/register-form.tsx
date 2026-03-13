@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
-import { register } from "@/app/lib/actions"
+import { register } from "@/app/lib/auth-actions"
 
 export default function RegisterForm() {
   const [errorMessage, formAction, isPending] = useActionState(register, undefined)

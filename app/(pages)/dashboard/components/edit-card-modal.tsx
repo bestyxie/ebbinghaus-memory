@@ -2,7 +2,6 @@
 
 import { useActionState, useState, useEffect, useRef } from "react";
 import { updateCard } from "@/app/lib/actions";
-import { getUserDecksAction } from "@/app/lib/deck";
 import {
   X,
   Check,
@@ -28,7 +27,19 @@ export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
   // Fetch all decks for the dropdown
   useEffect(() => {
     if (isOpen) {
-      getUserDecksAction().then(setDecks);
+      const fetchDecks = async () => {
+        try {
+          const response = await fetch('/api/decks');
+          if (response.ok) {
+            const data = await response.json();
+            setDecks(data);
+          }
+        } catch (error) {
+          console.error('Error fetching decks:', error);
+        }
+      };
+
+      fetchDecks();
     }
   }, [isOpen]);
 

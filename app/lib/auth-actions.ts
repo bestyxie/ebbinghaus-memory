@@ -58,7 +58,8 @@ export async function register(
 
 export async function signOut() {
   try {
-    await auth.api.signOut({ headers: await headers() });
+    // const header = await headers()
+    await auth.api.signOut();
     redirect('/login');
   } catch (error: any) {
     console.error('Error signing out:', error)

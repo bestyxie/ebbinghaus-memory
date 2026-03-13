@@ -8,7 +8,7 @@ import { REVIEW_BATCH_SIZE } from '@/app/lib/constants';
 
 // GET - Fetch cards for review session
 export async function GET(request: NextRequest): Promise<NextResponse<ReviewSession | { error: string }>> {
-  const userId = await requireAuth();
+  const userId = await requireAuth(request);
   if (userId instanceof NextResponse) return userId;
 
   try {
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
 
 // POST - Submit a card rating
 export async function POST(req: NextRequest) {
-  const userId = await requireAuth();
+  const userId = await requireAuth(req);
   if (userId instanceof NextResponse) return userId;
 
   try {

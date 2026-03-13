@@ -1,18 +1,25 @@
-import { signOut } from "@/app/lib/auth-actions";
 import {
   Brain,
   Search,
-  LogOut,
 } from "lucide-react";
 import { Navigation } from "./navigation";
 import { SidebarTagsSection } from "./sidebar-tags-section";
-import type { User } from "@/app/lib/auth";
+import { headers } from "next/headers";
+import { auth } from "@/app/lib/auth";
+// import SignOutBtn from "./signout-btn";
 
-interface SidebarProps {
-  user: User | null;
-}
+export default async function Sidebar() {
+  console.log('sidebar refresh================', typeof window)
+  let session
+  try {
+    const header = await headers();
+    session = await auth.api.getSession({ headers: header });
+  } catch (e) {
+    debugger
+    console.error('Error fetching session:', e)
+    session = null
+  }
 
-export default async function Sidebar({ user }: SidebarProps) {
   return (
     <aside className="w-[256px] h-screen bg-white border-r border-gray-200 flex flex-col">
       {/* Logo */}
@@ -48,19 +55,12 @@ export default async function Sidebar({ user }: SidebarProps) {
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600" />
             <div>
               <div className="text-sm font-semibold text-gray-900">
-                {user?.name || user?.email || "User"}
+                {session?.user?.name || session?.user?.email || "User"}
               </div>
               {/* <div className="text-xs text-gray-500">Pro Plan</div> */}
             </div>
           </div>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              <LogOut className="w-[18px] h-[22px] text-gray-500" />
-            </button>
-          </form>
+          {/* <SignOutBtn /> */}
         </div>
       </div>
     </aside>

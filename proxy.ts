@@ -1,15 +1,9 @@
 import { auth } from "./app/lib/auth";
-// proxy.ts
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-// import { auth } from "@/lib/auth"; // 指向你初始化 Better Auth 实例的文件
 
 export async function proxy(request: NextRequest) {
-  // 1. 获取当前的 Session
-  // 因为运行在 Node.js 环境，这里会直接查库验证 token 的真实性
-  // 注意：在 Next.js 最新架构中，headers() 是异步函数，需要 await
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: request.headers,
   });
 
   const { pathname } = request.nextUrl;

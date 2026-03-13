@@ -3,26 +3,32 @@
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { TagsModal, Tag } from '@/app/components/tags-modal';
-import { getUserDecksWithCountAction, DeckWithCount } from '@/app/lib/deck';
+import { Deck } from '@/app/lib/types'
+
+export interface DeckWithCount extends Deck {
+  cardCount: number;
+}
 
 export function SidebarTagsSection() {
   const [isOpen, setIsOpen] = useState(false);
   const [tags, setTags] = useState<DeckWithCount[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchDecks() {
-      try {
-        const decks = await getUserDecksWithCountAction();
-
-        setTags(decks);
-      } catch (error) {
-        console.error('Error fetching decks:', error);
-      } finally {
-        setLoading(false);
+  const fetchDecks = async () => {
+    try {
+      const response = await fetch('/api/decks/with-count');
+      if (response.ok) {
+        const data = await response.json();
+        setTags(data);
       }
+    } catch (error) {
+      console.error('Error fetching decks:', error);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchDecks();
   }, []);
 
@@ -61,12 +67,7 @@ export function SidebarTagsSection() {
   }
 
   const refreshDecks = async () => {
-    try {
-      const decks = await getUserDecksWithCountAction();
-      setTags(decks);
-    } catch (error) {
-      console.error('Error refetching decks:', error);
-    }
+    await fetchDecks();
   };
 
   return (

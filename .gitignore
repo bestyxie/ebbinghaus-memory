@@ -54,3 +54,6 @@ next-env.d.ts
 # .agents/skills/*/user-specific/
 # .claude/skills/user-specific/
 /dist/
+
+generated/
+

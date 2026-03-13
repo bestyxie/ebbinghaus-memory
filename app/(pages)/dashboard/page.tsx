@@ -75,7 +75,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
               <Plus className="h-5 w-5" />
               New Point
             </CreateBtn>
-            <AIMemoryButton />
+            {/* <AIMemoryButton /> */}
             <Link
               href="/review"
               className="flex items-center gap-2 px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"

@@ -4,7 +4,7 @@ import { CardsResponse } from '@/app/lib/types';
 import { requireAuth } from '@/app/lib/api-helpers';
 
 export async function GET(request: NextRequest): Promise<NextResponse<CardsResponse | { error: string }>> {
-  const userId = await requireAuth();
+  const userId = await requireAuth(request);
   if (userId instanceof NextResponse) return userId;
 
   try {

@@ -6,8 +6,8 @@ import { Deck } from '@/app/lib/types';
 import { requireAuth } from '@/app/lib/api-helpers';
 
 // GET - Fetch all user's decks
-export async function GET(): Promise<NextResponse<Deck[] | { error: string }>> {
-  const userId = await requireAuth();
+export async function GET(request: NextRequest): Promise<NextResponse<Deck[] | { error: string }>> {
+  const userId = await requireAuth(request);
   if (userId instanceof NextResponse) return userId;
 
   try {
@@ -34,7 +34,7 @@ export async function GET(): Promise<NextResponse<Deck[] | { error: string }>> {
 // POST - Create new deck
 // OPTIMIZED: Uses transaction to ensure atomicity and improve performance
 export async function POST(request: NextRequest) {
-  const userId = await requireAuth();
+  const userId = await requireAuth(request);
   if (userId instanceof NextResponse) return userId;
 
   try {

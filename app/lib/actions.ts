@@ -6,64 +6,71 @@ import { createCardSchema, editCardSchema, calculateInitialEaseFactor } from './
 import { revalidatePath } from 'next/cache'
 
 // 创建卡片
-export async function createCard(prevState: unknown, formData: FormData) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
-    return { error: "Unauthorized" };
-  }
-
-  // 验证表单数据
-  const validated = createCardSchema.safeParse(Object.fromEntries(formData));
-  if (!validated.success) {
-    return { error: validated.error.message };
-  }
-
-  const { front, back, note, deckId, quality } = validated.data;
-  const userId = session.user.id;
-
-  // 如果选择了 deckId，验证该 deck 属于当前用户且未被删除
-  if (deckId) {
-    const deck = await prisma.deck.findFirst({
-      where: {
-        id: deckId,
-        userId,
-        deletedAt: null,
-      },
-    });
-    if (!deck) {
-      return { error: "Invalid deck" };
-    }
-  }
-
-  // 创建卡片
+export const createCard = async (prevState: unknown, formData: FormData) => {
+  const headerList = await headers()
   try {
-    await prisma.card.create({
-      data: {
-        front,
-        back,
-        note: note || null,
-        userId,
-        nextReviewAt: new Date(),
-        interval: 0,
-        easeFactor: calculateInitialEaseFactor(parseInt(quality)),
-        repetitions: 0,
-        state: "NEW",
-        ...(deckId && {
-          cardDecks: {
-            create: {
-              deckId,
+
+    const session = await auth.api.getSession({ headers: headerList });
+    if (!session?.user?.id) {
+      return { error: "Unauthorized" };
+    }
+
+    // 验证表单数据
+    const validated = createCardSchema.safeParse(Object.fromEntries(formData));
+    if (!validated.success) {
+      return { error: validated.error.message };
+    }
+
+    const { front, back, note, deckId, quality } = validated.data;
+    const userId = session.user.id;
+
+    // 如果选择了 deckId，验证该 deck 属于当前用户且未被删除
+    if (deckId) {
+      const deck = await prisma.deck.findFirst({
+        where: {
+          id: deckId,
+          userId,
+          deletedAt: null,
+        },
+      });
+      if (!deck) {
+        return { error: "Invalid deck" };
+      }
+    }
+
+    // 创建卡片
+    try {
+      await prisma.card.create({
+        data: {
+          front,
+          back,
+          note: note || null,
+          userId,
+          nextReviewAt: new Date(),
+          interval: 0,
+          easeFactor: calculateInitialEaseFactor(parseInt(quality)),
+          repetitions: 0,
+          state: "NEW",
+          ...(deckId && {
+            cardDecks: {
+              create: {
+                deckId,
+              },
             },
-          },
-        }),
-      },
-    });
+          }),
+        },
+      });
 
-    // Revalidate dashboard page to refresh server components
-    revalidatePath('/dashboard');
+      // Revalidate dashboard page to refresh server components
+      revalidatePath('/dashboard');
 
-    return { success: true };
-  } catch (error) {
-    console.error("createCard error:", error);
+      return { success: true };
+    } catch (error) {
+      console.error("createCard error:", error);
+      return { error: "Failed to create card" };
+    }
+  } catch (err) {
+    console.error("createCard error:", err);
     return { error: "Failed to create card" };
   }
 }

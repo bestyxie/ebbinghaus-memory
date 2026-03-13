@@ -19,7 +19,7 @@ import { requireAuth } from '@/app/lib/api-helpers';
  * }
  */
 export async function POST(req: NextRequest) {
-  const userId = await requireAuth();
+  const userId = await requireAuth(req);
   if (userId instanceof NextResponse) return userId;
 
   try {

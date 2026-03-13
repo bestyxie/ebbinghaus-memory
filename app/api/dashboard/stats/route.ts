@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { requireAuth } from '@/app/lib/api-helpers';
 
-export async function GET() {
-  const userId = await requireAuth();
+export async function GET(request: NextRequest) {
+  const userId = await requireAuth(request);
   if (userId instanceof NextResponse) return userId;
 
   try {
@@ -35,8 +35,8 @@ export async function GET() {
 
     const retentionRate = reviewLogs.length > 0
       ? Math.round(
-          (reviewLogs.filter((log) => log.rating >= 3).length / reviewLogs.length) * 100
-        )
+        (reviewLogs.filter((log) => log.rating >= 3).length / reviewLogs.length) * 100
+      )
       : 100;
 
     return NextResponse.json({

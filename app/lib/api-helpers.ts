@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { auth } from './auth';
-import { headers } from 'next/headers';
 
 /**
  * Require authentication for API routes
@@ -18,8 +17,8 @@ import { headers } from 'next/headers';
  * }
  * ```
  */
-export async function requireAuth(): Promise<string | NextResponse<{ error: string }>> {
-  const session = await auth.api.getSession({ headers: await headers() });
+export async function requireAuth(request: NextRequest): Promise<string | NextResponse<{ error: string }>> {
+  const session = await auth.api.getSession({ headers: request.headers });
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
