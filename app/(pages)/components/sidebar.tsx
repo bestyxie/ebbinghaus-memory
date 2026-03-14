@@ -9,7 +9,6 @@ import { auth } from "@/app/lib/auth";
 // import SignOutBtn from "./signout-btn";
 
 export default async function Sidebar() {
-  console.log('sidebar refresh================', typeof window)
   let session
   try {
     const header = await headers();
