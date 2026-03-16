@@ -1,0 +1,43 @@
+name: Deploy to Cloudflare and Migrate Supabase
+
+on:
+  push:
+    branches:
+      - main # 只有当你把代码推送到 main 分支时，才会触发这个自动化流程
+
+jobs:
+  deploy-and-migrate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. 拉取最新代码
+        uses: actions/checkout@v4
+
+      - name: 2. 配置 Node.js 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # 推荐使用 Node 20
+
+      - name: 3. 干净安装依赖 (npm ci)
+        run: npm ci
+
+      - name: 4. 更新 Supabase 数据库表结构
+        env:
+          # Prisma 迁移必须使用直连 URL (端口通常是 5432)
+          DATABASE_URL: ${{ secrets.SUPABASE_DIRECT_URL }}
+        run: npx prisma migrate deploy
+
+      - name: 5. 构建项目代码 (Build)
+        env:
+          # 设置应用的公共 URL，用于 better-auth 的 baseURL
+          # 部署后记得更新这个 URL 为实际的 Worker URL 或自定义域名
+          NEXT_PUBLIC_APP_URL: "https://ebbinghaus-memory.workers.dev"
+        run: npx vinext build
+
+      - name: 6. 构建并部署到 Cloudflare (vinext)
+        env:
+          # 告诉 Cloudflare 你是谁，允许它把代码传到你的账号下
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # 如果你的 package.json 里写了 "deploy": "vinext deploy"，这里也可以用 npm run deploy
+        run: npx vinext deploy
