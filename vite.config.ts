@@ -1,8 +1,14 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
+import { cloudflare } from "@cloudflare/vite-plugin";
 
 export default defineConfig({
-  plugins: [vinext()],
+  plugins: [
+    vinext(),
+    cloudflare({
+      viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
+    }),
+  ],
   ssr: {
     // 强制 Vite 在服务端渲染时跳过这些 Node.js 原生包
     external: [
