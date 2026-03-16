@@ -56,6 +56,9 @@ CREATE TABLE "verification" (
     CONSTRAINT "verification_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateEnum
+CREATE TYPE "CardState" AS ENUM ('NEW', 'LEARNING', 'REVIEW', 'RELEARNING');
+
 -- CreateTable
 CREATE TABLE "CardDeck" (
     "cardId" TEXT NOT NULL,
