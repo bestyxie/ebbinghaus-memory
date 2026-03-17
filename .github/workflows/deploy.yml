@@ -29,6 +29,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 5. Generate Prisma Client
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DIRECT_URL }}
         run: npx prisma generate
 
       - name: 6. 更新 Supabase 数据库表结构
