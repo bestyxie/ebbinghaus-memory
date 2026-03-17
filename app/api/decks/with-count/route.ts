@@ -27,7 +27,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<DeckWithCo
     });
 
     const response = NextResponse.json(
-      decks.map(deck => ({
+      decks.map((deck) => ({
         ...deck,
         cardCount: deck._count.cardDecks,
       }))

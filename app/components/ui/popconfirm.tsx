@@ -191,16 +191,15 @@ export function PopConfirm({
     <div className="relative inline-block">
       {/* Trigger button */}
       <div ref={triggerRef} onClick={handleTriggerClick}>
-        {React.cloneElement(children, {
+        {React.cloneElement(children as React.ReactElement, {
+          ...((children as React.ReactElement).props || {}),
           onClick: (e: React.MouseEvent) => {
-            if (React.isValidElement(children)) {
-              const originalOnClick = (children.props as any).onClick;
-              if (originalOnClick) {
-                originalOnClick(e);
-              }
+            const childProps = (children as React.ReactElement).props;
+            if (typeof childProps.onClick === 'function') {
+              childProps.onClick(e);
             }
           },
-        } as any)}
+        })}
       </div>
 
       {/* Popconfirm popup - rendered via Portal to avoid layout shifts */}
@@ -259,11 +258,10 @@ export function PopConfirm({
                 <button
                   onClick={handleConfirm}
                   disabled={isLoading}
-                  className={`px-3 py-1.5 text-sm rounded transition-colors disabled:opacity-50 ${
-                    isDestructive
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
+                  className={`px-3 py-1.5 text-sm rounded transition-colors disabled:opacity-50 ${isDestructive
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
                 >
                   {isLoading ? 'Processing...' : confirmText}
                 </button>

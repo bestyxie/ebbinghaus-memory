@@ -17,12 +17,6 @@ export function AIMemoryModal({ isOpen, onClose, cards }: AIMemoryModalProps) {
   const [generatedText, setGeneratedText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && cards.length > 0) {
-      fetchGeneratedText();
-    }
-  }, [isOpen, cards]);
-
   async function fetchGeneratedText() {
     setIsLoading(true);
     setError(null);
@@ -49,6 +43,14 @@ export function AIMemoryModal({ isOpen, onClose, cards }: AIMemoryModalProps) {
       setIsLoading(false);
     }
   }
+
+
+  useEffect(() => {
+    if (isOpen && cards.length > 0) {
+      fetchGeneratedText();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, cards]);
 
   function handleRetry() {
     fetchGeneratedText();

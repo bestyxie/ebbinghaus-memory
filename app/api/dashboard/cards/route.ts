@@ -71,7 +71,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<CardsRespo
     const total = await prisma.card.count({ where });
 
     // Transform cardDecks to deck (single deck per card for now)
-    const transformedCards = cards.map(card => ({
+    const transformedCards = cards.map((card) => ({
       ...card,
       deck: card.cardDecks[0]?.deck || null, // Take first deck, or null
     }));

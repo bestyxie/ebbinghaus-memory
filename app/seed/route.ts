@@ -1,5 +1,3 @@
-import { prisma } from '@/app/lib/prisma'
-
 export async function GET() {
   try {
     // Prisma 会自动根据 schema.prisma 创建表结构

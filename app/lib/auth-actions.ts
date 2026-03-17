@@ -1,6 +1,5 @@
 "use server"
 import { auth } from "./auth"
-import { headers } from "next/headers"
 import { redirect } from 'next/navigation'
 
 export async function authenticate(
@@ -17,7 +16,7 @@ export async function authenticate(
 
     // 登录成功后重定向到 dashboard
     redirect('/dashboard');
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in authenticate:', error)
 
     // 如果是 redirect 错误，重新抛出
@@ -44,7 +43,7 @@ export async function register(
 
     // 注册成功后重定向到 dashboard
     redirect('/dashboard');
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in register:', error)
 
     // 如果是 redirect 错误，重新抛出
@@ -61,7 +60,7 @@ export async function signOut() {
     // const header = await headers()
     await auth.api.signOut();
     redirect('/login');
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error signing out:', error)
 
     // 如果是 redirect 错误，重新抛出

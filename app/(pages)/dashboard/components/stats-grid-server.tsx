@@ -5,8 +5,6 @@ import type { User } from '@/app/lib/auth';
 
 // Internal function that performs the actual database queries
 async function getStatsUncached(userId: string) {
-  const startTime = performance.now();
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);

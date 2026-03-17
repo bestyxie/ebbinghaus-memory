@@ -1,4 +1,3 @@
-import { auth } from "./auth"
 import { prisma } from './prisma'
 import { Deck } from './types'
 

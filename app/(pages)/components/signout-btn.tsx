@@ -1,7 +1,5 @@
 "use client"
-import { signOut } from "@/app/lib/auth-actions";
 import { LogOut } from "lucide-react"
-import { useActionState } from 'react'
 
 export default function SignOutBtn() {
   // const [state, formAction] = useActionState(signOut, null);

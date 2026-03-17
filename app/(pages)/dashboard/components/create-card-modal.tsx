@@ -32,10 +32,6 @@ export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
     }
   }, [state?.success, isPending, onClose]);
 
-  const handleAction = (formData: FormData) => {
-    console.log('formData', formData)
-  }
-
   // Reset the success handler when modal closes
   useEffect(() => {
     if (!isOpen) {

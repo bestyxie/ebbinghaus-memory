@@ -93,7 +93,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
     });
 
     // Transform cardDecks to deck (single deck per card for now)
-    const transformedCards = cards.map(card => ({
+    const transformedCards = cards.map((card) => ({
       ...card,
       deck: card.cardDecks[0]?.deck || null, // Take first deck, or null
     }));
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
     // If startCardId is provided and this is the first batch, reorder to start from that card
     let sessionCards = batchCards;
     if (isFirstBatch && startCardId) {
-      const startIndex = batchCards.findIndex(c => c.id === startCardId);
+      const startIndex = batchCards.findIndex((c) => c.id === startCardId);
       if (startIndex !== -1) {
         sessionCards = [
           batchCards[startIndex],
