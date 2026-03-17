@@ -7,7 +7,7 @@
   },
   "compatibility_date": "2025-03-16",
   "build": {
-    "command": "pnpm build:vinext",
+    "command": "pnpm build",
     "cwd": "."
   },
   "site": {
