@@ -28,26 +28,29 @@ jobs:
         # 严格读取 pnpm-lock.yaml，确保云端与本地环境绝对一致
         run: pnpm install --frozen-lockfile
 
-      - name: 5. 更新 Supabase 数据库表结构
+      - name: 5. Generate Prisma Client
+        run: npx prisma generate
+
+      - name: 6. 更新 Supabase 数据库表结构
         env:
           # 注意：必须是 5432 端口的直连 URL
           DATABASE_URL: ${{ secrets.SUPABASE_DIRECT_URL }}
         run: npx prisma migrate deploy
 
-      - name: 5.5 解决 Wrangler 提前校验的死锁 (创建占位文件)
+      - name: 7. 解决 Wrangler 提前校验的死锁 (创建占位文件)
         # 提前把空文件夹和空文件建好，骗过 Wrangler 的配置检查
         run: |
           mkdir -p dist/server
           touch dist/server/index.js
 
-      - name: 6. 构建项目代码 (Build)
+      - name: 8. 构建项目代码 (Build)
         env:
           # 设置应用的公共 URL，用于 better-auth 的 baseURL
           # 部署后记得更新这个 URL 为实际的 Worker URL 或自定义域名
           NEXT_PUBLIC_APP_URL: "https://ebbinghaus-memory.workers.dev"
         run: pnpm run build
 
-      - name: 7. 部署到 Cloudflare (Deploy)
+      - name: 9. 部署到 Cloudflare (Deploy)
         env:
           # 部署阶段专属的权限凭证
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
