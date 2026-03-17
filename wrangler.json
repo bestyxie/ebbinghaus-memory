@@ -1,5 +1,10 @@
 {
   "name": "ebbinghaus-memory",
+  "main": "dist/server/index.js",
+  "assets": {
+    "directory": "dist/client",
+    "binding": "ASSETS"
+  },
   "compatibility_date": "2025-03-16",
   "build": {
     "command": "pnpm build:vinext",
