@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 interface PopConfirmProps {
-  children: React.ReactElement;
+  // eslint-disable-next-line
+  children: React.ReactElement<any>;
   title: string;
   description?: string;
   onConfirm: () => void | Promise<void>;
@@ -191,10 +192,10 @@ export function PopConfirm({
     <div className="relative inline-block">
       {/* Trigger button */}
       <div ref={triggerRef} onClick={handleTriggerClick}>
-        {React.cloneElement(children as React.ReactElement, {
-          ...((children as React.ReactElement).props || {}),
+        {React.cloneElement(children, {
+          ...(children.props || {}),
           onClick: (e: React.MouseEvent) => {
-            const childProps = (children as React.ReactElement).props;
+            const childProps = children.props;
             if (typeof childProps.onClick === 'function') {
               childProps.onClick(e);
             }
