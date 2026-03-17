@@ -34,12 +34,18 @@ jobs:
           DATABASE_URL: ${{ secrets.SUPABASE_DIRECT_URL }}
         run: npx prisma migrate deploy
 
+      - name: 5.5 解决 Wrangler 提前校验的死锁 (创建占位文件)
+        # 提前把空文件夹和空文件建好，骗过 Wrangler 的配置检查
+        run: |
+          mkdir -p dist/server
+          touch dist/server/index.js
+
       - name: 6. 构建项目代码 (Build)
         env:
           # 设置应用的公共 URL，用于 better-auth 的 baseURL
           # 部署后记得更新这个 URL 为实际的 Worker URL 或自定义域名
           NEXT_PUBLIC_APP_URL: "https://ebbinghaus-memory.workers.dev"
-        run: npx vinext build
+        run: pnpm run build
 
       - name: 7. 部署到 Cloudflare (Deploy)
         env:
