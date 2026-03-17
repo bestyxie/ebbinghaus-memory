@@ -16,8 +16,5 @@
   "vars": {
     "NODE_ENV": "production"
   },
-  "compatibility_flags": ["nodejs_compat", "streams_enable_constructors"],
-  "limits": {
-    "cpu_ms": 50
-  }
+  "compatibility_flags": ["nodejs_compat", "streams_enable_constructors"]
 }
