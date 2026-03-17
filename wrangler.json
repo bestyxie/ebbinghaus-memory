@@ -1,6 +1,5 @@
 {
   "name": "ebbinghaus-memory",
-  "main": ".next/server/app/index.js",
   "compatibility_date": "2025-03-16",
   "build": {
     "command": "pnpm build:vinext",
@@ -12,10 +11,7 @@
   "vars": {
     "NODE_ENV": "production"
   },
-  "compatibility_flags": [
-    "nodejs_compat",
-    "streams_enable_constructors"
-  ],
+  "compatibility_flags": ["nodejs_compat", "streams_enable_constructors"],
   "limits": {
     "cpu_ms": 50
   }

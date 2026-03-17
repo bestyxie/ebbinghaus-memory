@@ -5,9 +5,13 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 export default defineConfig({
   plugins: [
     vinext(),
-    cloudflare({
-      viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-    }),
+    ...(process.env.NODE_ENV === 'production'
+      ? [
+          cloudflare({
+            viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
+          }),
+        ]
+      : []),
   ],
   ssr: {
     // 强制 Vite 在服务端渲染时跳过这些 Node.js 原生包
