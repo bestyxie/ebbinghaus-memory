@@ -48,16 +48,18 @@
   "mounts": [
     "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
     "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume",
-    "source=claude-code-node-modules-${devcontainerId},target=/workspace/node_modules,type=volume"
+    "source=claude-code-node-modules-${devcontainerId},target=/workspace/node_modules,type=volume",
+    "source=claude-code-pnpm-store,target=/var/lib/pnpm-store,type=volume"
   ],
   "containerEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
-    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    "NPM_CONFIG_STORE_DIR": "/var/lib/pnpm-store"
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "sudo chown -R node:node /workspace/node_modules && pnpm install"
+  "postCreateCommand": "sudo chown -R node:node /workspace/node_modules /var/lib/pnpm-store && pnpm install"
   // "forwardPorts": [3000],
   // "portsAttributes": {
   //   "3000": {
