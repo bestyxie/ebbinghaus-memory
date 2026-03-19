@@ -4,13 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build:next": "next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "dev:vinext": "vite dev --port 3001",
     "prebuild": "mkdir -p dist/server && touch dist/server/index.js",
-    "build": "vite build"
+    "build:vinext": "vite build"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.29.0",
