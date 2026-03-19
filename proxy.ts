@@ -9,8 +9,10 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 2. 路由保护逻辑
-  // 场景 A：未登录用户，试图访问受保护的页面（如 /dashboard）
-  if (pathname.startsWith("/dashboard") && !session) {
+  const publicRoutes = ["/login", "/register"];
+
+  // 场景 A：未登录用户，试图访问受保护的页面
+  if (!publicRoutes.includes(pathname) && !session) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
