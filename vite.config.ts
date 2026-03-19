@@ -20,12 +20,11 @@ export default defineConfig({
       'pg-native',
       '@prisma/client',
       'prisma',
-      'bcrypt'
     ],
   },
 
   // 有时候优化依赖也会导致类似问题，可以加上这行以防万一
   optimizeDeps: {
-    exclude: ['pg', 'pg-native', '@prisma/client', 'bcrypt'],
+    exclude: ['pg', 'pg-native', '@prisma/client'],
   }
 });

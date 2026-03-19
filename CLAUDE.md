@@ -21,6 +21,9 @@ pnpm start
 # Lint
 pnpm lint
 
+# type check
+pnpm type-check
+
 # Generate Prisma client (after schema changes)
 npx prisma generate
 
@@ -44,36 +47,41 @@ npx prisma studio
 - **NextAuth 5** (beta) for authentication
 - **Tailwind CSS 4**
 - **Zod** for validation
-- **bcrypt** for password hashing
 
 ### Key Directories
 
 - `app/(pages)/` - Route groups for authenticated pages
 - `app/api/` - API routes
-- `app/lib/` - Shared utilities (db, password, zod schemas, prisma client)
+- `app/lib/` - Shared utilities (auth, prisma, srs-algorithm, dashboard-data, deck, types, zod, etc.)
 - `app/components/` - Reusable components
 - `prisma/` - Database schema and migrations
-- `generated/` - Generated Prisma client (output directory)
+- `generated/` - Generated Prisma client (output directory, do not edit manually)
 - `docs/` - Additional documentation for major features
 
 ### Dashboard
 
 - Route: `/dashboard` - Main study dashboard
+- Uses server/client component split pattern with React `<Suspense>` for streaming
 - Components: `app/(pages)/dashboard/components/`
-  - `stats-grid.tsx` - Statistics cards
-  - `card-table.tsx` - Card listing with pagination
-  - `filters-bar.tsx` - Sort and filter controls
-- API Endpoints:
-  - `/api/dashboard/stats` - Get user statistics
-  - `/api/dashboard/cards` - Get paginated card list
+  - `stats-grid-server.tsx` - Server component: fetches stats with `unstable_cache` (5-min TTL)
+  - `card-table-server.tsx` - Server component: fetches paginated cards via `dashboard-data.ts`
+  - `filters-bar-server.tsx` - Server component: fetches decks, renders `FiltersBarClient`
+  - `filters-bar-client.tsx` - Client component: interactive sort/deck dropdowns
+  - `pagination-client.tsx` - Client component: page navigation
+  - `card-row.tsx` - Individual card row in the table
+  - `stats-card.tsx` - Single stat display card
+  - `ai-memory-button.tsx` / `ai-memory-modal.tsx` - AI memory feature
+- Data layer: `app/lib/dashboard-data.ts` - Card query logic used by `CardTableServer`
 
 ### Authentication Flow
 
-- Uses NextAuth 5 with Credentials provider
+- Uses NextAuth 5 (Better Auth) with Credentials provider
+- Auth client exported from `app/lib/auth.ts`
+- In server components/layouts: `auth.api.getSession({ headers: await headers() })`
 - Single `/login` page handles both login and registration (via `register` boolean field)
 - JWT session strategy
 - Protected routes defined in `auth.config.ts`
-- `middleware.ts` applies auth to all routes except `/api`, `_next/static`, `_next/image`, and `.png` files
+- `proxy.ts` applies auth to all routes except `/api`, `_next/static`, `_next/image`, and `.png` files
 
 ### Database Schema (Prisma)
 
