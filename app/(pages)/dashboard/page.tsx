@@ -1,16 +1,13 @@
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import CreateBtn from './components/createBtn';
 import { Plus, Play } from 'lucide-react';
-import { auth } from '@/app/lib/auth';
-import { headers } from 'next/headers';
 import { StatsGridServer } from './components/stats-grid';
 import { FiltersBarServer } from './components/filters-bar-server';
 import { CardTableServer } from './components/card-table-server';
 import { AIMemoryButton } from './components/ai-memory-button';
-import { getCardsData } from '@/app/lib/dashboard-data';
-import { getUserDecks } from '@/app/lib/deck';
 
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 
@@ -37,22 +34,12 @@ function StatsGridSkeleton() {
 }
 
 export default async function DashboardPage(props: DashboardPageProps) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
-    redirect('/login');
-  }
   const searchParams = await props.searchParams;
 
   // Parse and validate search params
   const sortBy = (searchParams.sortBy || 'nextReviewAt') as SortOption;
   const deckId = searchParams.deckId || null;
   const page = parseInt(searchParams.page || '1', 10);
-
-  // Fetch data in parallel
-  const [cardsData, decks] = await Promise.all([
-    getCardsData(session?.user.id || '', { sortBy, deckId, page }),
-    getUserDecks(session.user.id),
-  ]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -89,26 +76,26 @@ export default async function DashboardPage(props: DashboardPageProps) {
         {/* Stats Grid */}
         <div className="mb-12">
           <Suspense fallback={<StatsGridSkeleton />}>
-            <StatsGridServer user={session.user} />
+            <StatsGridServer />
           </Suspense>
         </div>
 
         {/* Filters Bar */}
-        <FiltersBarServer
-          decks={decks}
-          currentSortBy={sortBy}
-          currentDeckId={deckId}
-        />
+        <Suspense fallback={<div className="h-16" />}>
+          <FiltersBarServer
+            currentSortBy={sortBy}
+            currentDeckId={deckId}
+          />
+        </Suspense>
 
         {/* Card Table */}
-        <CardTableServer
-          cards={cardsData.cards}
-          total={cardsData.total}
-          currentPage={page}
-          totalPages={cardsData.totalPages}
-          sortBy={sortBy}
-          deckId={deckId}
-        />
+        <Suspense fallback={<div className="h-64" />}>
+          <CardTableServer
+            currentPage={page}
+            sortBy={sortBy}
+            deckId={deckId}
+          />
+        </Suspense>
 
         {/* Footer */}
         <footer className="mt-20 py-10 text-center text-sm text-gray-500">

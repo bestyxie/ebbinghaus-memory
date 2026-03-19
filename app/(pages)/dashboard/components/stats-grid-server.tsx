@@ -1,7 +1,8 @@
 import { prisma } from '@/app/lib/prisma';
 import { StatsCard } from './stats-card';
 import { unstable_cache } from 'next/cache';
-import type { User } from '@/app/lib/auth';
+import { auth } from '@/app/lib/auth';
+import { headers } from 'next/headers';
 
 // Internal function that performs the actual database queries
 async function getStatsUncached(userId: string) {
@@ -51,12 +52,12 @@ const getStats = unstable_cache(
   }
 );
 
-interface StatsGridServerProps {
-  user: User;
-}
+export async function StatsGridServer() {
+  const header = await headers();
+  const session = await auth.api.getSession({ headers: header });
+  const userId = session?.user?.id;
 
-export async function StatsGridServer({ user }: StatsGridServerProps) {
-  if (!user?.id) {
+  if (!userId) {
     return (
       <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
         <p className="text-red-700">Unauthorized</p>
@@ -65,7 +66,7 @@ export async function StatsGridServer({ user }: StatsGridServerProps) {
   }
 
   try {
-    const stats = await getStats(user.id);
+    const stats = await getStats(userId);
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

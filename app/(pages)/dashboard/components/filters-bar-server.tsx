@@ -1,11 +1,12 @@
 import { Funnel, Grid3x3, List } from 'lucide-react';
 import { FiltersBarClient } from './filters-bar-client';
-import { Deck } from '@/app/lib/types';
+import { getUserDecks } from '@/app/lib/deck';
+import { auth } from '@/app/lib/auth';
+import { headers } from 'next/headers';
 
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 
 interface FiltersBarServerProps {
-  decks: Deck[];
   currentSortBy: SortOption;
   currentDeckId: string | null;
 }
@@ -16,11 +17,14 @@ const sortOptions = [
   { value: 'easeFactor' as SortOption, label: 'Familiarity' },
 ];
 
-export function FiltersBarServer({
-  decks,
+export async function FiltersBarServer({
   currentSortBy,
   currentDeckId,
 }: FiltersBarServerProps) {
+  const header = await headers();
+  const session = await auth.api.getSession({ headers: header });
+  const decks = await getUserDecks(session?.user?.id || '');
+
   return (
     <div className="flex items-center gap-4 mb-6">
       {/* Filters Button (placeholder for future functionality) */}

@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -8,8 +9,6 @@ import { ProgressBar } from './components/progress-bar';
 import { ReviewSession } from '@/app/lib/types';
 import { REVIEW_BATCH_SIZE } from '@/app/lib/constants';
 import { Suspense } from 'react';
-
-export const dynamic = 'force-dynamic';
 
 function ReviewPageContent() {
   const searchParams = useSearchParams();

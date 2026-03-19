@@ -14,7 +14,6 @@ export default async function Sidebar() {
     const header = await headers();
     session = await auth.api.getSession({ headers: header });
   } catch (e) {
-    debugger
     console.error('Error fetching session:', e)
     session = null
   }

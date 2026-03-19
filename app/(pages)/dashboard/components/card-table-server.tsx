@@ -1,26 +1,27 @@
 import { CardRow } from './card-row';
 import { PaginationClient } from './pagination-client';
-import { CardWithDeck } from '@/app/lib/types';
+import { getCardsData } from '@/app/lib/dashboard-data';
+import { auth } from '@/app/lib/auth';
+import { headers } from 'next/headers';
 
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 
 interface CardTableServerProps {
-  cards: CardWithDeck[];
-  total: number;
   currentPage: number;
-  totalPages: number;
   sortBy: SortOption;
   deckId: string | null;
 }
 
-export function CardTableServer({
-  cards,
-  total,
+export async function CardTableServer({
   currentPage,
-  totalPages,
   sortBy,
   deckId,
 }: CardTableServerProps) {
+  const header = await headers();
+  const session = await auth.api.getSession({ headers: header });
+  const cardsData = await getCardsData(session?.user?.id || '', { sortBy, deckId, page: currentPage });
+  const { cards, total, totalPages } = cardsData;
+
   // Empty state
   if (cards.length === 0) {
     return (
