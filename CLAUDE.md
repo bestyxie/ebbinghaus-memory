@@ -83,6 +83,18 @@ npx prisma studio
 - Protected routes defined in `auth.config.ts`
 - `proxy.ts` applies auth to all routes except `/api`, `_next/static`, `_next/image`, and `.png` files
 
+### Decks and Frontend Tags
+
+In this project, **Decks** (database model) and **Tags** (frontend UI concept) are the same thing — one-to-one mapping:
+
+- The database stores `Deck` records with `title`, `color`, and card associations
+- The sidebar UI presents decks as "Tags" with colored dots
+- `SidebarTagsSection` (`app/(pages)/components/sidebar-tags-section.tsx`) fetches decks via `/api/decks/with-count` and renders them as tags
+- `TagsModal` (`app/components/tags-modal.tsx`) manages tag creation/deletion; creating a tag calls `POST /api/decks`, deleting calls `DELETE /api/decks/[id]`
+- The `Tag` interface (`{ id, name, color }`) maps to the `Deck` model fields: `id → id`, `name → title`, `color → color`
+- `DeckWithCount` in `sidebar-tags-section.tsx` extends `Deck` with `cardCount` (from `_count.cardDecks`)
+- Cards are associated to decks via the `cardDecks` join relation
+
 ### Database Schema (Prisma)
 
 - **User** - User accounts with email/password

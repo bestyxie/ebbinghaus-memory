@@ -12,6 +12,18 @@ yarn dev
 pnpm dev
 # or
 bun dev
+
+# Lint
+pnpm lint
+
+# Generate Prisma client (after schema changes)
+npx prisma generate
+
+# Run database migrations
+npx prisma migrate dev
+
+# Open Prisma Studio (database GUI)
+npx prisma studio
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
@@ -35,11 +47,11 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-
 ## 测试账号
+
 test@test.com
 1234567890
 
-
 ## 命令行进入数据库
+
 psql "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
