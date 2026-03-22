@@ -19,6 +19,11 @@ interface FiltersBarClientProps {
   currentDeckId: string | null;
 }
 
+const dropdownContainerClass = 'absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg z-10';
+const dropdownItemClass = 'w-full text-left px-4 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800';
+const dropdownItemActiveClass = 'text-blue-600 font-medium';
+const dropdownItemDefaultClass = 'text-slate-700 dark:text-slate-300';
+
 export function FiltersBarClient({
   sortOptions,
   currentSortBy,
@@ -32,7 +37,6 @@ export function FiltersBarClient({
 
   const updateURL = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-
     Object.entries(updates).forEach(([key, value]) => {
       if (value) {
         params.set(key, value);
@@ -40,12 +44,9 @@ export function FiltersBarClient({
         params.delete(key);
       }
     });
-
-    // Reset to page 1 when filters change
     if ('sortBy' in updates || 'deckId' in updates) {
       params.set('page', '1');
     }
-
     router.push(`/dashboard?${params.toString()}`);
   };
 
@@ -64,27 +65,27 @@ export function FiltersBarClient({
     ? decks.find((d) => d.id === currentDeckId)?.title || 'Tags'
     : 'All Tags';
 
+  const isDeckActive = currentDeckId !== null;
+
   return (
     <>
       {/* Sort Dropdown */}
       <div className="relative">
         <button
           onClick={() => setSortOpen(!sortOpen)}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
         >
           <span>{currentSortLabel}</span>
           <ChevronDown className="h-4 w-4" />
         </button>
 
         {sortOpen && (
-          <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+          <div className={dropdownContainerClass}>
             {sortOptions.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleSortSelect(option.value)}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
-                  option.value === currentSortBy ? 'text-blue-600 font-medium' : 'text-gray-700'
-                }`}
+                className={`${dropdownItemClass} ${option.value === currentSortBy ? dropdownItemActiveClass : dropdownItemDefaultClass}`}
               >
                 {option.label}
               </button>
@@ -97,19 +98,21 @@ export function FiltersBarClient({
       <div className="relative">
         <button
           onClick={() => setDeckOpen(!deckOpen)}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            isDeckActive
+              ? 'bg-blue-600/10 border border-blue-600/20 text-blue-600 font-bold hover:bg-blue-600/20'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
         >
           <span>{currentDeckLabel}</span>
           <ChevronDown className="h-4 w-4" />
         </button>
 
         {deckOpen && (
-          <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+          <div className={dropdownContainerClass}>
             <button
               onClick={() => handleDeckSelect(null)}
-              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg ${
-                currentDeckId === null ? 'text-blue-600 font-medium' : 'text-gray-700'
-              }`}
+              className={`${dropdownItemClass} ${currentDeckId === null ? dropdownItemActiveClass : dropdownItemDefaultClass}`}
             >
               All Tags
             </button>
@@ -117,15 +120,10 @@ export function FiltersBarClient({
               <button
                 key={deck.id}
                 onClick={() => handleDeckSelect(deck.id)}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 last:rounded-b-lg ${
-                  deck.id === currentDeckId ? 'text-blue-600 font-medium' : 'text-gray-700'
-                }`}
+                className={`${dropdownItemClass} ${deck.id === currentDeckId ? dropdownItemActiveClass : dropdownItemDefaultClass}`}
               >
                 <span className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: deck.color }}
-                  />
+                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: deck.color }} />
                   {deck.title}
                 </span>
               </button>

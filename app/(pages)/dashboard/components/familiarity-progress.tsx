@@ -6,16 +6,21 @@ interface FamiliarityProgressProps {
   percentage: number;
 }
 
+function getBarColor(percentage: number): string {
+  if (percentage >= 80) return 'bg-emerald-500';
+  if (percentage >= 40) return 'bg-blue-600';
+  return 'bg-rose-500';
+}
+
 export function FamiliarityProgress({ percentage }: FamiliarityProgressProps) {
+  const barColor = getBarColor(percentage);
+
   return (
     <div className="flex items-center gap-3">
-      <div className="h-1 w-20 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-blue-600 rounded-full transition-all"
-          style={{ width: `${percentage}%` }}
-        />
+      <div className="w-20 bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+        <div className={`${barColor} h-full transition-all`} style={{ width: `${percentage}%` }} />
       </div>
-      <span className="text-sm text-gray-600">{percentage}%</span>
+      <span className="text-[10px] font-bold text-slate-400">{percentage}%</span>
     </div>
   );
 }

@@ -7,8 +7,10 @@ import { CardStatusBadge } from './card-status-badge';
 import { FamiliarityProgress } from './familiarity-progress';
 import { EditCardModal } from './edit-card-modal';
 import { PopConfirm } from '@/app/components/ui/popconfirm';
-import { Pencil, Trash, Play } from 'lucide-react';
+import { Pencil, Trash, PlayCircle } from 'lucide-react';
 import { CardWithDeck } from '@/app/lib/types';
+
+const ACTION_BTN_CLASS = 'p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-all';
 
 interface CardRowProps {
   card: CardWithDeck;
@@ -21,163 +23,143 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Delete card handler
   const handleDeleteCard = async () => {
     try {
-      const response = await fetch(`/api/cards/${card.id}`, {
-        method: 'DELETE',
-      });
-
+      const response = await fetch(`/api/cards/${card.id}`, { method: 'DELETE' });
       if (!response.ok) {
-        const error = await response.json();
-        console.error('Delete failed:', error);
-        throw new Error(error.error || 'Failed to delete card');
+        let message = 'Failed to delete card. Please try again.';
+        try {
+          const body = await response.json();
+          if (body?.error) message = body.error;
+        } catch {
+          // Non-JSON response (e.g. gateway error) — use generic message
+        }
+        throw new Error(message);
       }
-
-      // Refresh the page to update the card list
       router.refresh();
     } catch (error) {
       console.error('Error deleting card:', error);
-      throw error; // Re-throw to let PopConfirm handle the error state
+      throw error;
     }
   };
 
-  // Build review URL with current filters
   const buildReviewUrl = () => {
-    const params = new URLSearchParams({
-      mode: 'filtered',
-      startCardId: card.id,
-      sortBy,
-      sortOrder,
-    });
-
-    if (deckId) {
-      params.append('deckId', deckId);
-    }
-
+    const params = new URLSearchParams({ mode: 'filtered', startCardId: card.id, sortBy, sortOrder });
+    if (deckId) params.append('deckId', deckId);
     return '/review?' + params.toString();
   };
 
-  // Calculate card status
   const getCardStatus = (): { status: 'new' | 'due' | 'overdue' | 'scheduled'; daysUntil?: number } => {
     const now = new Date();
     const reviewDate = card.nextReviewAt ? new Date(card.nextReviewAt) : null;
-
-    if (!reviewDate || card.state === 'NEW') {
-      return { status: 'new' };
-    }
-
-    const diffTime = reviewDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-      return { status: 'overdue' };
-    } else if (diffDays === 0) {
-      return { status: 'due' };
-    } else {
-      return { status: 'scheduled', daysUntil: diffDays };
-    }
+    if (!reviewDate || card.state === 'NEW') return { status: 'new' };
+    const diffDays = Math.ceil((reviewDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return { status: 'overdue' };
+    if (diffDays === 0) return { status: 'due' };
+    return { status: 'scheduled', daysUntil: diffDays };
   };
 
-  // Calculate familiarity based on ease factor and repetitions
   const familiarity = Math.min(100, Math.round(
-    (card.easeFactor - 1.3) / (2.5 - 1.3) * 50 +
-    (card.repetitions / 10) * 50
+    (card.easeFactor - 1.3) / (2.5 - 1.3) * 50 + (card.repetitions / 10) * 50
   ));
 
-  // Get last reviewed text
   const getLastReviewedText = () => {
-    if (card.state === 'NEW') {
-      return 'Not reviewed yet';
-    }
-
-    const now = new Date();
-    const diffTime = now.getTime() - (new Date(card.updatedAt)).getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
+    if (card.state === 'NEW') return 'Not reviewed yet';
+    const diffDays = Math.floor((Date.now() - new Date(card.updatedAt).getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return 'Reviewed today';
     if (diffDays === 1) return 'Last reviewed 1 day ago';
     return `Last reviewed ${diffDays} days ago`;
   };
 
   const { status, daysUntil } = getCardStatus();
+  const isOverdue = status === 'overdue';
+
+  const deckColor = card.deck?.color;
+  const tagStyle = deckColor ? {
+    backgroundColor: `${deckColor}20`,
+    borderColor: `${deckColor}50`,
+    color: deckColor,
+  } : undefined;
 
   return (
     <>
-      <tr className="border-b border-gray-200 hover:bg-gray-50">
-      {/* Knowledge Point */}
-      <td className="py-6 px-6">
-        <div>
-          <p className="font-medium text-gray-900">{card.front}</p>
-          <p className="mt-2 text-sm text-gray-500">{getLastReviewedText()}</p>
-        </div>
-      </td>
+      <tr className={`group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isOverdue ? 'bg-rose-50/10 dark:bg-rose-950/5' : ''}`}>
+        {/* Knowledge Point */}
+        <td className="px-6 py-5">
+          <div className="flex flex-col gap-0.5">
+            <span className={`font-bold text-sm transition-colors ${isOverdue ? 'text-rose-500 group-hover:underline' : 'text-slate-900 dark:text-white group-hover:text-blue-600'}`}>
+              {card.front}
+            </span>
+            <span className="text-[10px] text-slate-500 uppercase font-medium tracking-tight">
+              {getLastReviewedText()}
+            </span>
+          </div>
+        </td>
 
-      {/* Tags (Deck) */}
-      <td className="py-6 px-6">
-        {card.deck ? (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-            {card.deck.title}
-          </span>
-        ) : (
-          <span className="text-sm text-gray-400">No deck</span>
-        )}
-      </td>
-
-      {/* Status */}
-      <td className="py-6 px-6">
-        <CardStatusBadge status={status} daysUntil={daysUntil} />
-      </td>
-
-      {/* Familiarity */}
-      <td className="py-6 px-6">
-        <FamiliarityProgress percentage={familiarity} />
-      </td>
-
-      {/* Actions */}
-      <td className="py-6 px-6">
-        <div className="flex items-center gap-2">
-          <Link
-            href={buildReviewUrl()}
-            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            aria-label={`Start reviewing ${card.front}`}
-            title="Start reviewing"
-          >
-            <Play className="h-4 w-4" />
-          </Link>
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            aria-label={`Edit ${card.front}`}
-            title="Edit card"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <PopConfirm
-            title="Delete card?"
-            description="This action cannot be undone."
-            onConfirm={handleDeleteCard}
-            isDestructive={true}
-            confirmText="Delete"
-            cancelText="Cancel"
-          >
-            <button
-              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              aria-label={`Delete ${card.front}`}
-              title="Delete card"
+        {/* Tags (Deck) */}
+        <td className="px-6 py-5">
+          {card.deck ? (
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold uppercase border"
+              style={tagStyle}
             >
-              <Trash className="h-4 w-4" />
-            </button>
-          </PopConfirm>
-        </div>
-      </td>
-    </tr>
+              {card.deck.title}
+            </span>
+          ) : (
+            <span className="text-[10px] text-slate-400">No deck</span>
+          )}
+        </td>
 
-    <EditCardModal
-      card={card}
-      isOpen={isEditModalOpen}
-      onClose={() => setIsEditModalOpen(false)}
-    />
-  </>
+        {/* Status */}
+        <td className="px-6 py-5">
+          <CardStatusBadge status={status} daysUntil={daysUntil} />
+        </td>
+
+        {/* Familiarity */}
+        <td className="px-6 py-5">
+          <FamiliarityProgress percentage={familiarity} />
+        </td>
+
+        {/* Actions */}
+        <td className="px-6 py-5 text-right">
+          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+            <Link
+              href={buildReviewUrl()}
+              className={`${ACTION_BTN_CLASS} hover:text-blue-600`}
+              aria-label={`Start reviewing ${card.front}`}
+              title="Start reviewing"
+            >
+              <PlayCircle className="h-[18px] w-[18px]" />
+            </Link>
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className={`${ACTION_BTN_CLASS} hover:text-blue-600`}
+              aria-label={`Edit ${card.front}`}
+              title="Edit card"
+            >
+              <Pencil className="h-[18px] w-[18px]" />
+            </button>
+            <PopConfirm
+              title="Delete card?"
+              description="This action cannot be undone."
+              onConfirm={handleDeleteCard}
+              isDestructive={true}
+              confirmText="Delete"
+              cancelText="Cancel"
+            >
+              <button
+                className={`${ACTION_BTN_CLASS} hover:text-rose-500`}
+                aria-label={`Delete ${card.front}`}
+                title="Delete card"
+              >
+                <Trash className="h-[18px] w-[18px]" />
+              </button>
+            </PopConfirm>
+          </div>
+        </td>
+      </tr>
+
+      <EditCardModal card={card} isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} />
+    </>
   );
 }

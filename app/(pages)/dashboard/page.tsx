@@ -21,12 +21,12 @@ interface DashboardPageProps {
 
 function StatsGridSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-3 animate-pulse" />
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-2 animate-pulse" />
-          <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse" />
+        <div key={i} className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-3 animate-pulse" />
+          <div className="h-7 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2 animate-pulse" />
+          <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded w-1/3 animate-pulse" />
         </div>
       ))}
     </div>
@@ -43,42 +43,38 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1600px] mx-auto px-8 py-10">
+      <div className="max-w-6xl mx-auto px-8 py-10">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-12">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Study Dashboard
-            </h1>
-            <p className="text-lg text-gray-600 max-w-2xl">
+        <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl font-black tracking-tight">Study Dashboard</h1>
+            <p className="text-slate-500 dark:text-slate-400 max-w-md text-sm mt-1">
               Master your knowledge with space-repetition powered by the Ebbinghaus forgetting curve.
             </p>
           </div>
 
-          <div className="flex gap-4">
-            <CreateBtn
-              className="flex items-center gap-2 px-5 py-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              <Plus className="h-5 w-5" />
+          <div className="flex gap-3 w-full md:w-auto">
+            <CreateBtn className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+              <Plus className="h-4 w-4" />
               New Point
             </CreateBtn>
             <AIMemoryButton />
             <Link
               href="/review"
-              className="flex items-center gap-2 px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 hover:brightness-110 transition-all"
             >
-              <Play className="h-5 w-5" />
+              <Play className="h-4 w-4" />
               Start Reviewing
             </Link>
           </div>
-        </div>
+        </section>
 
         {/* Stats Grid */}
-        <div className="mb-12">
+        <section className="mb-10">
           <Suspense fallback={<StatsGridSkeleton />}>
             <StatsGridServer />
           </Suspense>
-        </div>
+        </section>
 
         {/* Filters Bar */}
         <Suspense fallback={<div className="h-16" />}>
@@ -98,8 +94,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
         </Suspense>
 
         {/* Footer */}
-        <footer className="mt-20 py-10 text-center text-sm text-gray-500">
-          <p>© 2023 MindFlow. Master everything, forget nothing.</p>
+        <footer className="py-10 border-t border-slate-200 dark:border-slate-800 text-center">
+          <p className="text-slate-500 dark:text-slate-400 text-xs">© 2023 MindFlow. Master everything, forget nothing.</p>
         </footer>
       </div>
     </div>

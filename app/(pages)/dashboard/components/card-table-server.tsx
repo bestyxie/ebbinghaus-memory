@@ -12,73 +12,69 @@ interface CardTableServerProps {
   deckId: string | null;
 }
 
-export async function CardTableServer({
-  currentPage,
-  sortBy,
-  deckId,
-}: CardTableServerProps) {
+export async function CardTableServer({ currentPage, sortBy, deckId }: CardTableServerProps) {
   const header = await headers();
   const session = await auth.api.getSession({ headers: header });
-  const cardsData = await getCardsData(session?.user?.id || '', { sortBy, deckId, page: currentPage });
-  const { cards, total, totalPages } = cardsData;
 
-  // Empty state
+  if (!session?.user?.id) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-6">
+        <p className="text-amber-700 dark:text-amber-400 text-sm">Session expired. Please refresh the page or log in again.</p>
+      </div>
+    );
+  }
+
+  let cards: Awaited<ReturnType<typeof getCardsData>>['cards'];
+  let total: number;
+  let totalPages: number;
+
+  try {
+    const cardsData = await getCardsData(session.user.id, { sortBy, deckId, page: currentPage });
+    cards = cardsData.cards;
+    total = cardsData.total;
+    totalPages = cardsData.totalPages;
+  } catch (error) {
+    console.error('CardTableServer: failed to fetch cards', { userId: session.user.id, sortBy, deckId, page: currentPage, error });
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 p-6">
+        <p className="text-red-700 dark:text-red-400 text-sm">Failed to load cards. Please refresh the page.</p>
+      </div>
+    );
+  }
+
   if (cards.length === 0) {
     return (
-      <div className="bg-white rounded-lg border shadow-sm p-12 text-center">
-        <p className="text-gray-500">
-          No cards found. Create your first card to get started!
-        </p>
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-12 text-center">
+        <p className="text-slate-500">No cards found. Create your first card to get started!</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden mb-8">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px]">
+        <table className="w-full min-w-[800px] text-left border-collapse">
           <caption className="sr-only">
             List of all knowledge points with their status and familiarity
           </caption>
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="py-4 px-6 text-left text-sm font-medium text-gray-700">
-                Knowledge Point
-              </th>
-              <th className="py-4 px-6 text-left text-sm font-medium text-gray-700">
-                Tags
-              </th>
-              <th className="py-4 px-6 text-left text-sm font-medium text-gray-700">
-                Status
-              </th>
-              <th className="py-4 px-6 text-left text-sm font-medium text-gray-700">
-                Familiarity
-              </th>
-              <th className="py-4 px-6 text-center text-sm font-medium text-gray-700">
-                Actions
-              </th>
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-800/30 text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+              <th className="px-6 py-4">Knowledge Point</th>
+              <th className="px-6 py-4">Tags</th>
+              <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4">Familiarity</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {cards.map((card) => (
-              <CardRow
-                key={card.id}
-                card={card}
-                sortBy={sortBy}
-                sortOrder="asc"
-                deckId={deckId}
-              />
+              <CardRow key={card.id} card={card} sortBy={sortBy} sortOrder="asc" deckId={deckId} />
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
-      <PaginationClient
-        currentPage={currentPage}
-        totalPages={totalPages}
-        total={total}
-      />
+      <PaginationClient currentPage={currentPage} totalPages={totalPages} total={total} />
     </div>
   );
 }
