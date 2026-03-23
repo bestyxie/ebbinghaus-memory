@@ -7,6 +7,9 @@ import {
   updateCardSchema,
   updateDeckSchema,
   editCardSchema,
+  recallBlockSchema,
+  createArticleCardSchema,
+  updateArticleCardSchema,
 } from './zod'
 
 // === 基础类型 (从 Zod 派生) ===
@@ -58,3 +61,29 @@ export interface ReviewSession {
 // === 工具类型 ===
 export type CardState = Card['state']
 export type CardStatus = 'new' | 'due' | 'overdue' | 'scheduled'
+
+// === Article Card 类型 ===
+
+// 主动回忆记忆块
+export type RecallBlock = z.infer<typeof recallBlockSchema>
+
+// 文章卡片类型 (扩展 Card 模型)
+export type ArticleCard = Card & {
+  cardType: 'ARTICLE'
+  articleTitle: string
+  articleContent: string
+  recallBlocks: RecallBlock[] | null
+  wordCount: number | null
+  readTimeMins: number | null
+  totalStudyTimeMs: number | null
+  lastStudyAt: Date | null
+}
+
+// 文章卡片输入类型
+export type CreateArticleCardInput = z.infer<typeof createArticleCardSchema>
+export type UpdateArticleCardInput = z.infer<typeof updateArticleCardSchema>
+
+// 带卡组的文章卡片
+export type ArticleCardWithDeck = ArticleCard & {
+  deck: DeckMinimal | null
+}

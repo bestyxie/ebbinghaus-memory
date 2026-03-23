@@ -62,3 +62,5 @@ generated/
 
 .claude/**.local.**
 
+stitch-export
+

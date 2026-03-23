@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { JSONContent } from '@tiptap/react'
 import { ArticleEditor } from './components/article-editor'
 import { MetricCard } from './components/metric-card'
 import { RecallBlock } from '@/app/lib/types'
 import { calculateWordCount, calculateReadTime, calculateReadability } from '@/app/lib/text-analysis'
+import { getPlainTextFromJson } from './components/tiptap-editor'
 
 export default function ArticleEditorPage() {
   const router = useRouter()
-  const [content, setContent] = useState('')
+  const [plainTextContent, setPlainTextContent] = useState('')
   const [title, setTitle] = useState('')
   const [recallBlocks, setRecallBlocks] = useState<RecallBlock[]>([])
   const [selectedDeckId] = useState<string>()
@@ -17,9 +19,37 @@ export default function ArticleEditorPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string>()
 
+  // Handle content changes from TipTap editor
+  const handleContentChange = useCallback((json: JSONContent) => {
+    const text = getPlainTextFromJson(json)
+    setPlainTextContent(text)
+  }, [])
+
+  // Handle recall block creation/update
+  const handleSelectionCreate = useCallback((block: RecallBlock) => {
+    setRecallBlocks((prev) => {
+      // Check if block already exists
+      const existingIndex = prev.findIndex((b) => b.id === block.id)
+      if (existingIndex >= 0) {
+        // Update existing block
+        const updated = [...prev]
+        updated[existingIndex] = block
+        return updated
+      }
+      // Add new block
+      return [...prev, block]
+    })
+  }, [])
+
   const handleSave = async () => {
-    if (!title.trim()) { setError('Please enter a title'); return }
-    if (!content.trim()) { setError('Please enter article content'); return }
+    if (!title.trim()) {
+      setError('Please enter a title')
+      return
+    }
+    if (!plainTextContent.trim()) {
+      setError('Please enter article content')
+      return
+    }
 
     setIsSaving(true)
     setError(undefined)
@@ -30,7 +60,7 @@ export default function ArticleEditorPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           articleTitle: title,
-          articleContent: content,
+          articleContent: plainTextContent,
           deckId: selectedDeckId,
           recallBlocks,
         }),
@@ -48,14 +78,14 @@ export default function ArticleEditorPage() {
     }
   }
 
-  const wordCount = calculateWordCount(content)
+  // Use plain text for metrics calculation
+  const wordCount = calculateWordCount(plainTextContent)
   const readTime = calculateReadTime(wordCount)
-  const readability = calculateReadability(content)
+  const readability = calculateReadability(plainTextContent)
 
   return (
     <div className="min-h-screen bg-slate-50/80 selection:bg-note-yellow/50">
       <div className="max-w-4xl mx-auto px-8 py-10 space-y-8">
-
         {/* Error banner */}
         {error && (
           <div className="bg-red-50 text-red-800 px-4 py-3 rounded-xl text-sm font-medium">
@@ -83,10 +113,10 @@ export default function ArticleEditorPage() {
         {/* Editor canvas */}
         <ArticleEditor
           title={title}
-          content={content}
+          content={plainTextContent}
           onTitleChange={setTitle}
-          onContentChange={setContent}
-          onSelectionCreate={(block) => setRecallBlocks([...recallBlocks, block])}
+          onContentChange={handleContentChange}
+          onSelectionCreate={handleSelectionCreate}
           isPreview={isPreview}
           recallBlocks={recallBlocks}
           onToggleBlock={() => {}}
@@ -113,7 +143,6 @@ export default function ArticleEditorPage() {
             color="pink"
           />
         </div>
-
       </div>
     </div>
   )

@@ -54,6 +54,7 @@ export function calculateInitialEaseFactor(quality: number): number {
 // Card schemas
 export const cardBaseSchema = z.object({
   id: z.string().cuid(),
+  cardType: z.enum(['FLASHCARD', 'ARTICLE']).default('FLASHCARD'),
   front: z.string().min(1),
   back: z.string().min(1),
   note: z.string().nullable(),
@@ -65,6 +66,14 @@ export const cardBaseSchema = z.object({
   userId: z.string().cuid(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  // Article card fields
+  articleTitle: z.string().nullable().optional(),
+  articleContent: z.string().nullable().optional(),
+  recallBlocks: z.any().nullable().optional(), // JSON field
+  wordCount: z.number().int().nullable().optional(),
+  readTimeMins: z.number().int().nullable().optional(),
+  totalStudyTimeMs: z.number().int().nullable().optional(),
+  lastStudyAt: z.date().nullable().optional(),
 })
 
 export const updateCardSchema = z.object({
@@ -103,4 +112,35 @@ export const updateDeckSchema = z.object({
 // AI Memory Text Generation schemas
 export const generateMemoryTextSchema = z.object({
   cardFronts: z.array(z.string().min(1)).min(1, 'At least one card front is required').max(20, 'Maximum 20 card fronts allowed'),
+})
+
+// Recall Block schema for article cards
+export const recallBlockSchema = z.object({
+  id: z.string(),
+  startIndex: z.number().int().min(0),
+  endIndex: z.number().int().min(0),
+  content: z.string().min(1),
+  hint: z.string().optional(),
+})
+
+// Article card creation validation
+export const createArticleCardSchema = z.object({
+  articleTitle: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+  articleContent: z.string().min(1, "Content is required"),
+  deckId: z.string().optional(),
+  recallBlocks: z.array(recallBlockSchema).optional(),
+})
+
+// Article card update validation
+export const updateArticleCardSchema = z.object({
+  cardId: z.string().cuid(),
+  articleTitle: z.string().min(1).max(200).optional(),
+  articleContent: z.string().min(1).optional(),
+  recallBlocks: z.array(recallBlockSchema).optional(),
+})
+
+// Update recall blocks validation
+export const updateRecallBlocksSchema = z.object({
+  cardId: z.string().cuid(),
+  recallBlocks: z.array(recallBlockSchema),
 })

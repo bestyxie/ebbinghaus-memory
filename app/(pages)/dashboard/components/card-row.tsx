@@ -7,7 +7,7 @@ import { CardStatusBadge } from './card-status-badge';
 import { FamiliarityProgress } from './familiarity-progress';
 import { EditCardModal } from './edit-card-modal';
 import { PopConfirm } from '@/app/components/ui/popconfirm';
-import { Pencil, Trash, PlayCircle } from 'lucide-react';
+import { Pencil, Trash, PlayCircle, FileText } from 'lucide-react';
 import { CardWithDeck } from '@/app/lib/types';
 
 const ACTION_BTN_CLASS = 'p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-all';
@@ -44,6 +44,10 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
   };
 
   const buildReviewUrl = () => {
+    // For article cards, go to article review page
+    if (isArticleCard) {
+      return `/article-review?startCardId=${card.id}`;
+    }
     const params = new URLSearchParams({ mode: 'filtered', startCardId: card.id, sortBy, sortOrder });
     if (deckId) params.append('deckId', deckId);
     return '/review?' + params.toString();
@@ -73,6 +77,7 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
 
   const { status, daysUntil } = getCardStatus();
   const isOverdue = status === 'overdue';
+  const isArticleCard = (card as any).cardType === 'ARTICLE';
 
   const deckColor = card.deck?.color;
   const tagStyle = deckColor ? {
@@ -81,17 +86,39 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
     color: deckColor,
   } : undefined;
 
+  // For article cards, get article-specific metadata
+  const getArticleMetadata = () => {
+    if (!isArticleCard) return null;
+    const articleCard = card as any;
+    const wordCount = articleCard.wordCount || 0;
+    const blocksCount = articleCard.recallBlocks?.length || 0;
+    return { wordCount, blocksCount };
+  };
+
+  const articleMetadata = getArticleMetadata();
+
   return (
     <>
       <tr className={`group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isOverdue ? 'bg-rose-50/10 dark:bg-rose-950/5' : ''}`}>
         {/* Knowledge Point */}
         <td className="px-6 py-5">
           <div className="flex flex-col gap-0.5">
-            <span className={`font-bold text-sm transition-colors ${isOverdue ? 'text-rose-500 group-hover:underline' : 'text-slate-900 dark:text-white group-hover:text-blue-600'}`}>
-              {card.front}
-            </span>
+            <div className="flex items-center gap-2">
+              {isArticleCard && (
+                <FileText className="h-4 w-4 text-purple-500 flex-shrink-0" />
+              )}
+              <span className={`font-bold text-sm transition-colors ${isOverdue ? 'text-rose-500 group-hover:underline' : 'text-slate-900 dark:text-white group-hover:text-blue-600'}`}>
+                {isArticleCard ? (card as any).articleTitle || card.front : card.front}
+              </span>
+            </div>
             <span className="text-[10px] text-slate-500 uppercase font-medium tracking-tight">
-              {getLastReviewedText()}
+              {isArticleCard && articleMetadata ? (
+                <>
+                  {articleMetadata.wordCount} words · {articleMetadata.blocksCount} blocks
+                </>
+              ) : (
+                getLastReviewedText()
+              )}
             </span>
           </div>
         </td>

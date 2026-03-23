@@ -111,10 +111,24 @@ model Deck {
 // 4. 卡片表 (Card) - ★★★ 最核心的部分 ★★★
 model Card {
   id          String   @id @default(cuid())
+  cardType    CardType @default(FLASHCARD) // 卡片类型
+
+  // 闪卡字段
   front       String   // 卡片正面（问题），支持 Markdown 或 HTML
   back        String   // 卡片背面（答案）
   note        String?  // 助记提示
-  
+
+  // 文章卡片专用字段
+  articleTitle String?  @db.Text // 文章标题
+  articleContent String? @db.Text // 文章 Markdown 内容
+  recallBlocks  Json?    // 主动回忆记忆块数据
+  wordCount     Int?     // 字数统计
+  readTimeMins  Int?     // 预计阅读时间（分钟）
+
+  // 文章学习元数据
+  totalStudyTimeMs Int? @default(0) // 总学习时间（毫秒）
+  lastStudyAt     DateTime? // 最后学习时间
+
   // --- 艾宾浩斯/SM-2 算法所需字段 ---
   
   // 下一次需要复习的具体时间点
@@ -175,6 +189,12 @@ model ReviewLog {
 
   @@index([userId]) // 索引：统计用户复习记录
   @@index([userId, rating]) // 索引：计算用户留存率
+}
+
+// 枚举：卡片类型
+enum CardType {
+  FLASHCARD  // 传统问答闪卡
+  ARTICLE    // 文章学习卡片
 }
 
 // 枚举：卡片状态
