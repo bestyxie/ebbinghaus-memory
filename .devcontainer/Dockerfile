@@ -2,10 +2,12 @@ FROM mcr.microsoft.com/devcontainers/javascript-node:22
 
 ARG TZ
 ENV TZ="$TZ"
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 
 ARG CLAUDE_CODE_VERSION=2.1.37
 
 # Install basic development tools and iptables/ipset
+# Chrome dependencies for agent-browser (based on agent-browser install --with-deps)
 RUN apt-get update && apt-get install -y --no-install-recommends \
   less \
   git \
@@ -25,6 +27,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   jq \
   nano \
   vim \
+  ca-certificates \
+  fonts-liberation \
+  libasound2 \
+  libatk-bridge2.0-0 \
+  libatk1.0-0 \
+  libatspi2.0-0 \
+  libcups2 \
+  libdbus-1-3 \
+  libdrm2 \
+  libgbm1 \
+  libgtk-3-0 \
+  libnspr4 \
+  libnss3 \
+  libwayland-client0 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxkbcommon0 \
+  libxrandr2 \
+  xdg-utils \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Ensure default node user has access to /usr/local/share
@@ -81,6 +103,17 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
+# Install agent-browser globally (Chrome will be installed via postCreateCommand)
+RUN sudo mkdir -p $PLAYWRIGHT_BROWSERS_PATH \
+  && sudo chown -R node:node $PLAYWRIGHT_BROWSERS_PATH \
+  && npm install -g agent-browser playwright \
+  && playwright install --with-deps chromium
+
+ENV AGENT_BROWSER_EXECUTABLE_PATH="/usr/local/bin/agent-chromium"
+RUN BROWSER_BIN=$(find $PLAYWRIGHT_BROWSERS_PATH -type f \( -name "headless_shell" -o -name "chrome-headless-shell" -o -name "chrome" \) | grep -v "third_party" | head -n 1) \
+  && echo "Found Chromium binary at: $BROWSER_BIN" \
+  && sudo mkdir -p /usr/local/bin && sudo chown -R node:node /usr/local/bin \
+  && ln -s "$BROWSER_BIN" $AGENT_BROWSER_EXECUTABLE_PATH
 
 # Copy and set up firewall script
 COPY init-firewall.sh /usr/local/bin/

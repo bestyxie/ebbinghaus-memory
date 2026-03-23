@@ -1,0 +1,59 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ebbinghaus-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ebbinghaus
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        TZ: "${TZ:-Asia/Shanghai}"
+        CLAUDE_CODE_VERSION: "latest"
+        GIT_DELTA_VERSION: "0.18.2"
+        ZSH_IN_DOCKER_VERSION: "1.2.0"
+    container_name: ebbinghaus-app
+    restart: unless-stopped
+    working_dir: /workspace
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/ebbinghaus"
+      AUTH_SECRET: "dev-secret-change-in-production"
+      # agent-browser environment variables
+      AGENT_BROWSER_DEFAULT_TIMEOUT: "30000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspace:delegated
+      - node-modules:/workspace/node_modules
+      - pnpm-store:/var/lib/pnpm-store
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: /bin/zsh -c "pnpm install && pnpm dev"
+
+volumes:
+  postgres-data:
+  node-modules:
+  pnpm-store:

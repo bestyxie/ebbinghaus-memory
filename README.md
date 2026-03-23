@@ -55,3 +55,52 @@ test@test.com
 ## 命令行进入数据库
 
 psql "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
+
+## agent-browser
+
+This project includes [agent-browser](https://github.com/vercel-labs/agent-browser) - a headless browser automation CLI for AI agents.
+
+### Installation
+
+```bash
+# Install Chrome for Testing (required for agent-browser)
+agent-browser install
+```
+
+### Docker / DevContainer
+
+When using Docker Compose or DevContainer, agent-browser and Chrome are pre-installed.
+
+```bash
+# Start all services (includes PostgreSQL)
+docker-compose up
+
+# Rebuild and start
+docker-compose up --build
+
+# Stop services
+docker-compose down
+```
+
+### Quick Start
+
+```bash
+# Navigate to a URL
+agent-browser open https://example.com
+
+# Take an accessibility snapshot (returns element refs like @e1, @e2)
+agent-browser snapshot -i
+
+# Click an element by ref
+agent-browser click @e1
+
+# Take a screenshot
+agent-browser screenshot result.png
+
+# Close browser
+agent-browser close
+```
+
+### Documentation
+
+See [docs/agent-browser.md](docs/agent-browser.md) for complete usage guide.

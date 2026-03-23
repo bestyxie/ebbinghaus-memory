@@ -59,7 +59,7 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "sudo chown -R node:node /workspace/node_modules /var/lib/pnpm-store && pnpm install"
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
   // "forwardPorts": [3000],
   // "portsAttributes": {
   //   "3000": {
