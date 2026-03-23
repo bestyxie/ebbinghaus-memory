@@ -112,6 +112,95 @@ body {
   clip-path: polygon(0 0, 0 100%, 100% 0);
 }
 
+/* TipTap Editor Styles */
+.tiptap-editor {
+  min-height: 400px;
+  caret-color: #374151;
+}
+
+.tiptap-editor p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  font-style: italic;
+}
+
+.tiptap-editor:focus {
+  outline: none;
+}
+
+/* Recall Block Mark Styles in TipTap */
+.recall-block-mark {
+  background-color: rgba(255, 234, 133, 0.4);
+  border-bottom: 2px dotted #1a1f23;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recall-block-mark:hover {
+  background-color: rgba(255, 234, 133, 0.8);
+}
+
+.recall-block-mark[data-revealed="true"] {
+  background-color: rgba(255, 234, 133, 0.2);
+  border-bottom-style: solid;
+}
+
+.recall-block-mark[data-revealed="false"] {
+  color: transparent;
+  user-select: none;
+  position: relative;
+}
+
+.recall-block-mark[data-revealed="false"]::after {
+  content: "████";
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* In edit mode, all recall blocks use text cursor and visible caret */
+.tiptap-container-editable .recall-block-mark {
+  cursor: text;
+  caret-color: #374151;
+}
+
+.tiptap-container-editable .recall-block-mark:hover {
+  background-color: rgba(255, 234, 133, 0.4);
+}
+
+/* In edit mode, hidden blocks show text normally with highlight + underline only */
+.tiptap-container-editable .recall-block-mark[data-revealed="false"] {
+  color: inherit;
+  caret-color: #374151;
+  user-select: text;
+  position: static;
+  background-color: #fef08a;
+  border-bottom: 2px dotted #1a1a1a;
+  border-radius: 2px;
+  padding: 2px 6px;
+}
+
+.tiptap-container-editable .recall-block-mark[data-revealed="false"]::after {
+  content: none;
+}
+
+/* ProseMirror Selection Styles */
+.ProseMirror-selectednode {
+  outline: 2px solid rgba(255, 234, 133, 0.5);
+}
+
+.ProseMirror ::selection {
+  background-color: rgba(255, 234, 133, 0.4);
+}
+
+.ProseMirror-focused {
+  outline: none;
+}
+
 @layer utilities {
   .rotate-y-180 {
     transform: rotateY(180deg);
