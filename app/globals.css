@@ -3,6 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Vibrant Note Colors for Article Cards */
+  --note-yellow: #ffea85;
+  --note-orange: #ffc885;
+  --note-pink: #ffacc3;
+  --note-purple: #bca1ff;
+  --note-blue: #90b5ff;
+  --note-green: #c1f284;
 }
 
 @theme inline {
@@ -10,6 +18,13 @@
   --color-foreground: var(--foreground);
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  /* Vibrant note palette as Tailwind utilities */
+  --color-note-yellow: var(--note-yellow);
+  --color-note-orange: var(--note-orange);
+  --color-note-pink: var(--note-pink);
+  --color-note-purple: var(--note-purple);
+  --color-note-blue: var(--note-blue);
+  --color-note-green: var(--note-green);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,6 +43,73 @@ body {
 /* Flashcard flip animation */
 .rotate-y-180 {
   transform: rotateY(180deg);
+}
+
+/* Article Card Recall Block Styles */
+.recall-block-inline {
+  display: inline;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.recall-block-inline.hidden {
+  background-color: rgba(255, 234, 133, 0.4);
+  border-bottom: 2px dotted #1a1f23;
+  color: transparent;
+}
+
+.recall-block-inline.hidden:hover {
+  background-color: rgba(255, 234, 133, 0.8);
+}
+
+.recall-block-inline.revealed {
+  background-color: rgba(255, 234, 133, 0.2);
+  border-bottom: 2px solid #1a1f23;
+}
+
+.recall-block {
+  display: inline;
+  padding: 2px 6px;
+  background-color: rgba(255, 234, 133, 0.4);
+  border-bottom: 2px dotted #1a1f23;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.recall-block:hover {
+  background-color: rgba(255, 234, 133, 0.8);
+}
+
+.recall-block.hidden {
+  background-color: rgba(255, 234, 133, 0.6);
+  color: transparent;
+  user-select: none;
+}
+
+.recall-block.revealed {
+  background-color: rgba(255, 234, 133, 0.2);
+  border-bottom-style: solid;
+}
+
+/* Sticky Note Effect */
+.sticky-note {
+  position: relative;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+}
+.sticky-note::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.1);
+  clip-path: polygon(0 0, 0 100%, 100% 0);
 }
 
 @layer utilities {
