@@ -2,12 +2,12 @@ export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
 import { Suspense } from 'react';
-import CreateBtn from './components/createBtn';
-import { Plus, Play, FileText } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { StatsGridServer } from './components/stats-grid';
 import { FiltersBarServer } from './components/filters-bar-server';
 import { CardTableServer } from './components/card-table-server';
 import { AIMemoryButton } from './components/ai-memory-button';
+import { CreateDropdown } from './components/create-dropdown';
 
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 
@@ -54,17 +54,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
           </div>
 
           <div className="flex gap-3 w-full md:w-auto">
-            <CreateBtn className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-              <Plus className="h-4 w-4" />
-              New Point
-            </CreateBtn>
-            <Link
-              href="/article-editor"
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-purple-700 transition-colors shadow-lg shadow-purple-600/20"
-            >
-              <FileText className="h-4 w-4" />
-              New Article
-            </Link>
+            <CreateDropdown className="flex-1 md:flex-none" />
             <AIMemoryButton />
             <Link
               href="/review"
