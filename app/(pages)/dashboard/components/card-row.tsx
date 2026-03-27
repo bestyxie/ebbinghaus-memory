@@ -77,7 +77,7 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
 
   const { status, daysUntil } = getCardStatus();
   const isOverdue = status === 'overdue';
-  const isArticleCard = (card as any).cardType === 'ARTICLE';
+  const isArticleCard = card.cardType === 'ARTICLE';
 
   const deckColor = card.deck?.color;
   const tagStyle = deckColor ? {
@@ -89,9 +89,8 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
   // For article cards, get article-specific metadata
   const getArticleMetadata = () => {
     if (!isArticleCard) return null;
-    const articleCard = card as any;
-    const wordCount = articleCard.wordCount || 0;
-    const blocksCount = articleCard.recallBlocks?.length || 0;
+    const wordCount = card.wordCount || 0;
+    const blocksCount = card.recallBlocks?.length || 0;
     return { wordCount, blocksCount };
   };
 
@@ -108,7 +107,7 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
                 <FileText className="h-4 w-4 text-purple-500 flex-shrink-0" />
               )}
               <span className={`font-bold text-sm transition-colors ${isOverdue ? 'text-rose-500 group-hover:underline' : 'text-slate-900 dark:text-white group-hover:text-blue-600'}`}>
-                {isArticleCard ? (card as any).articleTitle || card.front : card.front}
+                {isArticleCard ? card.articleTitle || card.front : card.front}
               </span>
             </div>
             <span className="text-[10px] text-slate-500 uppercase font-medium tracking-tight">

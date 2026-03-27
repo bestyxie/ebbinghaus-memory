@@ -7,10 +7,10 @@ export default defineConfig({
     vinext(),
     ...(process.env.NODE_ENV === 'production'
       ? [
-          cloudflare({
-            viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-          }),
-        ]
+        cloudflare({
+          viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
+        }),
+      ]
       : []),
   ],
   ssr: {
@@ -26,5 +26,14 @@ export default defineConfig({
   // 有时候优化依赖也会导致类似问题，可以加上这行以防万一
   optimizeDeps: {
     exclude: ['pg', 'pg-native', '@prisma/client'],
+  },
+  server: {
+    // 允许局域网/外部访问 (相当于命令行的 --host)
+    host: true,
+    port: 3001,
+    //告诉 Vite 信任并放行来自这个域名的请求
+    allowedHosts: [
+      'host.docker.internal'
+    ]
   }
 });

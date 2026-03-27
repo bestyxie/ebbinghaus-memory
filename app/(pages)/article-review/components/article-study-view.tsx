@@ -33,7 +33,7 @@ export function ArticleStudyView({
   // Check if all blocks are revealed
   useEffect(() => {
     if (article.recallBlocks && article.recallBlocks.length > 0) {
-      const allRevealed = article.recallBlocks.every((block) =>
+      const allRevealed = article.recallBlocks.every((block: RecallBlock) =>
         revealedBlocks.has(block.id)
       )
       setHasShownAllBlocks(allRevealed)

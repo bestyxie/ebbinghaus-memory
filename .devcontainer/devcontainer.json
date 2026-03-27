@@ -55,10 +55,14 @@
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
     "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    "DATABASE_URL": "postgresql://postgres@host.docker.internal:5432/ebbinghus",
     "NPM_CONFIG_STORE_DIR": "/var/lib/pnpm-store"
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql://postgres@host.docker.internal:5432/ebbinghus"
+  },
   "postCreateCommand": "bash .devcontainer/post-create.sh"
   // "forwardPorts": [3000],
   // "portsAttributes": {

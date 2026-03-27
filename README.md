@@ -104,3 +104,9 @@ agent-browser close
 ### Documentation
 
 See [docs/agent-browser.md](docs/agent-browser.md) for complete usage guide.
+
+#### Database Changes
+
+1. Modify `prisma/schema.prisma` first
+2. Run `npx prisma generate` after schema changes
+3. Create new migrations with `npx prisma migrate dev`
