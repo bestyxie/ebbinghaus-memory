@@ -2,12 +2,12 @@ export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { Play } from 'lucide-react';
 import { StatsGridServer } from './components/stats-grid';
 import { FiltersBarServer } from './components/filters-bar-server';
 import { CardTableServer } from './components/card-table-server';
 import { AIMemoryButton } from './components/ai-memory-button';
 import { CreateDropdown } from './components/create-dropdown';
+import { ReviewDropdown } from './components/review-dropdown';
 
 type SortOption = 'nextReviewAt' | 'createdAt' | 'easeFactor';
 
@@ -56,13 +56,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
           <div className="flex gap-3 w-full md:w-auto">
             <CreateDropdown className="flex-1 md:flex-none" />
             <AIMemoryButton />
-            <Link
-              href="/review"
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 hover:brightness-110 transition-all"
-            >
-              <Play className="h-4 w-4" />
-              Start Reviewing
-            </Link>
+            <ReviewDropdown className="flex-1 md:flex-none" />
           </div>
         </section>
 
