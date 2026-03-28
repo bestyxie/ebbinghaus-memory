@@ -30,8 +30,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
         };
       };
       nextReviewAt?: { lte: Date };
+      cardType?: 'FLASHCARD';
     };
-    const where: WhereType = { userId };
+    const where: WhereType = { userId, cardType: 'FLASHCARD' };
 
     if (mode === 'all-due') {
       // Fetch all cards that are due for review

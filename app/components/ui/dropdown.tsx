@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, useRef, useEffect, ReactNode } from "react";
+import { useState, useRef, useEffect, ReactNode } from "react";
 import Link from "next/link";
 
 export type DropdownItem = {

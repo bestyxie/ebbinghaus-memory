@@ -107,7 +107,7 @@ export function calculateReadability(text: string): number {
   const avgWordsPerSentence = words.length / sentences
   const avgSyllablesPerWord = syllableCount / words.length
 
-  let score = 206.835 - (1.015 * avgWordsPerSentence) - (84.6 * avgSyllablesPerWord)
+  const score = 206.835 - (1.015 * avgWordsPerSentence) - (84.6 * avgSyllablesPerWord)
 
   // Clamp score between 0 and 100
   return Math.max(0, Math.min(100, Math.round(score)))

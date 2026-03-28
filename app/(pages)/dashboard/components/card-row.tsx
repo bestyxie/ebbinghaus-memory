@@ -44,11 +44,12 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
   };
 
   const buildReviewUrl = () => {
-    // For article cards, go to article review page
+    // For article cards, go to article review mode
     if (isArticleCard) {
-      return `/article-review?startCardId=${card.id}`;
+      return `/review?type=article&startCardId=${card.id}`;
     }
-    const params = new URLSearchParams({ mode: 'filtered', startCardId: card.id, sortBy, sortOrder });
+    // For flashcards, go to flashcard review mode
+    const params = new URLSearchParams({ type: 'flashcard', mode: 'filtered', startCardId: card.id, sortBy, sortOrder });
     if (deckId) params.append('deckId', deckId);
     return '/review?' + params.toString();
   };
