@@ -53,7 +53,6 @@ export interface DecksResponse {
 export interface ReviewSession {
   cards: CardWithDeck[]
   total: number
-  mode: string
   hasMore: boolean
   nextCursor?: string
 }

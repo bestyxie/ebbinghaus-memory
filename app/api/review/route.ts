@@ -13,61 +13,21 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
 
   try {
     const { searchParams } = new URL(request.url);
-    const mode = searchParams.get('mode') || 'all-due';
-    const startCardId = searchParams.get('startCardId');
-    const deckId = searchParams.get('deckId');
-    const sortBy = searchParams.get('sortBy') || 'nextReviewAt';
-    const sortOrder = searchParams.get('sortOrder') || 'asc';
-
-    type WhereType = {
-      userId: string;
-      cardDecks?: {
-        some: {
-          deckId: string;
-          deck?: {
-            deletedAt: null;
-          };
-        };
-      };
-      nextReviewAt?: { lte: Date };
-      cardType?: 'FLASHCARD';
-    };
-    const where: WhereType = { userId, cardType: 'FLASHCARD' };
-
-    if (mode === 'all-due') {
-      // Fetch all cards that are due for review
-      where.nextReviewAt = { lte: new Date() };
-    } else if (mode === 'filtered') {
-      // Fetch cards based on filters (from card list)
-      if (deckId) {
-        where.cardDecks = {
-          some: {
-            deckId,
-            deck: {
-              deletedAt: null,
-            },
-          },
-        };
-      }
-    }
-
-    // Build orderBy object
-    let orderBy: Record<string, 'asc' | 'desc'> = { nextReviewAt: 'asc' };
-    if (sortBy === 'createdAt') {
-      orderBy = { createdAt: sortOrder as 'asc' | 'desc' };
-    } else if (sortBy === 'easeFactor') {
-      orderBy = { easeFactor: sortOrder as 'asc' | 'desc' };
-    } else if (sortBy === 'nextReviewAt') {
-      orderBy = { nextReviewAt: sortOrder as 'asc' | 'desc' };
-    }
 
     // Support batched fetching with pagination
     const cursor = searchParams.get('cursor');
     const isFirstBatch = !cursor;
 
+    // Fetch due flashcards
+    const where = {
+      userId,
+      cardType: 'FLASHCARD' as const,
+      nextReviewAt: { lte: new Date() },
+    };
+
     const cards = await prisma.card.findMany({
       where,
-      orderBy,
+      orderBy: { nextReviewAt: 'asc' },
       take: REVIEW_BATCH_SIZE + 1, // Fetch one extra to check if there are more
       ...(cursor && {
         skip: 1,
@@ -77,7 +37,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
         cardDecks: {
           where: {
             deck: {
-              deletedAt: null, // Only include non-deleted decks
+              deletedAt: null,
             },
           },
           include: {
@@ -104,18 +64,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
     const batchCards = hasMore ? transformedCards.slice(0, REVIEW_BATCH_SIZE) : transformedCards;
     const nextCursor = hasMore ? batchCards[REVIEW_BATCH_SIZE - 1].id : undefined;
 
-    // If startCardId is provided and this is the first batch, reorder to start from that card
-    let sessionCards = batchCards;
-    if (isFirstBatch && startCardId) {
-      const startIndex = batchCards.findIndex((c) => c.id === startCardId);
-      if (startIndex !== -1) {
-        sessionCards = [
-          batchCards[startIndex],
-          ...batchCards.slice(0, startIndex),
-          ...batchCards.slice(startIndex + 1)
-        ];
-      }
-    }
+    const sessionCards = batchCards;
 
     // Get total count for progress bar (only on first request)
     let total = sessionCards.length;
@@ -126,7 +75,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
     return NextResponse.json({
       cards: sessionCards,
       total,
-      mode,
       hasMore,
       nextCursor,
     });

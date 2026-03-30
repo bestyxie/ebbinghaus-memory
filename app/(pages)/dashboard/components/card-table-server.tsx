@@ -68,7 +68,7 @@ export async function CardTableServer({ currentPage, sortBy, deckId }: CardTable
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {cards.map((card) => (
-              <CardRow key={card.id} card={card} sortBy={sortBy} sortOrder="asc" deckId={deckId} />
+              <CardRow key={card.id} card={card} />
             ))}
           </tbody>
         </table>

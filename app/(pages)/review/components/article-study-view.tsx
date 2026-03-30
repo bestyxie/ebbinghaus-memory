@@ -10,6 +10,7 @@ interface ArticleStudyViewProps {
   currentIndex: number
   totalArticles: number
   onComplete: (quality: number) => void
+  isSingleMode?: boolean
 }
 
 export function ArticleStudyView({
@@ -17,6 +18,7 @@ export function ArticleStudyView({
   currentIndex,
   totalArticles,
   onComplete,
+  isSingleMode,
 }: ArticleStudyViewProps) {
   const [revealedBlocks, setRevealedBlocks] = useState<Set<string>>(new Set())
   const [studyTime, setStudyTime] = useState(0)
@@ -68,7 +70,11 @@ export function ArticleStudyView({
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="text-sm text-gray-600">
-              Article {currentIndex + 1} of {totalArticles}
+              {isSingleMode ? (
+                <span className="font-semibold text-blue-600">Quick Review - Single article</span>
+              ) : (
+                <>Article {currentIndex + 1} of {totalArticles}</>
+              )}
             </div>
             <div className="h-4 w-px bg-gray-300"></div>
             <div className="flex items-center gap-2 text-sm text-gray-600">

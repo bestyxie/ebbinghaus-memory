@@ -13,10 +13,14 @@ import { CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 
 type ReviewMode = 'flashcard' | 'article' | 'transition' | 'complete' | 'empty';
 
+// Auto-redirect delay after completion (ms)
+const COMPLETION_REDIRECT_DELAY = 2000;
+
 function ReviewPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const typeParam = searchParams.get('type');
+  const isSingleMode = searchParams.get('single') === 'true';
 
   // Flashcard state
   const [session, setSession] = useState<ReviewSession | null>(null);
@@ -31,24 +35,15 @@ function ReviewPageContent() {
   // Article state
   const [articles, setArticles] = useState<ArticleCard[]>([]);
   const [articleIndex, setArticleIndex] = useState(0);
-  const [isLoadingArticles, setIsLoadingArticles] = useState(false);
+  const [isLoadingArticles, setIsLoadingArticles] = useState(typeParam === 'article'); // Start loading if article mode
   const [articlesCount, setArticlesCount] = useState(0);
+  const [hasLoadedArticles, setHasLoadedArticles] = useState(false); // Track if articles have been loaded
 
-  // Mode state
-  const [mode, setMode] = useState<ReviewMode>('flashcard');
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Initialize mode based on URL params
-  useEffect(() => {
-    if (typeParam === 'flashcard') {
-      setMode('flashcard');
-    } else if (typeParam === 'article') {
-      setMode('article');
-    } else {
-      setMode('flashcard'); // Default: start with flashcards
-    }
-    setIsInitialized(true);
-  }, [typeParam]);
+  // Mode state - initialize based on URL param
+  const [mode, setMode] = useState<ReviewMode>(() => {
+    if (typeParam === 'article') return 'article';
+    return 'flashcard';
+  });
 
   const currentCard = session?.cards[currentIndex];
   const currentArticle = articles[articleIndex];
@@ -56,7 +51,37 @@ function ReviewPageContent() {
   const flashcardProgress = reviewedCount + 1;
   const flashcardTotal = session?.total || 0;
 
-  // Load flashcards
+  // Load single flashcard (for single mode)
+  const loadSingleFlashcard = useCallback(async () => {
+    const cardId = searchParams.get('id');
+    if (!cardId) return;
+
+    setIsLoadingFlashcards(true);
+    try {
+      const response = await fetch(`/api/review/${cardId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch card');
+      }
+
+      const data = await response.json();
+      setSession({
+        cards: [data],
+        total: 1,
+        hasMore: false,
+        nextCursor: undefined,
+      });
+      setCurrentIndex(0);
+      setReviewedCount(0);
+      setIsFlipped(false);
+    } catch (err) {
+      console.error('Error loading flashcard:', err);
+      setFlashcardError('Failed to load card');
+    } finally {
+      setIsLoadingFlashcards(false);
+    }
+  }, [searchParams]);
+
+  // Load flashcards (for batch mode)
   const loadFlashcards = useCallback(async (cursor?: string) => {
     if (cursor && (!session?.nextCursor || isLoadingMore)) return;
 
@@ -67,24 +92,8 @@ function ReviewPageContent() {
         setIsLoadingMore(true);
       }
 
-      const mode = searchParams.get('mode') || 'all-due';
-      const params = new URLSearchParams({ mode });
-
-      if (mode === 'filtered') {
-        const startCardId = searchParams.get('startCardId');
-        const deckId = searchParams.get('deckId');
-        const sortBy = searchParams.get('sortBy') || 'nextReviewAt';
-        const sortOrder = searchParams.get('sortOrder') || 'asc';
-
-        if (startCardId && !cursor) params.append('startCardId', startCardId);
-        if (deckId) params.append('deckId', deckId);
-        params.append('sortBy', sortBy);
-        params.append('sortOrder', sortOrder);
-      }
-
-      if (cursor) {
-        params.append('cursor', cursor);
-      }
+      const params = new URLSearchParams();
+      if (cursor) params.append('cursor', cursor);
 
       const response = await fetch(`/api/review?${params}`);
       if (!response.ok) {
@@ -116,9 +125,33 @@ function ReviewPageContent() {
         setIsLoadingMore(false);
       }
     }
-  }, [searchParams, session?.nextCursor, isLoadingMore]);
+  }, [session?.nextCursor, isLoadingMore]);
 
-  // Load articles
+  // Load single article (for single mode)
+  const loadSingleArticle = useCallback(async () => {
+    const cardId = searchParams.get('id');
+    if (!cardId) return;
+
+    setIsLoadingArticles(true);
+    try {
+      const response = await fetch(`/api/article-review/${cardId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch article');
+      }
+
+      const data = await response.json();
+      setArticles([data]);
+      setArticlesCount(1);
+      setArticleIndex(0);
+    } catch (error) {
+      console.error('Failed to fetch article:', error);
+    } finally {
+      setIsLoadingArticles(false);
+      setHasLoadedArticles(true);
+    }
+  }, [searchParams]);
+
+  // Load articles (for batch mode)
   const loadArticles = useCallback(async () => {
     setIsLoadingArticles(true);
     try {
@@ -135,20 +168,27 @@ function ReviewPageContent() {
       console.error('Failed to fetch articles:', error);
     } finally {
       setIsLoadingArticles(false);
+      setHasLoadedArticles(true);
     }
   }, []);
 
   // Initial load
   useEffect(() => {
-    if (!isInitialized) return;
-
-    if (mode === 'flashcard' && typeParam !== 'article') {
-      loadFlashcards();
+    if (mode === 'flashcard') {
+      if (isSingleMode) {
+        loadSingleFlashcard();
+      } else {
+        loadFlashcards();
+      }
     } else if (mode === 'article') {
-      loadArticles();
+      if (isSingleMode) {
+        loadSingleArticle();
+      } else {
+        loadArticles();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized, mode]);
+  }, [mode, isSingleMode]);
 
   // Load more flashcards when near end
   useEffect(() => {
@@ -224,11 +264,12 @@ function ReviewPageContent() {
       mode === 'article' &&
       typeParam === 'article' &&
       !isLoadingArticles &&
+      hasLoadedArticles &&
       articles.length === 0
     ) {
       setMode('empty');
     }
-  }, [mode, isLoadingFlashcards, isLoadingMore, session, typeParam, loadArticles, isLoadingArticles, articles.length]);
+  }, [mode, isLoadingFlashcards, isLoadingMore, session, typeParam, loadArticles, isLoadingArticles, articles.length, hasLoadedArticles]);
 
   const handleFlip = useCallback(() => {
     if (isFlipped) return;
@@ -250,17 +291,25 @@ function ReviewPageContent() {
         throw new Error('Failed to submit rating');
       }
 
+      // Single mode: redirect to dashboard immediately
+      if (isSingleMode) {
+        setMode('complete');
+        setTimeout(() => router.push('/dashboard'), COMPLETION_REDIRECT_DELAY);
+        return;
+      }
+
       setReviewedCount(prev => prev + 1);
       const nextIndex = currentIndex + 1;
       const isLastOverallCard = nextIndex >= flashcardTotal && !session!.hasMore;
 
       if (isLastOverallCard) {
         // Flashcards complete - check if we should transition to articles
-        if (typeParam === 'article') {
-          // User explicitly selected article-only mode, go to dashboard
-          router.push('/dashboard');
+        // (Flashcards Only mode: typeParam === 'flashcard', show completion immediately)
+        if (typeParam === 'flashcard') {
+          setMode('complete');
+          setTimeout(() => router.push('/dashboard'), COMPLETION_REDIRECT_DELAY);
         } else {
-          // Load article count and show transition
+          // Review All mode: load article count and show transition
           const articleResponse = await fetch('/api/article-review');
           if (articleResponse.ok) {
             const data = await articleResponse.json();
@@ -271,11 +320,11 @@ function ReviewPageContent() {
               setMode('transition');
             } else {
               setMode('complete');
-              setTimeout(() => router.push('/dashboard'), 2000);
+              setTimeout(() => router.push('/dashboard'), COMPLETION_REDIRECT_DELAY);
             }
           } else {
             setMode('complete');
-            setTimeout(() => router.push('/dashboard'), 2000);
+            setTimeout(() => router.push('/dashboard'), COMPLETION_REDIRECT_DELAY);
           }
         }
       } else if (nextIndex < session!.cards.length) {
@@ -291,7 +340,7 @@ function ReviewPageContent() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentCard, currentIndex, session, isSubmitting, router, flashcardTotal, typeParam]);
+  }, [currentCard, currentIndex, session, isSubmitting, router, flashcardTotal, typeParam, isSingleMode]);
 
   const handleArticleRating = useCallback(async (quality: number) => {
     if (!currentArticle) return;
@@ -313,17 +362,24 @@ function ReviewPageContent() {
         throw new Error('Failed to submit review');
       }
 
+      // Single mode: redirect to dashboard immediately
+      if (isSingleMode) {
+        setMode('complete');
+        setTimeout(() => router.push('/dashboard'), COMPLETION_REDIRECT_DELAY);
+        return;
+      }
+
       if (articleIndex < articles.length - 1) {
         setArticleIndex((prev) => prev + 1);
       } else {
         // Show completion page before redirecting
         setMode('complete');
-        setTimeout(() => router.push('/dashboard'), 2000);
+        setTimeout(() => router.push('/dashboard'), COMPLETION_REDIRECT_DELAY);
       }
     } catch (error) {
       console.error('Failed to submit review:', error);
     }
-  }, [currentArticle, articleIndex, articles.length, router]);
+  }, [currentArticle, articleIndex, articles.length, router, isSingleMode]);
 
   const handleTransitionToArticles = useCallback(() => {
     setMode('article');
@@ -391,18 +447,18 @@ function ReviewPageContent() {
           </div>
 
           <h2 className="text-2xl font-bold mb-3 text-gray-800">
-            干得漂亮！🎉
+            Great job! 🎉
           </h2>
 
           <p className="text-gray-600 mb-6">
-            碎片知识已复习完毕，建立了 <span className="font-bold text-blue-600">{flashcardTotal}</span> 个记忆连接。
+            You&apos;ve reviewed <span className="font-bold text-blue-600">{flashcardTotal}</span> flashcards and strengthened your memory.
           </p>
 
           {articlesCount > 0 ? (
             <>
               <div className="bg-blue-50 rounded-xl p-4 mb-6">
                 <p className="text-blue-800">
-                  接下来有 <span className="font-bold text-blue-600">{articlesCount}</span> 篇文章需要深度阅读
+                  You have <span className="font-bold text-blue-600">{articlesCount}</span> article(s) to read
                 </p>
               </div>
 
@@ -411,14 +467,14 @@ function ReviewPageContent() {
                   onClick={handleTransitionToArticles}
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all hover:scale-105"
                 >
-                  继续阅读文章
+                  Continue to Articles
                   <ArrowRight className="h-5 w-5" />
                 </button>
                 <button
                   onClick={handleSkipArticles}
                   className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all"
                 >
-                  稍后再说
+                  Skip for Now
                 </button>
               </div>
             </>
@@ -426,7 +482,7 @@ function ReviewPageContent() {
             <div className="bg-green-50 rounded-xl p-4 mb-6">
               <p className="text-green-800 flex items-center justify-center gap-2">
                 <CheckCircle2 className="h-5 w-5" />
-                今天没有待复习的文章
+                No articles due for review
               </p>
             </div>
           )}
@@ -447,18 +503,18 @@ function ReviewPageContent() {
           </div>
 
           <h2 className="text-2xl font-bold mb-3 text-gray-800">
-            复习完成！🎊
+            All done! 🎊
           </h2>
 
           <p className="text-gray-600 mb-6">
-            今天的学习任务已全部完成
+            You&apos;ve completed all your reviews for today
           </p>
 
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all"
           >
-            返回首页
+            Back to Dashboard
           </button>
         </div>
       </div>
@@ -477,26 +533,26 @@ function ReviewPageContent() {
           </div>
 
           <h2 className="text-2xl font-bold mb-3 text-gray-800">
-            太棒了！🎉
+            All caught up! 🎉
           </h2>
 
           <p className="text-gray-600 mb-6">
             {typeParam === 'flashcard'
-              ? '目前没有需要复习的闪卡'
+              ? 'No flashcards due for review right now'
               : typeParam === 'article'
-              ? '目前没有需要复习的文章'
-              : '目前没有需要复习的内容'}
+              ? 'No articles due for review right now'
+              : 'No content due for review right now'}
           </p>
 
           <p className="text-sm text-gray-500 mb-6">
-            保持这个节奏，继续积累知识吧！
+            Keep up the great work!
           </p>
 
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all"
           >
-            返回首页
+            Back to Dashboard
           </button>
         </div>
       </div>
@@ -508,7 +564,7 @@ function ReviewPageContent() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-8 py-10">
-          <ProgressBar current={flashcardProgress} total={flashcardTotal} />
+          <ProgressBar current={flashcardProgress} total={flashcardTotal} isSingleMode={isSingleMode} />
 
           {currentCard && (
             <FlashCard
@@ -570,6 +626,7 @@ function ReviewPageContent() {
         currentIndex={articleIndex}
         totalArticles={articles.length}
         onComplete={handleArticleRating}
+        isSingleMode={isSingleMode}
       />
     );
   }

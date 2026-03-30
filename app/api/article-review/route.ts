@@ -20,16 +20,23 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '5')
+    const limit = parseInt(searchParams.get('limit') || '100')
 
+    // Fetch NEW and due articles
     const cards = await prisma.card.findMany({
       where: {
         userId,
         cardType: 'ARTICLE',
-        nextReviewAt: { lte: new Date() },
+        OR: [
+          { state: 'NEW' },
+          { nextReviewAt: { lte: new Date() } },
+        ],
       },
       take: limit,
-      orderBy: { nextReviewAt: 'asc' },
+      orderBy: [
+        { state: 'asc' },
+        { nextReviewAt: 'asc' },
+      ],
       include: {
         cardDecks: {
           include: {

@@ -14,12 +14,9 @@ const ACTION_BTN_CLASS = 'p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-
 
 interface CardRowProps {
   card: CardWithDeck;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  deckId?: string | null;
 }
 
-export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deckId }: CardRowProps) {
+export function CardRow({ card }: CardRowProps) {
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -46,12 +43,10 @@ export function CardRow({ card, sortBy = 'nextReviewAt', sortOrder = 'asc', deck
   const buildReviewUrl = () => {
     // For article cards, go to article review mode
     if (isArticleCard) {
-      return `/review?type=article&startCardId=${card.id}`;
+      return `/review?type=article&id=${card.id}&single=true`;
     }
     // For flashcards, go to flashcard review mode
-    const params = new URLSearchParams({ type: 'flashcard', mode: 'filtered', startCardId: card.id, sortBy, sortOrder });
-    if (deckId) params.append('deckId', deckId);
-    return '/review?' + params.toString();
+    return `/review?type=flashcard&id=${card.id}&single=true`;
   };
 
   const getCardStatus = (): { status: 'new' | 'due' | 'overdue' | 'scheduled'; daysUntil?: number } => {

@@ -3,9 +3,28 @@
 interface ProgressBarProps {
   current: number;
   total: number;
+  isSingleMode?: boolean;
 }
 
-export function ProgressBar({ current, total }: ProgressBarProps) {
+export function ProgressBar({ current, total, isSingleMode }: ProgressBarProps) {
+  if (isSingleMode) {
+    return (
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Quick Review
+          </h2>
+          <span className="text-lg font-semibold text-blue-600">
+            Single card
+          </span>
+        </div>
+        <div className="text-sm text-gray-600">
+          Review this card, then return to dashboard
+        </div>
+      </div>
+    );
+  }
+
   const percentage = total > 0 ? (current / total) * 100 : 0;
 
   return (
