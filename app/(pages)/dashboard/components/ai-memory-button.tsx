@@ -82,7 +82,7 @@ export function AIMemoryButton() {
       <button
         onClick={handleOpen}
         disabled={isLoading}
-        className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-600/20 hover:brightness-110"
+        className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-600/20 hover:brightness-110 whitespace-nowrap"
       >
         <Sparkles className="h-4 w-4" />
         {isLoading ? 'Loading...' : 'AI Memory'}

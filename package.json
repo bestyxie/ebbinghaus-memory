@@ -49,6 +49,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-rsc": "^0.5.21",
+    "agentation": "^3.0.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "prisma": "7.2.0",

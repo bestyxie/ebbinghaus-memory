@@ -82,12 +82,16 @@ export function ArticleStudyView({
               {formatTime(studyTime)}
             </div>
           </div>
-          {hasShownAllBlocks && totalBlocks > 0 && (
-            <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1.5 rounded-lg">
-              <CheckCircle2 className="h-4 w-4" />
-              All blocks revealed
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg min-h-[38px]">
+            {hasShownAllBlocks && totalBlocks > 0 ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span className="text-green-600 bg-green-50">All blocks revealed</span>
+              </>
+            ) : totalBlocks > 0 ? (
+              <span className="opacity-0">Placeholder</span>
+            ) : null}
+          </div>
         </div>
 
         {/* Progress Bar */}
@@ -184,8 +188,8 @@ function ArticleContentWithBlocks({
       const before = processed.substring(0, block.startIndex)
       const after = processed.substring(block.endIndex)
 
-      // Create marker for custom renderer
-      const marker = `:::RECALL-${isRevealed ? 'SHOWN' : 'HIDDEN'}-${block.id}:::${block.content}:::END-${block.id}:::`
+      // Create marker with unique delimiters
+      const marker = `[[RECALL_${isRevealed ? 'SHOWN' : 'HIDDEN'}:${block.id}]]${block.content}[[END_RECALL:${block.id}]]`
 
       processed = before + marker + after
     })
@@ -199,47 +203,51 @@ function ArticleContentWithBlocks({
         p: ({ children }) => {
           if (typeof children !== 'string') return <p>{children}</p>
 
-          const parts = children.split(/:::RECALL-(SHOWN|HIDDEN)-([^:]+):::(.+?):::END-([^:]+):::/g)
+          // Use matchAll for more reliable parsing
+          const regex = /\[\[RECALL_(SHOWN|HIDDEN):([^\]]+)\]\](.+?)\[\[END_RECALL:\2\]\]/g
+          const matches = Array.from(children.matchAll(regex))
 
-          return (
-            <p className="mb-4">
-              {parts.map((part, index) => {
-                const isHiddenMarker = parts[index - 3]?.startsWith('HIDDEN')
-                const isShownMarker = parts[index - 3]?.startsWith('SHOWN')
-                const blockId = parts[index - 2]
-                const content = part
+          if (matches.length === 0) {
+            return <p className="mb-4">{children}</p>
+          }
 
-                if (isHiddenMarker && blockId) {
-                  return (
-                    <RecallBlockSpan
-                      key={blockId}
-                      content={content}
-                      isRevealed={false}
-                      onClick={() => onToggleBlock(blockId)}
-                    />
-                  )
-                }
+          let lastIndex = 0
+          const elements: React.ReactNode[] = []
 
-                if (isShownMarker && blockId) {
-                  return (
-                    <RecallBlockSpan
-                      key={blockId}
-                      content={content}
-                      isRevealed={true}
-                      onClick={() => onToggleBlock(blockId)}
-                    />
-                  )
-                }
+          matches.forEach((match, index) => {
+            const [, status, blockId, blockContent] = match
 
-                // Skip metadata parts
-                if (index % 5 === 0 || index % 5 === 4) {
-                  return <span key={index}>{part}</span>
-                }
+            // Add text before this block
+            if (match.index! > lastIndex) {
+              elements.push(
+                <span key={`text-${index}`}>
+                  {children.substring(lastIndex, match.index)}
+                </span>
+              )
+            }
 
-                return null
-              })}
-            </p>
-          )
+            // Add the recall block
+            const isRevealed = status === 'SHOWN'
+            elements.push(
+              <RecallBlockSpan
+                key={blockId}
+                content={blockContent}
+                isRevealed={isRevealed}
+                onClick={() => onToggleBlock(blockId)}
+              />
+            )
+
+            lastIndex = match.index! + match[0].length
+          })
+
+          // Add remaining text after last block
+          if (lastIndex < children.length) {
+            elements.push(
+              <span key="text-end">{children.substring(lastIndex)}</span>
+            )
+          }
+
+          return <p className="mb-4">{elements}</p>
         },
       }}
     >
