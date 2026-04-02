@@ -5,7 +5,9 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { FlashCard } from './flash-card';
 import { RatingButtons } from './rating-buttons';
 import { ProgressBar } from './progress-bar';
-import { ReviewSession } from '@/app/lib/types';
+import { OutputExerciseView } from './exercises';
+import { ReviewSession, OutputLevel } from '@/app/lib/types';
+import { getOutputLevel } from '@/app/lib/output-exercises';
 import { REVIEW_BATCH_SIZE } from '@/app/lib/constants';
 
 interface FlashcardReviewContainerProps {
@@ -34,10 +36,21 @@ function FlashcardReviewContainerContent({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [flashcardError, setFlashcardError] = useState<string | null>(null);
 
+  // 输出练习相关状态
+  const [outputExerciseAnswer, setOutputExerciseAnswer] = useState<string | null>(null);
+  const [outputExerciseIsCorrect, setOutputExerciseIsCorrect] = useState<boolean | null>(null);
+
   const currentCard = session?.cards[currentIndex];
   const isFlashcardComplete = !currentCard;
   const flashcardProgress = currentIndex + 1;
   const flashcardTotal = session?.total || 0;
+
+  // 确定当前卡片应该显示的输出练习级别
+  const outputLevel: OutputLevel | null = currentCard
+    ? getOutputLevel(currentCard.repetitions, currentCard.outputRepetitions || 0)
+    : null;
+
+  const isOutputExerciseMode = outputLevel !== null;
 
   const loadSingleFlashcard = useCallback(async () => {
     const cardId = searchParams.get('id');
@@ -134,10 +147,41 @@ function FlashcardReviewContainerContent({
 
     setIsSubmitting(true);
     try {
+      // 对于输出练习模式，需要传递额外的参数
+      const requestBody: {
+        cardId: string;
+        quality: number;
+        exerciseId?: string;
+        isOutputCorrect?: boolean;
+        outputLevel?: number;
+        userAnswer?: string;
+      } = {
+        cardId: currentCard.id,
+        quality,
+      };
+
+      // 如果是输出练习模式，添加输出练习相关数据
+      if (isOutputExerciseMode && outputExerciseAnswer && outputLevel) {
+        // exerciseId 会由后端通过 card.outputExercise.id 查找
+        requestBody.exerciseId = undefined;
+
+        // Level 1-2: 自动判断正确性
+        if (outputLevel <= 2 && outputExerciseIsCorrect !== null) {
+          requestBody.isOutputCorrect = outputExerciseIsCorrect;
+          requestBody.outputLevel = outputLevel;
+          requestBody.userAnswer = outputExerciseAnswer;
+        } else {
+          // Level 3-4: 用户自评，quality >= 3 认为正确
+          requestBody.isOutputCorrect = quality >= 3;
+          requestBody.outputLevel = outputLevel;
+          requestBody.userAnswer = outputExerciseAnswer;
+        }
+      }
+
       const response = await fetch('/api/review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cardId: currentCard.id, quality }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) throw new Error('Failed to submit rating');
@@ -150,6 +194,10 @@ function FlashcardReviewContainerContent({
 
       const nextIndex = currentIndex + 1;
       const isLastOverallCard = nextIndex >= flashcardTotal && !session!.hasMore;
+
+      // 重置输出练习状态
+      setOutputExerciseAnswer(null);
+      setOutputExerciseIsCorrect(null);
 
       if (isLastOverallCard) {
         if (typeParam === 'flashcard') {
@@ -171,9 +219,24 @@ function FlashcardReviewContainerContent({
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentCard, currentIndex, session, isSubmitting, router, flashcardTotal, typeParam, isSingleMode, onComplete, onTransitionToArticles]);
+  }, [currentCard, currentIndex, session, isSubmitting, router, flashcardTotal, typeParam, isSingleMode, onComplete, onTransitionToArticles, isOutputExerciseMode, outputExerciseAnswer, outputExerciseIsCorrect, outputLevel]);
+
+  // 处理输出练习提交（Level 1-2）
+  const handleOutputExerciseSubmit = useCallback((answer: string, isCorrect?: boolean) => {
+    setOutputExerciseAnswer(answer);
+    if (typeof isCorrect === 'boolean') {
+      setOutputExerciseIsCorrect(isCorrect);
+      // Level 1-2: 根据正确性自动评分
+      const quality = isCorrect ? 4 : 1;
+      handleRating(quality);
+    }
+    // Level 3-4: 由用户在看到反馈后自评
+  }, [handleRating]);
 
   useEffect(() => {
+    // 输出练习模式下，键盘快捷键由子组件处理
+    if (isOutputExerciseMode) return;
+
     if (!isFlipped || isFlashcardComplete || isSubmitting) return;
 
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -185,7 +248,7 @@ function FlashcardReviewContainerContent({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isFlipped, isFlashcardComplete, isSubmitting, handleRating]);
+  }, [isFlipped, isFlashcardComplete, isSubmitting, handleRating, isOutputExerciseMode]);
 
   if (isLoadingFlashcards) {
     return (
@@ -216,40 +279,56 @@ function FlashcardReviewContainerContent({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-8 py-10">
-        <ProgressBar current={flashcardProgress} total={flashcardTotal} isSingleMode={isSingleMode} />
-
-        {currentCard && (
-          <FlashCard
-            card={currentCard}
-            isFlipped={isFlipped}
-            onFlip={handleFlip}
-          />
-        )}
-
-        {isFlashcardComplete && isLoadingMore && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">Loading more cards...</p>
+      {/* 输出练习模式 */}
+      {isOutputExerciseMode && currentCard && outputLevel ? (
+        <div>
+          <div className="max-w-4xl mx-auto px-8 py-6">
+            <ProgressBar current={flashcardProgress} total={flashcardTotal} isSingleMode={isSingleMode} />
           </div>
-        )}
-
-        {isFlipped && currentCard && (
-          <RatingButtons
-            onRate={handleRating}
+          <OutputExerciseView
+            card={currentCard}
+            level={outputLevel}
+            onSubmit={handleOutputExerciseSubmit}
             disabled={isSubmitting}
           />
-        )}
-
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="text-sm text-gray-600 hover:text-gray-800"
-          >
-            ← Back to Dashboard
-          </button>
         </div>
-      </div>
+      ) : (
+        /* 标准闪卡模式 */
+        <div className="max-w-4xl mx-auto px-8 py-10">
+          <ProgressBar current={flashcardProgress} total={flashcardTotal} isSingleMode={isSingleMode} />
+
+          {currentCard && (
+            <FlashCard
+              card={currentCard}
+              isFlipped={isFlipped}
+              onFlip={handleFlip}
+            />
+          )}
+
+          {isFlashcardComplete && isLoadingMore && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+              <p className="text-gray-600">Loading more cards...</p>
+            </div>
+          )}
+
+          {isFlipped && currentCard && (
+            <RatingButtons
+              onRate={handleRating}
+              disabled={isSubmitting}
+            />
+          )}
+
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

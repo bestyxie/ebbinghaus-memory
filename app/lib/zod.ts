@@ -62,6 +62,7 @@ export const cardBaseSchema = z.object({
   interval: z.number().int().min(0),
   easeFactor: z.number().min(1.3),
   repetitions: z.number().int().min(0),
+  outputRepetitions: z.number().int().min(0).default(0),
   state: z.enum(['NEW', 'LEARNING', 'REVIEW', 'RELEARNING']),
   userId: z.string().cuid(),
   createdAt: z.date(),

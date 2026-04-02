@@ -86,3 +86,56 @@ export type UpdateArticleCardInput = z.infer<typeof updateArticleCardSchema>
 export type ArticleCardWithDeck = ArticleCard & {
   deck: DeckMinimal | null
 }
+
+// === 输出练习类型 ===
+
+// 输出练习级别
+export type OutputLevel = 1 | 2 | 3 | 4
+
+// 输出练习数据
+export interface OutputExercise {
+  id: string
+  cardId: string
+  targetWord: string
+  englishSentence: string
+  chineseSentence: string
+  fillBlankTemplate: string
+  wordList: string[]
+  standardAnswer: string
+  contextPrompt: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+// 带输出练习的卡片
+export interface CardWithOutput extends CardWithDeck {
+  outputRepetitions: number
+  outputExercise: OutputExercise | null
+}
+
+// AI 评估结果
+export interface AIEvaluationResult {
+  vocabScore: number // 0-100
+  grammarScore: number // 0-100
+  nativeScore: number // 0-100
+  feedback: string
+  suggestedAnswer: string
+  overall: 'correct' | 'partial' | 'incorrect'
+}
+
+// 输出练习日志
+export interface OutputPracticeLog {
+  id: string
+  cardId: string
+  exerciseId: string
+  userId: string
+  level: OutputLevel
+  isCorrect: boolean
+  userAnswer: string
+  aiVocabScore: number | null
+  aiGrammarScore: number | null
+  aiNativeScore: number | null
+  aiFeedback: string | null
+  aiSuggestedAnswer: string | null
+  practicedAt: Date
+}

@@ -21,6 +21,7 @@ model User {
   decks     Deck[]   // 用户创建的卡组
   cards     Card[]   // 用户拥有的卡片
   logs      ReviewLog[] // 复习记录
+  outputPracticeLogs OutputPracticeLog[] // 输出练习记录
   
   @@unique([email])
   @@map("users")
@@ -148,11 +149,17 @@ model Card {
   // 用于判断是否是"新卡片"或者"熟练卡片"
   repetitions  Int      @default(0)
 
+  // 输出练习连续正确次数 (Output Repetitions)
+  // 用于跟踪翻译/造句等输出练习的熟练度
+  outputRepetitions Int @default(0)
+
   // 卡片状态
   state        CardState @default(NEW)
 
   // --- 关系 ---
   cardDecks    CardDeck[]
+  outputExercise OutputExercise? // 关联输出练习数据
+  outputPracticeLogs OutputPracticeLog[] // 输出练习日志
 
   userId      String
   user        User     @relation(fields: [userId], references: [id])
@@ -167,7 +174,77 @@ model Card {
   @@index([userId, easeFactor]) // 索引：按熟悉度排序
 }
 
-// 5. 复习日志表 (ReviewLog) - 用于生成"热力图"或分析记忆情况
+// 5. 输出练习表 (OutputExercise) - 缓存AI生成的练习题
+model OutputExercise {
+  id        String   @id @default(cuid())
+
+  // 关联的卡片
+  cardId    String   @unique
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  // 目标词汇（从 card.front 提取）
+  targetWord String
+
+  // 示例句子（Level 1-4 共用）
+  englishSentence String // 完整英文句子
+  chineseSentence String // 中文翻译
+
+  // Level 1: 填空题（英语句子，目标词用 _____ 替代）
+  fillBlankTemplate String
+
+  // Level 2: 连词成句（单词数组，按正确顺序）
+  wordList Json // string[]
+
+  // Level 3-4: AI 评估用标准答案
+  standardAnswer String // 标准翻译参考
+
+  // Level 4: 情景造句提示
+  contextPrompt String // 情景描述
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  practiceLogs OutputPracticeLog[] // 关联的练习记录
+
+  @@index([cardId])
+}
+
+// 6. 输出练习日志表 (OutputPracticeLog) - 记录用户输出练习历史
+model OutputPracticeLog {
+  id        String   @id @default(cuid())
+
+  // 关联
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  exerciseId String
+  exercise  OutputExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  // 练习信息
+  level     Int // 1=填空, 2=连词, 3=翻译, 4=情景
+  isCorrect Boolean // 是否正确（Level 1-2 自动判断，3-4 用户自评）
+
+  // 用户答案
+  userAnswer String @db.Text
+
+  // AI 反馈（Level 3-4）
+  aiVocabScore Int? // 词汇使用评分 0-100
+  aiGrammarScore Int? // 语法正确性评分 0-100
+  aiNativeScore Int? // 地道表达评分 0-100
+  aiFeedback String? @db.Text // AI 反馈文本
+  aiSuggestedAnswer String? @db.Text // AI 建议的更好答案
+
+  practicedAt DateTime @default(now())
+
+  @@index([cardId])
+  @@index([userId])
+  @@index([exerciseId])
+}
+
+// 7. 复习日志表 (ReviewLog) - 用于生成"热力图"或分析记忆情况
 model ReviewLog {
   id           String   @id @default(cuid())
   rating       Int      // 用户评分：1(忘记), 2(困难), 3(一般), 4(简单)

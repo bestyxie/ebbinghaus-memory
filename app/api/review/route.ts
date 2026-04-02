@@ -94,11 +94,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { cardId, quality } = body;
+    const { cardId, quality, exerciseId, isOutputCorrect, outputLevel, userAnswer } = body;
 
     // 1. 从数据库获取当前卡片状态
     const card = await prisma.card.findUnique({
       where: { id: cardId },
+      include: {
+        outputExercise: {
+          select: { id: true },
+        },
+      },
     });
 
     if (!card) {
@@ -118,18 +123,41 @@ export async function POST(req: NextRequest) {
       quality: quality,
     });
 
-    // 3. 事务更新：同时更新 卡片状态 和 插入 复习日志
-    await prisma.$transaction([
+    // 3. 计算输出练习次数更新
+    const outputRepetitionsIncrement = isOutputCorrect ? 1 : 0;
+    const newOutputRepetitions = (card.outputRepetitions || 0) + outputRepetitionsIncrement;
+
+    // 4. 准备更新数据
+    const cardUpdateData: {
+      interval: number;
+      repetitions: number;
+      easeFactor: number;
+      nextReviewAt: Date;
+      state: 'RELEARNING' | 'REVIEW';
+      outputRepetitions?: number;
+    } = {
+      interval: result.interval,
+      repetitions: result.repetitions,
+      easeFactor: result.easeFactor,
+      nextReviewAt: result.nextReviewDate,
+      state: quality < 3 ? 'RELEARNING' : 'REVIEW',
+    };
+
+    // 如果是输出练习，更新 outputRepetitions
+    if (exerciseId && typeof isOutputCorrect === 'boolean') {
+      cardUpdateData.outputRepetitions = newOutputRepetitions;
+    }
+
+    // 5. 事务更新：同时更新 卡片状态 和 插入 复习日志
+    const operations: (
+      | ReturnType<typeof prisma.card.update>
+      | ReturnType<typeof prisma.reviewLog.create>
+      | ReturnType<typeof prisma.outputPracticeLog.create>
+    )[] = [
       // A. 更新卡片主表
       prisma.card.update({
         where: { id: cardId },
-        data: {
-          interval: result.interval,
-          repetitions: result.repetitions,
-          easeFactor: result.easeFactor,
-          nextReviewAt: result.nextReviewDate,
-          state: quality < 3 ? 'RELEARNING' : 'REVIEW',
-        },
+        data: cardUpdateData,
       }),
 
       // B. 插入历史记录 (用于统计)
@@ -145,12 +173,40 @@ export async function POST(req: NextRequest) {
           newEaseFactor: result.easeFactor,
         },
       }),
-    ]);
+    ];
+
+    // C. 如果是输出练习，插入输出练习日志
+    // 如果 exerciseId 为 null，尝试通过 cardId 查找
+    let actualExerciseId = exerciseId;
+    if (!actualExerciseId && card.outputExercise) {
+      actualExerciseId = card.outputExercise.id;
+    }
+
+    if (actualExerciseId && outputLevel && userAnswer) {
+      operations.push(
+        prisma.outputPracticeLog.create({
+          data: {
+            cardId: cardId,
+            exerciseId: actualExerciseId,
+            userId: card.userId,
+            level: outputLevel,
+            isCorrect: isOutputCorrect ?? false,
+            userAnswer: userAnswer,
+          },
+        })
+      );
+    }
+
+    await prisma.$transaction(operations);
 
     // Revalidate dashboard to refresh stats (retention rate, due cards)
     revalidatePath('/dashboard');
 
-    return NextResponse.json({ success: true, nextReview: result.nextReviewDate });
+    return NextResponse.json({
+      success: true,
+      nextReview: result.nextReviewDate,
+      newOutputRepetitions: exerciseId ? newOutputRepetitions : undefined,
+    });
 
   } catch (error) {
     console.error(error);
