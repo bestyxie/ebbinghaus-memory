@@ -107,13 +107,7 @@ export function CardRow({ card }: CardRowProps) {
               </span>
             </div>
             <span className="text-[10px] text-slate-500 uppercase font-medium tracking-tight">
-              {isArticleCard && articleMetadata ? (
-                <>
-                  {articleMetadata.wordCount} words · {articleMetadata.blocksCount} blocks
-                </>
-              ) : (
-                getLastReviewedText()
-              )}
+              {getLastReviewedText()}
             </span>
           </div>
         </td>
