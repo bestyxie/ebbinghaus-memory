@@ -6,20 +6,37 @@ import type { OutputExercise } from '@/app/lib/types';
 interface Level1FillBlanksProps {
   exercise: OutputExercise;
   onSubmit: (userAnswer: string, isCorrect: boolean) => void;
+  onContinue?: () => void;
+  showContinue?: boolean;
   disabled: boolean;
 }
 
-export function Level1FillBlanks({ exercise, onSubmit, disabled }: Level1FillBlanksProps) {
+const BLANK_PLACEHOLDER = '_____';
+
+export function Level1FillBlanks({ exercise, onSubmit, onContinue, showContinue, disabled }: Level1FillBlanksProps) {
   const [userAnswer, setUserAnswer] = useState('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
 
+  // 将模板分割为空白前后的文本部分
+  const parts = exercise.fillBlankTemplate.split(BLANK_PLACEHOLDER);
+
   const handleSubmit = () => {
     if (disabled || !userAnswer.trim()) return;
 
-    const trimmedAnswer = userAnswer.trim().toLowerCase();
-    const correctAnswer = exercise.targetWord.toLowerCase();
-    const correct = trimmedAnswer === correctAnswer;
+    const normalize = (s: string) =>
+      s.trim().toLowerCase().replace(/[.,!?;:'"()\-]/g, '');
+
+    const normalizedAnswer = normalize(userAnswer);
+
+    // The actual word in the sentence (extracted by diffing template against sentence)
+    const [before, after] = exercise.fillBlankTemplate.split(BLANK_PLACEHOLDER);
+    const wordInSentence = exercise.englishSentence
+      .slice(before.length, exercise.englishSentence.length - after.length);
+
+    const correct =
+      normalizedAnswer === normalize(exercise.targetWord) ||
+      normalizedAnswer === normalize(wordInSentence);
 
     setIsCorrect(correct);
     setHasSubmitted(true);
@@ -30,6 +47,32 @@ export function Level1FillBlanks({ exercise, onSubmit, disabled }: Level1FillBla
     if (e.key === 'Enter' && !hasSubmitted) {
       handleSubmit();
     }
+  };
+
+  // 渲染带输入框的句子
+  const renderSentenceWithInput = () => {
+    if (hasSubmitted) {
+      // 提交后显示完整句子
+      return (
+        <span className={userAnswer.trim().toLowerCase() === exercise.targetWord.toLowerCase() ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+          {userAnswer || '(空)'}
+        </span>
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        value={userAnswer}
+        onChange={(e) => setUserAnswer(e.target.value)}
+        onKeyPress={handleKeyPress}
+        placeholder="输入单词"
+        disabled={disabled}
+        className="inline-block mx-1 px-2 py-1 text-xl border-b-2 border-blue-400 bg-blue-50 focus:border-blue-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] text-center"
+        style={{ width: Math.max(120, userAnswer.length * 16 + 40) }}
+        autoFocus
+      />
+    );
   };
 
   return (
@@ -53,29 +96,19 @@ export function Level1FillBlanks({ exercise, onSubmit, disabled }: Level1FillBla
           </div>
         </div>
 
-        {/* 填空句子 */}
+        {/* 填空句子 - 直接在句子中输入 */}
         <div className="mb-6">
           <div className="text-sm text-gray-500 mb-2">请填入正确的单词</div>
           <div className="text-xl text-gray-900 p-6 bg-blue-50 rounded-lg leading-relaxed">
-            {exercise.fillBlankTemplate}
+            {parts[0]}
+            {renderSentenceWithInput()}
+            {parts[1] && parts[1]}
           </div>
         </div>
 
-        {/* 答案输入 */}
         {!hasSubmitted ? (
-          <div className="space-y-4">
-            <div>
-              <input
-                type="text"
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="输入目标词汇..."
-                disabled={disabled}
-                className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                autoFocus
-              />
-            </div>
+          <>
+            {/* 提交按钮 */}
             <button
               onClick={handleSubmit}
               disabled={disabled || !userAnswer.trim()}
@@ -83,33 +116,41 @@ export function Level1FillBlanks({ exercise, onSubmit, disabled }: Level1FillBla
             >
               提交答案
             </button>
-          </div>
+            {/* 提示信息 */}
+            <div className="mt-4 text-center text-sm text-gray-500">
+              按 <kbd className="px-2 py-1 bg-gray-200 rounded">Enter</kbd> 提交答案
+            </div>
+          </>
         ) : (
           /* 结果反馈 */
-          <div className={`p-6 rounded-lg ${isCorrect ? 'bg-green-50 border-2 border-green-300' : 'bg-red-50 border-2 border-red-300'}`}>
-            <div className="flex items-start gap-3">
-              <div className={`text-3xl ${isCorrect ? '✅' : '❌'}`} />
-              <div className="flex-1">
-                <div className={`font-semibold text-lg mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                  {isCorrect ? '正确！' : '错误'}
-                </div>
-                {!isCorrect && (
-                  <div className="text-gray-700 mb-2">
-                    正确答案: <span className="font-semibold text-blue-600">{exercise.targetWord}</span>
+          <div className="space-y-4">
+            <div className={`p-6 rounded-lg ${isCorrect ? 'bg-green-50 border-2 border-green-300' : 'bg-red-50 border-2 border-red-300'}`}>
+              <div className="flex items-start gap-3">
+                <div className={`text-2xl ${isCorrect ? '✅' : '❌'}`} />
+                <div className="flex-1">
+                  <div className={`font-semibold text-lg mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                    {isCorrect ? '正确！' : '错误'}
                   </div>
-                )}
-                <div className="text-gray-700">
-                  完整句子: <span className="italic">{exercise.englishSentence}</span>
+                  {!isCorrect && (
+                    <div className="text-gray-700 mb-2">
+                      正确答案: <span className="font-semibold text-blue-600">{exercise.targetWord}</span>
+                    </div>
+                  )}
+                  <div className="text-gray-700">
+                    完整句子: <span className="italic">{exercise.englishSentence}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* 提示信息 */}
-        {!hasSubmitted && (
-          <div className="mt-4 text-center text-sm text-gray-500">
-            按 <kbd className="px-2 py-1 bg-gray-200 rounded">Enter</kbd> 提交答案
+            {showContinue && onContinue && (
+              <button
+                onClick={onContinue}
+                disabled={disabled}
+                className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                继续 →
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -22,11 +22,14 @@ Card {
   nextReviewAt: DateTime  // 下次复习时间
   interval:     number    // 当前间隔（天）
   easeFactor:   number    // 难度系数（默认 2.5）
-  repetitions:  number    // 连续答对次数
+  repetitions:  number    // 连续答对次数（被动识别）
+  outputRepetitions: number // 连续输出练习答对次数（主动产出）
   state:        CardState // NEW | LEARNING | REVIEW | RELEARNING
 
   // 关联
   cardDecks:   CardDeck[] // 所属牌组
+  outputExercise: OutputExercise? // 关联的输出练习数据
+  outputPracticeLogs: OutputPracticeLog[] // 输出练习记录
   userId:      string     // 所有者
   logs:        ReviewLog[] // 复习记录
 

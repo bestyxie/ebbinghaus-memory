@@ -145,6 +145,85 @@ AI 被指示执行以下任务：
 
 ---
 
+---
+
+## 输出练习 AI 功能
+
+### 概述
+
+为每张闪卡 AI 生成结构化输出练习数据，支持 4 级渐进式练习；并对 Level 3（中译英）和 Level 4（情景造句）的用户自由作答进行 AI 评估打分。
+
+### 练习生成
+
+**API 端点**：`POST /api/output-exercises/generate`
+
+**文件**：`/workspace/app/api/output-exercises/generate/route.ts`
+
+**逻辑库**：`/workspace/app/lib/output-exercises.ts` → `generateOutputExercise()`
+
+#### 请求体
+
+```json
+{ "cardId": "clxxx..." }
+```
+
+#### 生成内容（AI 返回结构化 JSON）
+
+| 字段 | 说明 |
+|------|------|
+| `englishSentence` | 使用目标词的完整英文示例句 |
+| `chineseSentence` | 该句子的中文翻译 |
+| `fillBlankTemplate` | 目标词替换为 `_____` 的填空版本 |
+| `wordList` | 句子所有单词+标点的有序数组（Level 2 连词成句用） |
+| `standardAnswer` | 标准参考答案（Level 3-4 评估用） |
+| `contextPrompt` | 情景造句引导提示（中文，Level 4 用） |
+
+练习数据生成后存入 `OutputExercise` 表缓存，同一卡片不会重复生成。
+
+#### AI 调用参数
+
+| 参数 | 值 |
+|------|----|
+| 模型 | GLM-4 |
+| 方式 | `generateObject`（结构化输出） |
+| temperature | 0.7 |
+
+### 答案评估
+
+**API 端点**：`POST /api/output-exercises/evaluate`
+
+**文件**：`/workspace/app/api/output-exercises/evaluate/route.ts`
+
+**逻辑库**：`/workspace/app/lib/output-exercises.ts` → `evaluateOutputAnswer()`
+
+仅用于 Level 3（翻译）和 Level 4（造句）的自由作答评估。
+
+#### 请求体
+
+```json
+{
+  "targetWord": "ephemeral",
+  "standardAnswer": "The beauty of cherry blossoms is ephemeral...",
+  "userAnswer": "用户的输入内容",
+  "level": "3"
+}
+```
+
+#### AI 返回评估结果
+
+```typescript
+{
+  vocabScore:      number  // 词汇使用评分 0-100
+  grammarScore:    number  // 语法正确性评分 0-100
+  nativeScore:     number  // 地道表达评分 0-100
+  feedback:        string  // 文字反馈
+  suggestedAnswer: string  // AI 建议的更好表达
+  overall:         'correct' | 'partial' | 'incorrect'
+}
+```
+
+---
+
 ## 环境变量
 
 | 变量 | 用途 |

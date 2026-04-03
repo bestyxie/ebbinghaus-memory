@@ -10,12 +10,15 @@ import { Level4ContextualPrompt } from './level4-contextual-prompt';
 interface OutputExerciseViewProps {
   card: CardWithDeck;
   level: OutputLevel;
-  onSubmit: (answer: string, isCorrect?: boolean, quality?: number) => void;
+  onSubmit: (answer: string, isCorrect?: boolean, quality?: number, exerciseId?: string | null) => void;
+  onContinue?: () => void;
+  showContinue?: boolean;
   disabled: boolean;
 }
 
-export function OutputExerciseView({ card, level, onSubmit, disabled }: OutputExerciseViewProps) {
+export function OutputExerciseView({ card, level, onSubmit, onContinue, showContinue, disabled }: OutputExerciseViewProps) {
   const [exercise, setExercise] = useState<OutputExercise | null>(null);
+  const [exerciseId, setExerciseId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +39,7 @@ export function OutputExerciseView({ card, level, onSubmit, disabled }: OutputEx
 
       const data = await response.json();
       setExercise(data.exercise);
+      setExerciseId(data.exercise.id);
     } catch (err) {
       console.error('Error loading exercise:', err);
       setError('Failed to load exercise. Please try again.');
@@ -109,7 +113,9 @@ export function OutputExerciseView({ card, level, onSubmit, disabled }: OutputEx
         <div className="min-h-screen bg-gray-50 py-10">
           <Level1FillBlanks
             exercise={exercise}
-            onSubmit={(answer, isCorrect) => onSubmit(answer, isCorrect)}
+            onSubmit={(answer, isCorrect) => onSubmit(answer, isCorrect, undefined, exerciseId)}
+            onContinue={onContinue}
+            showContinue={showContinue}
             disabled={disabled}
           />
         </div>
@@ -119,7 +125,9 @@ export function OutputExerciseView({ card, level, onSubmit, disabled }: OutputEx
         <div className="min-h-screen bg-gray-50 py-10">
           <Level2WordScramble
             exercise={exercise}
-            onSubmit={(answer, isCorrect) => onSubmit(answer, isCorrect)}
+            onSubmit={(answer, isCorrect) => onSubmit(answer, isCorrect, undefined, exerciseId)}
+            onContinue={onContinue}
+            showContinue={showContinue}
             disabled={disabled}
           />
         </div>
@@ -129,7 +137,7 @@ export function OutputExerciseView({ card, level, onSubmit, disabled }: OutputEx
         <div className="min-h-screen bg-gray-50 py-10">
           <Level3FreeTranslation
             exercise={exercise}
-            onSubmit={(answer, quality) => onSubmit(answer, undefined, quality)}
+            onSubmit={(answer, quality) => onSubmit(answer, undefined, quality, exerciseId)}
             onEvaluate={handleEvaluate}
             disabled={disabled}
           />
@@ -140,7 +148,7 @@ export function OutputExerciseView({ card, level, onSubmit, disabled }: OutputEx
         <div className="min-h-screen bg-gray-50 py-10">
           <Level4ContextualPrompt
             exercise={exercise}
-            onSubmit={(answer, quality) => onSubmit(answer, undefined, quality)}
+            onSubmit={(answer, quality) => onSubmit(answer, undefined, quality, exerciseId)}
             onEvaluate={handleEvaluate}
             disabled={disabled}
           />

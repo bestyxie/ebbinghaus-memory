@@ -2,7 +2,7 @@
 
 ## 概述
 
-复习系统是应用的核心功能，实现了基于 SM-2 算法的间隔复习流程。支持闪卡复习和文章复习两种模式，可以混合或单独进行。
+复习系统是应用的核心功能，实现了基于 SM-2 算法的间隔复习流程。支持闪卡复习和文章复习两种模式，可以混合或单独进行。同时集成了**输出练习系统**，在传统翻转卡片评分之后，通过 4 级渐进式输出练习强化主动产出能力。
 
 ---
 
@@ -227,6 +227,105 @@ ReviewLog {
   newEaseFactor:  number    // 复习后的难度系数
 }
 ```
+
+---
+
+---
+
+## 输出练习系统
+
+### 概述
+
+在完成传统闪卡评分后，系统会触发**输出练习（Output Exercises）**，要求用户主动产出目标词汇，而非被动识别。共有 4 个渐进难度等级。
+
+**组件目录**：`/workspace/app/(pages)/review/components/exercises/`
+
+### 4 级练习体系
+
+| 等级 | 名称 | 形式 | 评分方式 |
+|------|------|------|----------|
+| Level 1 | 填空题 | 句子中目标词挖空，用户输入 | 自动判断（精确匹配） |
+| Level 2 | 连词成句 | 打乱的单词块，拖拽/点击排序 | 自动判断（顺序匹配） |
+| Level 3 | 中译英 | 给出中文句，用户翻译成英文 | AI 评估 + 用户自评 |
+| Level 4 | 情景造句 | 给出情景描述，用户用目标词造句 | AI 评估 + 用户自评 |
+
+### 输出练习流程
+
+```
+完成传统闪卡评分
+        │
+        ▼
+POST /api/output-exercises/generate { cardId }
+        │
+        ├── 已有缓存练习 ──▶ 直接返回
+        │
+        └── 无缓存 ──▶ 调用 Zhipu GLM-4 生成 ──▶ 存入 OutputExercise 表
+        │
+        ▼
+OutputExerciseView 展示练习
+        │
+        ├── Level 1 (FillBlanks)
+        │   用户填写 ──▶ 前端自动判断 ──▶ 显示对错
+        │
+        ├── Level 2 (WordScramble)
+        │   用户排序 ──▶ 前端自动判断 ──▶ 显示对错
+        │
+        ├── Level 3 (FreeTranslation)
+        │   用户翻译 ──▶ POST /api/output-exercises/evaluate ──▶ AI 反馈
+        │   用户自评"正确"/"错误"
+        │
+        └── Level 4 (ContextualPrompt)
+            用户造句 ──▶ POST /api/output-exercises/evaluate ──▶ AI 反馈
+            用户自评"正确"/"错误"
+        │
+        ▼
+POST /api/review {
+  cardId, quality,
+  exerciseId, isOutputCorrect, outputLevel, userAnswer,
+  aiVocabScore?, aiGrammarScore?, aiNativeScore?, aiFeedback?, aiSuggestedAnswer?
+}
+        │
+        ▼
+更新 card.outputRepetitions
+写入 OutputPracticeLog
+```
+
+### 练习数据来源
+
+AI（Zhipu GLM-4）为每张卡片生成一套练习数据，缓存在 `OutputExercise` 表中，包含：
+
+| 字段 | 用途 |
+|------|------|
+| `englishSentence` | Level 1-4 的完整示例句子 |
+| `chineseSentence` | Level 3 翻译练习的中文原文 |
+| `fillBlankTemplate` | Level 1 填空模板（目标词替换为 `_____`） |
+| `wordList` | Level 2 打乱的单词数组 |
+| `standardAnswer` | Level 3-4 AI 评估参考答案 |
+| `contextPrompt` | Level 4 情景造句提示（中文） |
+
+### 练习提交 API 扩展
+
+`POST /api/review` 在原有评分字段基础上新增可选字段：
+
+```json
+{
+  "cardId": "clxxx...",
+  "quality": 4,
+  "exerciseId": "clyyy...",
+  "isOutputCorrect": true,
+  "outputLevel": 1,
+  "userAnswer": "ephemeral",
+  "aiVocabScore": 90,
+  "aiGrammarScore": 85,
+  "aiNativeScore": 80,
+  "aiFeedback": "表达自然，词汇使用准确",
+  "aiSuggestedAnswer": "..."
+}
+```
+
+### outputRepetitions 连续正确次数
+
+`Card.outputRepetitions` 记录输出练习的连续正确次数，与 `repetitions`（被动识别）分开追踪，反映主动产出的熟练程度。
 
 ---
 

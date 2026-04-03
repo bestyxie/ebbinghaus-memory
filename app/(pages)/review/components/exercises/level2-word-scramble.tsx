@@ -6,10 +6,12 @@ import type { OutputExercise } from '@/app/lib/types';
 interface Level2WordScrambleProps {
   exercise: OutputExercise;
   onSubmit: (userAnswer: string, isCorrect: boolean) => void;
+  onContinue?: () => void;
+  showContinue?: boolean;
   disabled: boolean;
 }
 
-export function Level2WordScramble({ exercise, onSubmit, disabled }: Level2WordScrambleProps) {
+export function Level2WordScramble({ exercise, onSubmit, onContinue, showContinue, disabled }: Level2WordScrambleProps) {
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [availableWords, setAvailableWords] = useState<string[]>([...exercise.wordList]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -50,12 +52,10 @@ export function Level2WordScramble({ exercise, onSubmit, disabled }: Level2WordS
     if (disabled || selectedWords.length === 0) return;
 
     const userAnswer = selectedWords.join(' ');
-    const correctAnswer = exercise.englishSentence.toLowerCase().replace(/\s+/g, ' ');
-    const normalizedUserAnswer = userAnswer.toLowerCase().replace(/\s+/g, ' ');
 
-    // 允许标点符号的微小差异
-    const correct = normalizedUserAnswer === correctAnswer ||
-                   normalizedUserAnswer.replace(/[.,!?]/g, '') === correctAnswer.replace(/[.,!?]/g, '');
+    // 只比较实际单词，忽略标点符号（AI wordList 将标点作为独立 token，join 后会有空格）
+    const extractWords = (s: string) => (s.toLowerCase().match(/[a-z']+/g) ?? []);
+    const correct = JSON.stringify(extractWords(userAnswer)) === JSON.stringify(extractWords(exercise.englishSentence));
 
     setIsCorrect(correct);
     setHasSubmitted(true);
@@ -141,25 +141,36 @@ export function Level2WordScramble({ exercise, onSubmit, disabled }: Level2WordS
           </div>
         ) : (
           /* 结果反馈 */
-          <div className={`p-6 rounded-lg ${isCorrect ? 'bg-green-50 border-2 border-green-300' : 'bg-red-50 border-2 border-red-300'}`}>
-            <div className="flex items-start gap-3">
-              <div className={`text-3xl ${isCorrect ? '✅' : '❌'}`} />
-              <div className="flex-1">
-                <div className={`font-semibold text-lg mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                  {isCorrect ? '完全正确！' : '顺序错误'}
+          <div className="space-y-4">
+            <div className={`p-6 rounded-lg ${isCorrect ? 'bg-green-50 border-2 border-green-300' : 'bg-red-50 border-2 border-red-300'}`}>
+              <div className="flex items-start gap-3">
+                <div className={`text-3xl ${isCorrect ? '✅' : '❌'}`} />
+                <div className="flex-1">
+                  <div className={`font-semibold text-lg mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                    {isCorrect ? '完全正确！' : '顺序错误'}
+                  </div>
+                  {!isCorrect && (
+                    <>
+                      <div className="text-gray-700 mb-2">
+                        你的答案: <span className="italic">{selectedWords.join(' ')}</span>
+                      </div>
+                      <div className="text-gray-700">
+                        正确答案: <span className="font-semibold text-purple-600">{exercise.englishSentence}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-                {!isCorrect && (
-                  <>
-                    <div className="text-gray-700 mb-2">
-                      你的答案: <span className="italic">{selectedWords.join(' ')}</span>
-                    </div>
-                    <div className="text-gray-700">
-                      正确答案: <span className="font-semibold text-purple-600">{exercise.englishSentence}</span>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
+            {showContinue && onContinue && (
+              <button
+                onClick={onContinue}
+                disabled={disabled}
+                className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                继续 →
+              </button>
+            )}
           </div>
         )}
       </div>

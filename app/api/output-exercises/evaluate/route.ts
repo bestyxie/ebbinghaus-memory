@@ -8,7 +8,7 @@ const evaluateRequestSchema = z.object({
   targetWord: z.string().min(1),
   standardAnswer: z.string().min(1),
   userAnswer: z.string().min(1),
-  level: z.enum(['1', '2', '3', '4']).transform((v) => parseInt(v) as 1 | 2 | 3 | 4),
+  level: z.union([z.number(), z.string()]).transform((v) => parseInt(String(v)) as 1 | 2 | 3 | 4),
 });
 
 /**

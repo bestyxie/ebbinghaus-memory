@@ -116,16 +116,39 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. 运行核心算法
-    const result = calculateReview({
-      interval: card.interval,
-      repetitions: card.repetitions,
-      easeFactor: card.easeFactor,
-      quality: quality,
-    });
+    // 重复度（repetitions）只在闪卡评分时更新，输出练习不更新
+    let result;
+    if (exerciseId && typeof isOutputCorrect === 'boolean') {
+      // 输出练习：不更新 repetitions，只更新 easeFactor（根据用户自评）
+      // 保持 interval 和 nextReviewAt 不变
+      const efResult = calculateReview({
+        interval: card.interval,
+        repetitions: card.repetitions,
+        easeFactor: card.easeFactor,
+        quality: quality,
+      });
+
+      result = {
+        interval: card.interval,        // 保持原间隔
+        repetitions: card.repetitions,  // 不更新 repetitions
+        easeFactor: efResult.easeFactor, // 更新 easeFactor
+        nextReviewDate: card.nextReviewAt, // 保持原复习时间
+      };
+    } else {
+      // 闪卡评分：正常更新所有字段
+      result = calculateReview({
+        interval: card.interval,
+        repetitions: card.repetitions,
+        easeFactor: card.easeFactor,
+        quality: quality,
+      });
+    }
 
     // 3. 计算输出练习次数更新
-    const outputRepetitionsIncrement = isOutputCorrect ? 1 : 0;
-    const newOutputRepetitions = (card.outputRepetitions || 0) + outputRepetitionsIncrement;
+    // 正确: +1，错误: 重置为 0 (需要连续正确才能进阶)
+    const newOutputRepetitions = isOutputCorrect
+      ? (card.outputRepetitions || 0) + 1
+      : 0;
 
     // 4. 准备更新数据
     const cardUpdateData: {

@@ -31,26 +31,44 @@
 │ readTimeMins  totalStudyTimeMs  │
 │ nextReviewAt  interval          │
 │ easeFactor    repetitions       │
+│ outputRepetitions               │
 │ state                           │
 │ userId                          │
 └─────────────────────────────────┘
-      │                │
-      │ 1───N          │ M───N (via CardDeck)
-      ▼                ▼
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│  ReviewLog   │  │   CardDeck   │  │     Deck     │
-│ ──────────── │  │ ──────────── │  │ ──────────── │
-│ id           │  │ cardId (PK)  │  │ id           │
-│ rating       │  │ deckId (PK)  │  │ title        │
-│ reviewTime   │  └──────────────┘  │ description  │
-│ reviewedAt   │                    │ color        │
-│ scheduledDays│                    │ isPublic     │
-│ elapsedDays  │                    │ deletedAt?   │
-│ lastEaseFactor│                   │ userId       │
-│ newEaseFactor │                   └──────────────┘
-│ cardId       │
-│ userId       │
-└──────────────┘
+      │        │         │
+      │ 1───N  │ M───N   │ 1───1
+      ▼        ▼         ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+│  ReviewLog   │  │   CardDeck   │  │     Deck     │  │  OutputExercise  │
+│ ──────────── │  │ ──────────── │  │ ──────────── │  │ ──────────────── │
+│ id           │  │ cardId (PK)  │  │ id           │  │ id               │
+│ rating       │  │ deckId (PK)  │  │ title        │  │ cardId (unique)  │
+│ reviewTime   │  └──────────────┘  │ description  │  │ targetWord       │
+│ reviewedAt   │                    │ color        │  │ englishSentence  │
+│ scheduledDays│                    │ isPublic     │  │ chineseSentence  │
+│ elapsedDays  │                    │ deletedAt?   │  │ fillBlankTemplate│
+│ lastEaseFactor│                   │ userId       │  │ wordList (JSON)  │
+│ newEaseFactor │                   └──────────────┘  │ standardAnswer   │
+│ cardId       │                                      │ contextPrompt    │
+│ userId       │                                      └──────────────────┘
+└──────────────┘                                              │ 1───N
+                                                              ▼
+                                                   ┌──────────────────────┐
+                                                   │  OutputPracticeLog   │
+                                                   │ ──────────────────── │
+                                                   │ id                   │
+                                                   │ cardId               │
+                                                   │ exerciseId           │
+                                                   │ userId               │
+                                                   │ level (1-4)          │
+                                                   │ isCorrect            │
+                                                   │ userAnswer           │
+                                                   │ aiVocabScore?        │
+                                                   │ aiGrammarScore?      │
+                                                   │ aiNativeScore?       │
+                                                   │ aiFeedback?          │
+                                                   │ aiSuggestedAnswer?   │
+                                                   └──────────────────────┘
 ```
 
 ---
@@ -156,10 +174,13 @@ model Card {
   nextReviewAt DateTime  @default(now())
   interval     Int       @default(0)
   easeFactor   Float     @default(2.5)
-  repetitions  Int       @default(0)
+  repetitions       Int       @default(0)
+  outputRepetitions Int       @default(0)
   state        CardState @default(NEW)
 
-  cardDecks CardDeck[]
+  cardDecks    CardDeck[]
+  outputExercise OutputExercise?
+  outputPracticeLogs OutputPracticeLog[]
   userId    String
   user      User      @relation(fields: [userId], references: [id])
   logs      ReviewLog[]
@@ -315,6 +336,82 @@ model Verification {
 ```
 
 存储邮件验证、密码重置等场景的临时验证码（由 better-auth 管理）。
+
+---
+
+### OutputExercise（输出练习缓存）
+
+```prisma
+model OutputExercise {
+  id        String   @id @default(cuid())
+  cardId    String   @unique
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  targetWord        String
+  englishSentence   String
+  chineseSentence   String
+  fillBlankTemplate String
+  wordList          Json         // string[]
+  standardAnswer    String
+  contextPrompt     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  practiceLogs OutputPracticeLog[]
+
+  @@index([cardId])
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `cardId` | 唯一：每张卡片最多对应一条练习记录（缓存） |
+| `fillBlankTemplate` | Level 1 填空模板，目标词替换为 `_____` |
+| `wordList` | Level 2 单词数组，JSON 格式存储 |
+| `standardAnswer` | Level 3-4 AI 评估参考答案 |
+| `contextPrompt` | Level 4 情景描述，中文，由 AI 生成 |
+
+---
+
+### OutputPracticeLog（输出练习日志）
+
+```prisma
+model OutputPracticeLog {
+  id         String   @id @default(cuid())
+  cardId     String
+  exerciseId String
+  userId     String
+  level      Int              // 1=填空, 2=连词, 3=翻译, 4=情景
+  isCorrect  Boolean
+  userAnswer String   @db.Text
+
+  // AI 反馈（Level 3-4）
+  aiVocabScore      Int?
+  aiGrammarScore    Int?
+  aiNativeScore     Int?
+  aiFeedback        String? @db.Text
+  aiSuggestedAnswer String? @db.Text
+
+  practicedAt DateTime @default(now())
+
+  card     Card           @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  exercise OutputExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id])
+
+  @@index([cardId])
+  @@index([userId])
+  @@index([exerciseId])
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `level` | 练习等级：1 填空、2 连词、3 翻译、4 情景造句 |
+| `isCorrect` | Level 1-2 自动判断，Level 3-4 用户自评 |
+| `aiVocabScore` | AI 词汇使用评分 (0-100)，仅 Level 3-4 |
+| `aiGrammarScore` | AI 语法正确性评分 (0-100)，仅 Level 3-4 |
+| `aiNativeScore` | AI 地道表达评分 (0-100)，仅 Level 3-4 |
 
 ---
 

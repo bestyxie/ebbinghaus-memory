@@ -1,3 +1,5 @@
+"use client"
+
 import type { Metadata } from "next";
 import { Agentation } from "agentation";
 import "./globals.css";
@@ -16,7 +18,12 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         {children}
-        {process.env.NODE_ENV === "development" && <Agentation />}
+        {process.env.NODE_ENV === "development" && <Agentation
+          endpoint="http://localhost:4747"
+          onSessionCreated={(sessionId) => {
+            console.log("Session started:", sessionId);
+          }}
+        />}
       </body>
     </html>
   );

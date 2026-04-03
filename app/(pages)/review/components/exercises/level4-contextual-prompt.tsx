@@ -173,27 +173,42 @@ export function Level4ContextualPrompt({ exercise, onSubmit, onEvaluate, disable
               <div className="text-sm text-gray-600 mb-3 text-center">
                 参考AI反馈后，请为你的答案评分
               </div>
-              <div className="flex justify-center gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <button
                   onClick={() => handleSubmit(1)}
                   disabled={disabled}
-                  className="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
+                  className="flex flex-col items-center gap-1 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-lg disabled:opacity-50 transition"
                 >
-                  需加强
+                  <span className="text-2xl">😰</span>
+                  <span className="text-sm">完全不会</span>
+                  <span className="text-xs opacity-70">重学</span>
                 </button>
                 <button
                   onClick={() => handleSubmit(2)}
                   disabled={disabled}
-                  className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 disabled:opacity-50 transition"
+                  className="flex flex-col items-center gap-1 px-4 py-3 bg-orange-50 hover:bg-orange-100 text-orange-700 font-semibold rounded-lg disabled:opacity-50 transition"
                 >
-                  有进步
+                  <span className="text-2xl">🤔</span>
+                  <span className="text-sm">有难度</span>
+                  <span className="text-xs opacity-70">需巩固</span>
                 </button>
                 <button
                   onClick={() => handleSubmit(3)}
                   disabled={disabled}
-                  className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 disabled:opacity-50 transition"
+                  className="flex flex-col items-center gap-1 px-4 py-3 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 font-semibold rounded-lg disabled:opacity-50 transition"
                 >
-                  掌握良好
+                  <span className="text-2xl">👍</span>
+                  <span className="text-sm">基本掌握</span>
+                  <span className="text-xs opacity-70">还行</span>
+                </button>
+                <button
+                  onClick={() => handleSubmit(4)}
+                  disabled={disabled}
+                  className="flex flex-col items-center gap-1 px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 font-semibold rounded-lg disabled:opacity-50 transition"
+                >
+                  <span className="text-2xl">😊</span>
+                  <span className="text-sm">完全掌握</span>
+                  <span className="text-xs opacity-70">很好</span>
                 </button>
               </div>
             </div>
