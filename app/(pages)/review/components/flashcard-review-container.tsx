@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FlashcardStandardView } from './flashcard-standard-view';
 import { OutputExerciseView } from './exercises';
-import { ProgressBar } from './progress-bar';
 import { ReviewSession, OutputLevel } from '@/app/lib/types';
 import { getOutputLevel } from '@/app/lib/output-exercises';
 import { REVIEW_BATCH_SIZE } from '@/app/lib/constants';
@@ -292,7 +291,7 @@ function FlashcardReviewContainerContent({
     );
   }
 
-  // 单个模式的标题 UI
+  // 单个模式的标题 UI（普通模式的进度条在 FlashcardStandardView 中显示）
   const singleModeHeader = isSingleMode ? (
     <div className="max-w-4xl mx-auto px-8 py-6">
       <div className="mb-8">
@@ -311,12 +310,7 @@ function FlashcardReviewContainerContent({
         </div>
       </div>
     </div>
-  ) : (
-    /* 普通模式的进度条 */
-    <div className="max-w-4xl mx-auto px-8 py-6">
-      <ProgressBar current={flashcardProgress} total={flashcardTotal} />
-    </div>
-  );
+  ) : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
