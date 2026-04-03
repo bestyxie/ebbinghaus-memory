@@ -153,6 +153,11 @@ model Card {
   // 用于跟踪翻译/造句等输出练习的熟练度
   outputRepetitions Int @default(0)
 
+  // --- 输出轨道 SM-2 状态 (当 repetitions >= 3 后激活) ---
+  outputInterval     Int       @default(0)   // 输出轨道间隔天数
+  outputEaseFactor   Float     @default(2.5) // 输出轨道易记因子
+  outputNextReviewAt DateTime?               // 输出轨道下次复习时间 (null = 未激活)
+
   // 卡片状态
   state        CardState @default(NEW)
 

@@ -222,27 +222,13 @@ export async function evaluateOutputAnswer(
 // === 工具函数 ===
 
 /**
- * 根据卡片的复习次数和输出练习次数，确定应该显示的输出练习级别
+ * 根据输出轨道的连续正确次数，确定输出练习的级别
+ * 仅在 mode === 'output' 时调用（时机判断由后端展开逻辑负责）
  *
- * @param repetitions - 卡片的连续正确次数（标准SRS）
- * @param outputRepetitions - 输出练习的连续正确次数
- * @returns 练习级别或 null（表示不显示输出练习）
+ * @param outputRepetitions - 输出轨道的连续正确次数
+ * @returns 练习级别 1-4
  */
-export function getOutputLevel(
-  repetitions: number,
-  outputRepetitions: number
-): OutputLevel | null {
-  // 0-1次正确复习：标准闪卡
-  if (repetitions <= 1) {
-    return null;
-  }
-
-  // 2-3次正确复习：Level 1（填空）
-  if (repetitions <= 3) {
-    return 1;
-  }
-
-  // 4次以上：根据输出练习次数进阶
+export function getOutputLevel(outputRepetitions: number): OutputLevel {
   if (outputRepetitions <= 1) return 1;
   if (outputRepetitions <= 3) return 2;
   if (outputRepetitions <= 5) return 3;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
-import { calculateReview } from '@/app/lib/srs-algorithm';
-import { ReviewSession } from '@/app/lib/types';
+import { calculateReview, OUTPUT_TRACK_ACTIVATION_THRESHOLD, OUTPUT_TRACK_INITIAL } from '@/app/lib/srs-algorithm';
+import { ReviewSession, ReviewItem } from '@/app/lib/types';
 import { revalidatePath } from 'next/cache';
 import { requireAuth } from '@/app/lib/api-helpers';
 import { REVIEW_BATCH_SIZE } from '@/app/lib/constants';
@@ -14,66 +14,81 @@ export async function GET(request: NextRequest): Promise<NextResponse<ReviewSess
   try {
     const { searchParams } = new URL(request.url);
 
-    // Support batched fetching with pagination
     const cursor = searchParams.get('cursor');
     const isFirstBatch = !cursor;
 
-    // Fetch due flashcards
+    const now = new Date();
+
+    // 两个轨道任意一个到期即需要复习
     const where = {
       userId,
       cardType: 'FLASHCARD' as const,
-      nextReviewAt: { lte: new Date() },
+      OR: [
+        { nextReviewAt: { lte: now } },
+        { outputNextReviewAt: { lte: now } },
+      ],
     };
 
     const cards = await prisma.card.findMany({
       where,
       orderBy: { nextReviewAt: 'asc' },
-      take: REVIEW_BATCH_SIZE + 1, // Fetch one extra to check if there are more
+      take: REVIEW_BATCH_SIZE + 1,
       ...(cursor && {
         skip: 1,
         cursor: { id: cursor },
       }),
       include: {
         cardDecks: {
-          where: {
-            deck: {
-              deletedAt: null,
-            },
-          },
+          where: { deck: { deletedAt: null } },
           include: {
             deck: {
-              select: {
-                id: true,
-                title: true,
-                color: true,
-              },
+              select: { id: true, title: true, color: true },
             },
           },
         },
       },
     });
 
-    // Transform cardDecks to deck (single deck per card for now)
-    const transformedCards = cards.map((card) => ({
-      ...card,
-      deck: card.cardDecks[0]?.deck || null, // Take first deck, or null
-    }));
+    // 展开为 ReviewItem：两轨都到期时产生两个项（input 在前，output 在后）
+    const allItems: ReviewItem[] = [];
+    for (const card of cards) {
+      const base = { ...card, deck: card.cardDecks[0]?.deck || null };
+      if (card.nextReviewAt <= now) {
+        allItems.push({ ...base, mode: 'input' });
+      }
+      if (card.outputNextReviewAt && card.outputNextReviewAt <= now) {
+        allItems.push({ ...base, mode: 'output' });
+      }
+    }
 
-    // Handle pagination
-    const hasMore = transformedCards.length > REVIEW_BATCH_SIZE;
-    const batchCards = hasMore ? transformedCards.slice(0, REVIEW_BATCH_SIZE) : transformedCards;
-    const nextCursor = hasMore ? batchCards[REVIEW_BATCH_SIZE - 1].id : undefined;
+    // 分页：以 ReviewItem 数量为准
+    const hasMore = allItems.length > REVIEW_BATCH_SIZE;
+    const batchItems = hasMore ? allItems.slice(0, REVIEW_BATCH_SIZE) : allItems;
 
-    const sessionCards = batchCards;
+    // cursor 仍然以卡片 id 为基准（取最后一个不同卡片的 id）
+    const lastCard = hasMore ? cards[REVIEW_BATCH_SIZE - 1] : undefined;
+    const nextCursor = lastCard?.id;
 
-    // Get total count for progress bar (only on first request)
-    let total = sessionCards.length;
+    // 总数：计算 ReviewItem 总数
+    let total = batchItems.length;
     if (isFirstBatch) {
-      total = await prisma.card.count({ where });
+      const allCards = await prisma.card.findMany({
+        where,
+        select: {
+          nextReviewAt: true,
+          outputNextReviewAt: true,
+        },
+      });
+      total = allCards.reduce((sum, c) => {
+        let count = 0;
+        if (c.nextReviewAt <= now) count++;
+        if (c.outputNextReviewAt && c.outputNextReviewAt <= now) count++;
+        return sum + count;
+      }, 0);
     }
 
     return NextResponse.json({
-      cards: sessionCards,
+      items: batchItems,
       total,
       hasMore,
       nextCursor,
@@ -94,142 +109,138 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { cardId, quality, exerciseId, isOutputCorrect, outputLevel, userAnswer } = body;
+    const { cardId, quality, mode, exerciseId, outputLevel, userAnswer, isOutputCorrect } = body;
 
-    // 1. 从数据库获取当前卡片状态
     const card = await prisma.card.findUnique({
       where: { id: cardId },
       include: {
-        outputExercise: {
-          select: { id: true },
-        },
+        outputExercise: { select: { id: true } },
       },
     });
 
     if (!card) {
       return NextResponse.json({ error: 'Card not found' }, { status: 404 });
     }
-
-    // Verify card belongs to user
     if (card.userId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // 2. 运行核心算法
-    // 重复度（repetitions）只在闪卡评分时更新，输出练习不更新
-    let result;
-    if (exerciseId && typeof isOutputCorrect === 'boolean') {
-      // 输出练习：不更新 repetitions，只更新 easeFactor（根据用户自评）
-      // 保持 interval 和 nextReviewAt 不变
-      const efResult = calculateReview({
-        interval: card.interval,
-        repetitions: card.repetitions,
-        easeFactor: card.easeFactor,
-        quality: quality,
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (mode === 'output') {
+      // === 输出轨道 ===
+      const result = calculateReview({
+        interval: card.outputInterval,
+        repetitions: card.outputRepetitions,
+        easeFactor: card.outputEaseFactor,
+        quality,
       });
 
-      result = {
-        interval: card.interval,        // 保持原间隔
-        repetitions: card.repetitions,  // 不更新 repetitions
-        easeFactor: efResult.easeFactor, // 更新 easeFactor
-        nextReviewDate: card.nextReviewAt, // 保持原复习时间
+      const newOutputRepetitions = (isOutputCorrect ?? quality >= 3)
+        ? card.outputRepetitions + 1
+        : 0;
+
+      const cardUpdateData = {
+        outputInterval: result.interval,
+        outputRepetitions: newOutputRepetitions,
+        outputEaseFactor: result.easeFactor,
+        outputNextReviewAt: result.nextReviewDate,
+        // 输入轨道字段保持不变
       };
+
+      // 解析 exerciseId（支持传入或从 card 查找）
+      const actualExerciseId = exerciseId || card.outputExercise?.id;
+
+      const operations = [
+        prisma.card.update({ where: { id: cardId }, data: cardUpdateData }),
+        prisma.reviewLog.create({
+          data: {
+            cardId,
+            userId: card.userId,
+            rating: quality,
+            reviewTime: 0,
+            scheduledDays: card.outputInterval,
+            elapsedDays: result.interval,
+            lastEaseFactor: card.outputEaseFactor,
+            newEaseFactor: result.easeFactor,
+          },
+        }),
+        ...(actualExerciseId && outputLevel && userAnswer
+          ? [prisma.outputPracticeLog.create({
+              data: {
+                cardId,
+                exerciseId: actualExerciseId,
+                userId: card.userId,
+                level: outputLevel,
+                isCorrect: isOutputCorrect ?? quality >= 3,
+                userAnswer,
+              },
+            })]
+          : []),
+      ];
+
+      await prisma.$transaction(operations);
+      revalidatePath('/dashboard');
+
+      return NextResponse.json({
+        success: true,
+        nextReview: result.nextReviewDate,
+        newOutputRepetitions,
+      });
+
     } else {
-      // 闪卡评分：正常更新所有字段
-      result = calculateReview({
+      // === 输入轨道 ===
+      const result = calculateReview({
         interval: card.interval,
         repetitions: card.repetitions,
         easeFactor: card.easeFactor,
-        quality: quality,
+        quality,
+      });
+
+      const cardUpdateData: Parameters<typeof prisma.card.update>[0]['data'] = {
+        interval: result.interval,
+        repetitions: result.repetitions,
+        easeFactor: result.easeFactor,
+        nextReviewAt: result.nextReviewDate,
+        state: quality < 3 ? 'RELEARNING' : 'REVIEW',
+      };
+
+      // 激活输出轨道：首次达到阈值且尚未激活
+      if (
+        result.repetitions >= OUTPUT_TRACK_ACTIVATION_THRESHOLD &&
+        !card.outputNextReviewAt
+      ) {
+        cardUpdateData.outputInterval = OUTPUT_TRACK_INITIAL.interval;
+        cardUpdateData.outputRepetitions = OUTPUT_TRACK_INITIAL.repetitions;
+        cardUpdateData.outputEaseFactor = OUTPUT_TRACK_INITIAL.easeFactor;
+        cardUpdateData.outputNextReviewAt = tomorrow;
+      }
+
+      await prisma.$transaction([
+        prisma.card.update({ where: { id: cardId }, data: cardUpdateData }),
+        prisma.reviewLog.create({
+          data: {
+            cardId,
+            userId: card.userId,
+            rating: quality,
+            reviewTime: 0,
+            scheduledDays: card.interval,
+            elapsedDays: result.interval,
+            lastEaseFactor: card.easeFactor,
+            newEaseFactor: result.easeFactor,
+          },
+        }),
+      ]);
+
+      revalidatePath('/dashboard');
+
+      return NextResponse.json({
+        success: true,
+        nextReview: result.nextReviewDate,
+        outputTrackActivated: !card.outputNextReviewAt && result.repetitions >= OUTPUT_TRACK_ACTIVATION_THRESHOLD,
       });
     }
-
-    // 3. 计算输出练习次数更新
-    // 正确: +1，错误: 重置为 0 (需要连续正确才能进阶)
-    const newOutputRepetitions = isOutputCorrect
-      ? (card.outputRepetitions || 0) + 1
-      : 0;
-
-    // 4. 准备更新数据
-    const cardUpdateData: {
-      interval: number;
-      repetitions: number;
-      easeFactor: number;
-      nextReviewAt: Date;
-      state: 'RELEARNING' | 'REVIEW';
-      outputRepetitions?: number;
-    } = {
-      interval: result.interval,
-      repetitions: result.repetitions,
-      easeFactor: result.easeFactor,
-      nextReviewAt: result.nextReviewDate,
-      state: quality < 3 ? 'RELEARNING' : 'REVIEW',
-    };
-
-    // 如果是输出练习，更新 outputRepetitions
-    if (exerciseId && typeof isOutputCorrect === 'boolean') {
-      cardUpdateData.outputRepetitions = newOutputRepetitions;
-    }
-
-    // 5. 事务更新：同时更新 卡片状态 和 插入 复习日志
-    const operations: (
-      | ReturnType<typeof prisma.card.update>
-      | ReturnType<typeof prisma.reviewLog.create>
-      | ReturnType<typeof prisma.outputPracticeLog.create>
-    )[] = [
-      // A. 更新卡片主表
-      prisma.card.update({
-        where: { id: cardId },
-        data: cardUpdateData,
-      }),
-
-      // B. 插入历史记录 (用于统计)
-      prisma.reviewLog.create({
-        data: {
-          cardId: cardId,
-          userId: card.userId,
-          rating: quality,
-          reviewTime: 0,
-          scheduledDays: card.interval,
-          elapsedDays: result.interval,
-          lastEaseFactor: card.easeFactor,
-          newEaseFactor: result.easeFactor,
-        },
-      }),
-    ];
-
-    // C. 如果是输出练习，插入输出练习日志
-    // 如果 exerciseId 为 null，尝试通过 cardId 查找
-    let actualExerciseId = exerciseId;
-    if (!actualExerciseId && card.outputExercise) {
-      actualExerciseId = card.outputExercise.id;
-    }
-
-    if (actualExerciseId && outputLevel && userAnswer) {
-      operations.push(
-        prisma.outputPracticeLog.create({
-          data: {
-            cardId: cardId,
-            exerciseId: actualExerciseId,
-            userId: card.userId,
-            level: outputLevel,
-            isCorrect: isOutputCorrect ?? false,
-            userAnswer: userAnswer,
-          },
-        })
-      );
-    }
-
-    await prisma.$transaction(operations);
-
-    // Revalidate dashboard to refresh stats (retention rate, due cards)
-    revalidatePath('/dashboard');
-
-    return NextResponse.json({
-      success: true,
-      nextReview: result.nextReviewDate,
-      newOutputRepetitions: exerciseId ? newOutputRepetitions : undefined,
-    });
 
   } catch (error) {
     console.error(error);

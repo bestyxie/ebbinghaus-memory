@@ -49,7 +49,7 @@ function ReviewPageContent() {
           setIsLoadingFlashcards(false);
 
           // Auto-transition to articles if no flashcards (Review All mode)
-          if (typeParam === null && data.cards.length === 0 && !data.hasMore) {
+          if (typeParam === null && data.items.length === 0 && !data.hasMore) {
             setMode('article');
           }
         }
@@ -64,7 +64,7 @@ function ReviewPageContent() {
     if (isLoadingFlashcards) return;
     if ((typeParam === 'flashcard' || typeParam === null) && session === null) return;
 
-    const hasFlashcards = (session?.cards?.length ?? 0) > 0 || session?.hasMore;
+    const hasFlashcards = (session?.items?.length ?? 0) > 0 || session?.hasMore;
 
     // Flashcards Only mode - no flashcards available
     if (typeParam === 'flashcard' && !hasFlashcards) {

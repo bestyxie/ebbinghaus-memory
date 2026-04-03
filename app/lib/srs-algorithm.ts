@@ -1,5 +1,15 @@
 // src/lib/srs-algorithm.ts
 
+// 输出轨道激活阈值：输入轨道连续正确 3 次后激活
+export const OUTPUT_TRACK_ACTIVATION_THRESHOLD = 3;
+
+// 输出轨道初始值
+export const OUTPUT_TRACK_INITIAL = {
+  interval: 1,
+  repetitions: 0,
+  easeFactor: 2.5,
+};
+
 export interface ReviewInput {
   interval: number;    // 上次复习间隔天数
   repetitions: number; // 连续正确次数

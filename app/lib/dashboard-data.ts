@@ -37,6 +37,9 @@ export const getCardsData = cache(async (
     easeFactor: number;
     repetitions: number;
     outputRepetitions: number | null;
+    outputInterval: number | null;
+    outputEaseFactor: number | null;
+    outputNextReviewAt: Date | null;
     state: string;
     userId: string;
     createdAt: Date;
@@ -57,7 +60,8 @@ export const getCardsData = cache(async (
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
           c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
-          c.repetitions, c."outputRepetitions", c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
+          c.repetitions, c."outputRepetitions", c."outputInterval", c."outputEaseFactor", c."outputNextReviewAt",
+          c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
         FROM "Card" c
@@ -71,7 +75,8 @@ export const getCardsData = cache(async (
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
           c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
-          c.repetitions, c."outputRepetitions", c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
+          c.repetitions, c."outputRepetitions", c."outputInterval", c."outputEaseFactor", c."outputNextReviewAt",
+          c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
         FROM "Card" c
@@ -85,7 +90,8 @@ export const getCardsData = cache(async (
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
           c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
-          c.repetitions, c."outputRepetitions", c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
+          c.repetitions, c."outputRepetitions", c."outputInterval", c."outputEaseFactor", c."outputNextReviewAt",
+          c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
         FROM "Card" c
@@ -102,7 +108,8 @@ export const getCardsData = cache(async (
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
           c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
-          c.repetitions, c."outputRepetitions", c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
+          c.repetitions, c."outputRepetitions", c."outputInterval", c."outputEaseFactor", c."outputNextReviewAt",
+          c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
         FROM "Card" c
@@ -116,7 +123,8 @@ export const getCardsData = cache(async (
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
           c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
-          c.repetitions, c."outputRepetitions", c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
+          c.repetitions, c."outputRepetitions", c."outputInterval", c."outputEaseFactor", c."outputNextReviewAt",
+          c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
         FROM "Card" c
@@ -130,7 +138,8 @@ export const getCardsData = cache(async (
       rawCards = await prisma.$queryRaw<RawCardResult[]>`
         SELECT
           c.id, c.front, c.back, c.note, c."nextReviewAt", c.interval, c."easeFactor",
-          c.repetitions, c."outputRepetitions", c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
+          c.repetitions, c."outputRepetitions", c."outputInterval", c."outputEaseFactor", c."outputNextReviewAt",
+          c.state, c."userId", c."createdAt", c."updatedAt", c."cardType",
           d.id as "deckId", d.title as "deckTitle", d.color as "deckColor",
           COUNT(*) OVER()::int as total_count
         FROM "Card" c
@@ -157,6 +166,9 @@ export const getCardsData = cache(async (
     easeFactor: card.easeFactor,
     repetitions: card.repetitions,
     outputRepetitions: card.outputRepetitions ?? 0,
+    outputInterval: card.outputInterval ?? 0,
+    outputEaseFactor: card.outputEaseFactor ?? 2.5,
+    outputNextReviewAt: card.outputNextReviewAt ?? null,
     state: card.state as 'NEW' | 'LEARNING' | 'REVIEW' | 'RELEARNING',
     userId: card.userId,
     createdAt: card.createdAt,

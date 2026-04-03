@@ -43,17 +43,16 @@ function FlashcardReviewContainerContent({
     answer: string;
   } | null>(null);
 
-  const currentCard = session?.cards[currentIndex];
-  const isFlashcardComplete = !currentCard;
+  const currentItem = session?.items[currentIndex];
+  const isFlashcardComplete = !currentItem;
   const flashcardProgress = currentIndex + 1;
   const flashcardTotal = session?.total || 0;
 
-  // 确定当前卡片应该显示的输出练习级别
-  const outputLevel: OutputLevel | null = currentCard
-    ? getOutputLevel(currentCard.repetitions, currentCard.outputRepetitions || 0)
+  // mode 由后端决定：'input' = 标准闪卡，'output' = 输出练习
+  const isOutputExerciseMode = currentItem?.mode === 'output';
+  const outputLevel: OutputLevel | null = isOutputExerciseMode
+    ? getOutputLevel(currentItem!.outputRepetitions || 0)
     : null;
-
-  const isOutputExerciseMode = outputLevel !== null;
 
   const loadSingleFlashcard = useCallback(async () => {
     const cardId = searchParams.get('id');
@@ -65,7 +64,7 @@ function FlashcardReviewContainerContent({
       if (!response.ok) throw new Error('Failed to fetch card');
 
       const data = await response.json();
-      setSession({ cards: [data], total: 1, hasMore: false, nextCursor: undefined });
+      setSession({ items: [{ ...data, mode: 'input' as const }], total: 1, hasMore: false, nextCursor: undefined });
       setCurrentIndex(0);
       setIsFlipped(false);
     } catch (err) {
@@ -103,7 +102,7 @@ function FlashcardReviewContainerContent({
       } else {
         setSession(prev => ({
           ...prev!,
-          cards: [...(prev?.cards || []), ...data.cards],
+          items: [...(prev?.items || []), ...data.items],
           hasMore: data.hasMore,
           nextCursor: data.nextCursor,
         }));
@@ -150,37 +149,33 @@ function FlashcardReviewContainerContent({
     isCorrect: boolean;
     answer: string;
   }) => {
-    if (!currentCard || isSubmitting) return;
+    if (!currentItem || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      // 对于输出练习模式，需要传递额外的参数
       const requestBody: {
         cardId: string;
         quality: number;
+        mode: 'input' | 'output';
         exerciseId?: string;
         isOutputCorrect?: boolean;
         outputLevel?: number;
         userAnswer?: string;
       } = {
-        cardId: currentCard.id,
+        cardId: currentItem.id,
         quality,
+        mode: currentItem.mode,
       };
 
-      // 如果有输出练习参数（Level 1-2 通过 continue，Level 3-4 直接传递）
-      if (outputExerciseParams && outputLevel) {
+      // 输出轨道附加参数
+      if (currentItem.mode === 'output' && outputExerciseParams && outputLevel) {
         requestBody.exerciseId = outputExerciseParams.exerciseId;
-
-        // Level 1-2: 自动判断正确性
+        requestBody.outputLevel = outputLevel;
+        requestBody.userAnswer = outputExerciseParams.answer;
         if (outputLevel <= 2) {
           requestBody.isOutputCorrect = outputExerciseParams.isCorrect;
-          requestBody.outputLevel = outputLevel;
-          requestBody.userAnswer = outputExerciseParams.answer;
         } else {
-          // Level 3-4: 用户自评，quality >= 3 认为正确
           requestBody.isOutputCorrect = quality >= 3;
-          requestBody.outputLevel = outputLevel;
-          requestBody.userAnswer = outputExerciseParams.answer;
         }
       }
 
@@ -199,22 +194,19 @@ function FlashcardReviewContainerContent({
       }
 
       const nextIndex = currentIndex + 1;
-      const isLastOverallCard = nextIndex >= flashcardTotal && !session!.hasMore;
+      const isLastOverallItem = nextIndex >= flashcardTotal && !session!.hasMore;
 
       // 重置输出练习状态
       setOutputExercisePendingRating(null);
       setPendingOutputExerciseParams(null);
 
-      if (isLastOverallCard) {
+      if (isLastOverallItem) {
         if (typeParam === 'flashcard') {
           onComplete();
           setTimeout(() => router.push('/dashboard'), COMPLETION_REDIRECT_DELAY);
         } else {
           onTransitionToArticles();
         }
-      } else if (nextIndex < session!.cards.length) {
-        setCurrentIndex(nextIndex);
-        setIsFlipped(false);
       } else {
         setCurrentIndex(nextIndex);
         setIsFlipped(false);
@@ -225,7 +217,7 @@ function FlashcardReviewContainerContent({
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentCard, currentIndex, session, isSubmitting, router, flashcardTotal, typeParam, isSingleMode, onComplete, onTransitionToArticles, outputLevel]);
+  }, [currentItem, currentIndex, session, isSubmitting, router, flashcardTotal, typeParam, isSingleMode, onComplete, onTransitionToArticles, outputLevel]);
 
   // 处理输出练习提交
   const handleOutputExerciseSubmit = useCallback((answer: string, isCorrect?: boolean, quality?: number, exerciseId?: string | null) => {
@@ -330,9 +322,9 @@ function FlashcardReviewContainerContent({
     <div className="min-h-screen bg-gray-50">
       {singleModeHeader}
       {/* 输出练习模式 */}
-      {isOutputExerciseMode && currentCard && outputLevel ? (
+      {isOutputExerciseMode && currentItem && outputLevel ? (
         <OutputExerciseView
-          card={currentCard}
+          card={currentItem}
           level={outputLevel}
           onSubmit={handleOutputExerciseSubmit}
           onContinue={handleOutputExerciseContinue}
@@ -342,7 +334,7 @@ function FlashcardReviewContainerContent({
       ) : (
         /* 标准闪卡模式 */
         <FlashcardStandardView
-          card={currentCard ?? null}
+          card={currentItem ?? null}
           isFlipped={isFlipped}
           isSubmitting={isSubmitting}
           isLoadingMore={isLoadingMore}

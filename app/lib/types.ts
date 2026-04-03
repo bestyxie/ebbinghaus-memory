@@ -50,8 +50,17 @@ export interface DecksResponse {
 }
 
 // === Review Session 类型 ===
+
+// 复习模式：输入轨道（标准闪卡）或输出轨道（输出练习）
+export type ReviewMode = 'input' | 'output'
+
+// 复习项：卡片 + 本次应复习的轨道
+export type ReviewItem = CardWithDeck & {
+  mode: ReviewMode
+}
+
 export interface ReviewSession {
-  cards: CardWithDeck[]
+  items: ReviewItem[]
   total: number
   hasMore: boolean
   nextCursor?: string
