@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Card" ADD COLUMN     "outputEaseFactor" DOUBLE PRECISION NOT NULL DEFAULT 2.5,
+ADD COLUMN     "outputInterval" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "outputNextReviewAt" TIMESTAMP(3);

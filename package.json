@@ -11,7 +11,8 @@
     "dev:vinext": "vite dev --port 3001 --host",
     "prebuild": "mkdir -p dist/server && touch dist/server/index.js",
     "build:vinext": "vite build",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "migrate:output-track": "tsx prisma/migrations/20260403141031_add_output_track_sm2/migrate_output_track.ts"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.29.0",
