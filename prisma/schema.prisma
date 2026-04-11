@@ -22,6 +22,7 @@ model User {
   cards     Card[]   // 用户拥有的卡片
   logs      ReviewLog[] // 复习记录
   outputPracticeLogs OutputPracticeLog[] // 输出练习记录
+  apiTokens  ApiToken[]  // API tokens for extension access
   
   @@unique([email])
   @@map("users")
@@ -271,6 +272,21 @@ model ReviewLog {
 
   @@index([userId]) // 索引：统计用户复习记录
   @@index([userId, rating]) // 索引：计算用户留存率
+}
+
+model ApiToken {
+  id          String    @id @default(cuid())
+  name        String    // User-given label, e.g. "Chrome Extension"
+  tokenHash   String    @unique // SHA-256 hash of the raw token
+  lastUsedAt  DateTime?
+  expiresAt   DateTime? // null = never expires
+  createdAt   DateTime  @default(now())
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_tokens")
 }
 
 // 枚举：卡片类型

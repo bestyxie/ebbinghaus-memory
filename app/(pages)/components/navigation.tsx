@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   BarChart3,
   AlertTriangle,
+  Settings,
 } from "lucide-react";
 
 export function Navigation() {
@@ -14,6 +15,7 @@ export function Navigation() {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard", badge: undefined },
+    { href: "/settings", label: "Settings", icon: "Settings", badge: undefined },
     // {
     //   href: "/today-review",
     //   label: "Today's Review",
@@ -34,6 +36,7 @@ export function Navigation() {
     ClipboardCheck,
     BarChart3,
     AlertTriangle,
+    Settings,
   };
 
   return (
