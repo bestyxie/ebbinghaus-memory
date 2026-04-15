@@ -37,10 +37,10 @@ GET /api/extension/decks
 **请求示例：**
 
 ```typescript
-const res = await fetch('https://your-app.com/api/extension/decks', {
-  headers: { 'Authorization': 'Bearer emb_...' },
-})
-const { decks } = await res.json()
+const res = await fetch("https://your-app.com/api/extension/decks", {
+  headers: { Authorization: "Bearer emb_..." },
+});
+const { decks } = await res.json();
 ```
 
 **响应：**
@@ -65,32 +65,33 @@ Content-Type: application/json
 
 **请求体：**
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `front` | string | ✅ | 卡片正面（单词/问题） |
-| `back` | string | ✅ | 卡片背面（释义/答案） |
-| `note` | string | — | 助记提示 |
-| `deckId` | string | — | 所属卡组 ID |
-| `quality` | number | — | 初始难度：`3`=难 `4`=中（默认） `5`=易 |
+| 字段      | 类型   | 必填 | 说明                                   |
+| --------- | ------ | ---- | -------------------------------------- |
+| `front`   | string | ✅   | 卡片正面（单词/问题）                  |
+| `back`    | string | ✅   | 卡片背面（释义/答案）                  |
+| `note`    | string | —    | 助记提示                               |
+| `deckId`  | string | —    | 所属卡组 ID                            |
+| `quality` | number | —    | 初始难度：`3`=难 `4`=中（默认） `5`=易 |
+| `source`  | string | —    | 数据来源，如页面 URL 或来源标识        |
 
 **请求示例：**
 
 ```typescript
-const res = await fetch('https://your-app.com/api/extension/cards', {
-  method: 'POST',
+const res = await fetch("https://your-app.com/api/extension/cards", {
+  method: "POST",
   headers: {
-    'Authorization': 'Bearer emb_...',
-    'Content-Type': 'application/json',
+    Authorization: "Bearer emb_...",
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    front: 'ephemeral',
-    back: 'lasting for only a short time',
-    note: 'ep-HEM-er-al',
-    deckId: 'clxxx',
+    front: "ephemeral",
+    back: "lasting for only a short time",
+    note: "ep-HEM-er-al",
+    deckId: "clxxx",
     quality: 4,
   }),
-})
-const { card } = await res.json()
+});
+const { card } = await res.json();
 ```
 
 **响应（201）：**
@@ -103,6 +104,48 @@ const { card } = await res.json()
     "back": "lasting for only a short time",
     "createdAt": "2026-04-10T08:00:00.000Z"
   }
+}
+```
+
+---
+
+### 根据 source 查询卡片
+
+```
+GET /api/extension/cards?source=<url>
+```
+
+**查询参数：**
+
+| 参数     | 类型   | 必填 | 说明                |
+| -------- | ------ | ---- | ------------------- |
+| `source` | string | ✅   | 要查询的来源 URL    |
+
+**请求示例：**
+
+```typescript
+const res = await fetch(
+  "https://your-app.com/api/extension/cards?source=https://example.com/article",
+  {
+    headers: { Authorization: "Bearer emb_..." },
+  }
+);
+const { cards } = await res.json();
+```
+
+**响应（200）：**
+
+```json
+{
+  "cards": [
+    {
+      "id": "clzzz",
+      "front": "ephemeral",
+      "back": "lasting for only a short time",
+      "source": "https://example.com/article",
+      "createdAt": "2026-04-10T08:00:00.000Z"
+    }
+  ]
 }
 ```
 
@@ -140,26 +183,26 @@ DELETE /api/tokens/:id
 ## 完整使用示例
 
 ```typescript
-const SERVER = 'https://your-app.com'
-const TOKEN  = 'emb_a3f8c2d1e4b7...'
+const SERVER = "https://your-app.com";
+const TOKEN = "emb_a3f8c2d1e4b7...";
 
 async function addFlashcard(front: string, back: string, deckId?: string) {
   // 1. 可选：获取卡组列表供用户选择
   const { decks } = await fetch(`${SERVER}/api/extension/decks`, {
-    headers: { 'Authorization': `Bearer ${TOKEN}` },
-  }).then(r => r.json())
+    headers: { Authorization: `Bearer ${TOKEN}` },
+  }).then((r) => r.json());
 
   // 2. 创建闪卡
   const { card } = await fetch(`${SERVER}/api/extension/cards`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${TOKEN}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${TOKEN}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ front, back, deckId, quality: 4 }),
-  }).then(r => r.json())
+  }).then((r) => r.json());
 
-  return card
+  return card;
 }
 ```
 
@@ -167,8 +210,60 @@ async function addFlashcard(front: string, back: string, deckId?: string) {
 
 ## 错误响应
 
-| 状态码 | 原因 |
-|--------|------|
-| 401 | Token 无效或已过期 |
-| 400 | 请求体字段缺失或格式错误 |
-| 404 | 资源不存在（如 deckId 不属于该用户） |
+| 状态码 | 原因                                 |
+| ------ | ------------------------------------ |
+| 401    | Token 无效或已过期                   |
+| 400    | 请求体字段缺失或格式错误             |
+| 404    | 资源不存在（如 deckId 不属于该用户） |
+
+## 插件端适配示例
+
+```typescript
+// 插件抓取的数据类型
+interface ScrapedData {
+  word: string;
+  pronunciation?: string;
+  definition: string;
+  context: {
+    sentence: string;
+    source_url: string;
+  };
+}
+
+// 后端接收的数据类型（与 POST /api/extension/cards 请求体对应）
+interface FlashcardDTO {
+  front: string;
+  back: string;
+  note?: string;
+  deckId?: string;
+  source?: string;
+}
+
+// 适配器函数：将抓取的数据转换为卡片数据
+function adaptScrapedDataToCard(
+  data: ScrapedData,
+  currentDeckId?: string,
+): FlashcardDTO {
+  // 1. 组装正面：单词 + 音标（如 "apple [/ˈæpl/]"）
+  const front = data.word;
+
+  // 2. 组装背面：释义 + 语境例句
+  const back = `
+    <div> [${data.pronunciation}]</div>
+    <div class="card-definition"><strong>释义：</strong>${data.definition}</div>
+    <hr/>
+    <div class="card-context"><strong>语境：</strong><em>"${data.context.sentence}"</em></div>
+  `.trim();
+
+  // 3. 例句作为助记提示
+  const note = data.context.sentence.trim();
+
+  return {
+    front,
+    back,
+    note,
+    deckId: currentDeckId,
+    source: data.context.source_url,
+  };
+}
+```

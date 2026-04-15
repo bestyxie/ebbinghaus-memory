@@ -127,6 +127,9 @@ model Card {
   wordCount     Int?     // 字数统计
   readTimeMins  Int?     // 预计阅读时间（分钟）
 
+  // 来源（可选，记录卡片的数据来源，如 "chrome-extension"、"import" 等）
+  source      String?
+
   // 文章学习元数据
   totalStudyTimeMs Int? @default(0) // 总学习时间（毫秒）
   lastStudyAt     DateTime? // 最后学习时间

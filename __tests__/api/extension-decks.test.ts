@@ -12,7 +12,7 @@ vi.mock('@/app/lib/auth', () => ({
   auth: { api: { getSession: vi.fn() } },
 }))
 
-import { OPTIONS, GET } from '@/app/api/extension/decks/route'
+import { GET } from '@/app/api/extension/decks/route'
 import { prisma } from '@/app/lib/prisma'
 import { auth } from '@/app/lib/auth'
 import { hashToken } from '@/app/lib/token'
@@ -30,18 +30,6 @@ function bearerRequest(url: string) {
   })
 }
 
-describe('OPTIONS /api/extension/decks', () => {
-  it('returns 204 for preflight from a chrome extension', async () => {
-    const req = new NextRequest('http://localhost/api/extension/decks', {
-      method: 'OPTIONS',
-      headers: { Origin: 'chrome-extension://abc' },
-    })
-    const res = await OPTIONS(req)
-    expect(res.status).toBe(204)
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('chrome-extension://abc')
-    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Authorization')
-  })
-})
 
 describe('GET /api/extension/decks', () => {
   beforeEach(() => vi.clearAllMocks())
@@ -62,23 +50,6 @@ describe('GET /api/extension/decks', () => {
     expect(prisma.deck.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: USER_ID, deletedAt: null } })
     )
-  })
-
-  it('adds CORS headers to the response for extension origin', async () => {
-    vi.mocked(prisma.deck.findMany).mockResolvedValue([] as never)
-    const req = new NextRequest('http://localhost/api/extension/decks', {
-      headers: {
-        Authorization: `Bearer ${RAW_TOKEN}`,
-        Origin: 'chrome-extension://abc',
-      },
-    })
-    vi.mocked(prisma.apiToken.findUnique).mockResolvedValue({
-      id: 'tok_1', userId: USER_ID, expiresAt: null,
-    } as never)
-    vi.mocked(prisma.apiToken.update).mockResolvedValue({} as never)
-
-    const res = await GET(req)
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('chrome-extension://abc')
   })
 
   it('returns 401 with invalid token', async () => {

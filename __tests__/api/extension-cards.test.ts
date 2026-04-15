@@ -13,7 +13,7 @@ vi.mock('@/app/lib/auth', () => ({
   auth: { api: { getSession: vi.fn() } },
 }))
 
-import { OPTIONS, POST } from '@/app/api/extension/cards/route'
+import { POST } from '@/app/api/extension/cards/route'
 import { prisma } from '@/app/lib/prisma'
 import { auth } from '@/app/lib/auth'
 
@@ -40,17 +40,6 @@ function postRequest(body: object, origin?: string) {
   })
 }
 
-describe('OPTIONS /api/extension/cards', () => {
-  it('returns 204 for preflight from a chrome extension', async () => {
-    const req = new NextRequest('http://localhost/api/extension/cards', {
-      method: 'OPTIONS',
-      headers: { Origin: 'chrome-extension://abc' },
-    })
-    const res = await OPTIONS(req)
-    expect(res.status).toBe(204)
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('chrome-extension://abc')
-  })
-})
 
 describe('POST /api/extension/cards', () => {
   beforeEach(() => vi.clearAllMocks())
@@ -117,16 +106,6 @@ describe('POST /api/extension/cards', () => {
     authedTokenMock()
     const res = await POST(postRequest({ front: 'f', back: 'b', quality: 1 }))
     expect(res.status).toBe(400)
-  })
-
-  it('adds CORS headers to the response for extension origin', async () => {
-    vi.mocked(prisma.card.create).mockResolvedValue(createdCard as never)
-
-    const res = await POST(postRequest(
-      { front: 'ephemeral', back: 'lasting briefly' },
-      'chrome-extension://abc'
-    ))
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('chrome-extension://abc')
   })
 
   it('returns 401 without authentication', async () => {

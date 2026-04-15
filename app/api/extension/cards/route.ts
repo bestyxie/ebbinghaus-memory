@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/app/lib/api-helpers'
 import { prisma } from '@/app/lib/prisma'
-import { withCors, handleOptions } from '@/app/lib/cors'
 import { calculateInitialEaseFactor } from '@/app/lib/zod'
 import { z } from 'zod'
 
@@ -11,32 +10,45 @@ const createExtensionCardSchema = z.object({
   note: z.string().optional(),
   deckId: z.string().optional(),
   quality: z.number().int().min(3).max(5).default(4),
+  source: z.string().optional(),
 })
 
-export async function OPTIONS(request: NextRequest) {
-  return handleOptions(request)
+export async function GET(request: NextRequest) {
+  const userId = await requireAuth(request)
+  if (userId instanceof NextResponse) return userId
+
+  const { searchParams } = new URL(request.url)
+  const source = searchParams.get('source')
+
+  if (!source) {
+    return NextResponse.json({ error: 'Missing required query parameter: source' }, { status: 400 })
+  }
+
+  const cards = await prisma.card.findMany({
+    where: { userId, source },
+    select: { id: true, front: true, back: true, source: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  return NextResponse.json({ cards })
 }
 
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get('Origin')
   const userId = await requireAuth(request)
-  if (userId instanceof NextResponse) return withCors(userId, origin)
+  if (userId instanceof NextResponse) return userId
 
   const body = await request.json()
   const parsed = createExtensionCardSchema.safeParse(body)
   if (!parsed.success) {
-    return withCors(
-      NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 }),
-      origin
-    )
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { front, back, note, deckId, quality } = parsed.data
+  const { front, back, note, deckId, quality, source } = parsed.data
 
   if (deckId) {
     const deck = await prisma.deck.findFirst({ where: { id: deckId, userId, deletedAt: null } })
     if (!deck) {
-      return withCors(NextResponse.json({ error: 'Invalid deck' }, { status: 400 }), origin)
+      return NextResponse.json({ error: 'Invalid deck' }, { status: 400 })
     }
   }
 
@@ -45,6 +57,7 @@ export async function POST(request: NextRequest) {
       front,
       back,
       note: note ?? null,
+      source: source ?? null,
       userId,
       nextReviewAt: new Date(),
       interval: 0,
@@ -56,5 +69,5 @@ export async function POST(request: NextRequest) {
     select: { id: true, front: true, back: true, createdAt: true },
   })
 
-  return withCors(NextResponse.json({ card }, { status: 201 }), origin)
+  return NextResponse.json({ card }, { status: 201 })
 }

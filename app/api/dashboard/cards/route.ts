@@ -17,9 +17,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<CardsRespo
 
     const skip = (page - 1) * limit;
 
-    const where: { userId: string; cardDecks?: { some: { deckId: string; deck?: { deletedAt: null } } } } = { userId };
+    const source = searchParams.get('source');
 
-    // Add deck filter if provided
+    const where: {
+      userId: string;
+      cardDecks?: { some: { deckId: string; deck?: { deletedAt: null } } };
+      source?: string;
+    } = { userId };
+
     if (deckId) {
       where.cardDecks = {
         some: {
@@ -29,6 +34,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<CardsRespo
           },
         },
       };
+    }
+
+    if (source) {
+      where.source = source;
     }
 
     // Build orderBy object based on sortBy parameter
