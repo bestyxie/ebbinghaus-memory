@@ -9,6 +9,7 @@ interface GetCardsOptions {
   deckId: string | null;
   page: number;
   limit?: number;
+  searchTerm?: string;
 }
 
 /**
@@ -19,7 +20,7 @@ interface GetCardsOptions {
  */
 export const getCardsData = cache(async (
   userId: string,
-  { sortBy, deckId, page, limit = 10 }: GetCardsOptions
+  { sortBy, deckId, page, limit = 10, searchTerm }: GetCardsOptions
 ): Promise<CardsResponse> => {
   const skip = (page - 1) * limit;
 
@@ -54,6 +55,8 @@ export const getCardsData = cache(async (
   let rawCards: RawCardResult[];
 
   // Build query based on filters and sort options
+  const searchPattern = searchTerm ? `%${searchTerm}%` : '%';
+
   if (deckId) {
     // Query with deck filter
     if (sortBy === 'createdAt') {
@@ -68,6 +71,7 @@ export const getCardsData = cache(async (
         INNER JOIN "CardDeck" cd ON cd."cardId" = c.id AND cd."deckId" = ${deckId}
         LEFT JOIN "Deck" d ON d.id = cd."deckId" AND d."deletedAt" IS NULL
         WHERE c."userId" = ${userId}
+          AND c.front ILIKE ${searchPattern}
         ORDER BY c."createdAt" ASC
         LIMIT ${limit} OFFSET ${skip}
       `;
@@ -83,6 +87,7 @@ export const getCardsData = cache(async (
         INNER JOIN "CardDeck" cd ON cd."cardId" = c.id AND cd."deckId" = ${deckId}
         LEFT JOIN "Deck" d ON d.id = cd."deckId" AND d."deletedAt" IS NULL
         WHERE c."userId" = ${userId}
+          AND c.front ILIKE ${searchPattern}
         ORDER BY c."easeFactor" ASC
         LIMIT ${limit} OFFSET ${skip}
       `;
@@ -98,6 +103,7 @@ export const getCardsData = cache(async (
         INNER JOIN "CardDeck" cd ON cd."cardId" = c.id AND cd."deckId" = ${deckId}
         LEFT JOIN "Deck" d ON d.id = cd."deckId" AND d."deletedAt" IS NULL
         WHERE c."userId" = ${userId}
+          AND c.front ILIKE ${searchPattern}
         ORDER BY c."nextReviewAt" ASC
         LIMIT ${limit} OFFSET ${skip}
       `;
@@ -116,6 +122,7 @@ export const getCardsData = cache(async (
         LEFT JOIN "CardDeck" cd ON cd."cardId" = c.id
         LEFT JOIN "Deck" d ON d.id = cd."deckId" AND d."deletedAt" IS NULL
         WHERE c."userId" = ${userId}
+          AND c.front ILIKE ${searchPattern}
         ORDER BY c."createdAt" ASC
         LIMIT ${limit} OFFSET ${skip}
       `;
@@ -131,6 +138,7 @@ export const getCardsData = cache(async (
         LEFT JOIN "CardDeck" cd ON cd."cardId" = c.id
         LEFT JOIN "Deck" d ON d.id = cd."deckId" AND d."deletedAt" IS NULL
         WHERE c."userId" = ${userId}
+          AND c.front ILIKE ${searchPattern}
         ORDER BY c."easeFactor" ASC
         LIMIT ${limit} OFFSET ${skip}
       `;
@@ -146,6 +154,7 @@ export const getCardsData = cache(async (
         LEFT JOIN "CardDeck" cd ON cd."cardId" = c.id
         LEFT JOIN "Deck" d ON d.id = cd."deckId" AND d."deletedAt" IS NULL
         WHERE c."userId" = ${userId}
+          AND c.front ILIKE ${searchPattern}
         ORDER BY c."nextReviewAt" ASC
         LIMIT ${limit} OFFSET ${skip}
       `;
