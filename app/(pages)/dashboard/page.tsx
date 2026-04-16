@@ -15,6 +15,7 @@ interface DashboardPageProps {
     sortBy?: string;
     deckId?: string;
     page?: string;
+    search?: string;
   }>;
 }
 
@@ -39,6 +40,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
   const sortBy = (searchParams.sortBy || 'nextReviewAt') as SortOption;
   const deckId = searchParams.deckId || null;
   const page = parseInt(searchParams.page || '1', 10);
+  const search = searchParams.search || null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -80,6 +82,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             currentPage={page}
             sortBy={sortBy}
             deckId={deckId}
+            search={search}
           />
         </Suspense>
 

@@ -10,9 +10,10 @@ interface CardTableServerProps {
   currentPage: number;
   sortBy: SortOption;
   deckId: string | null;
+  search: string | null;
 }
 
-export async function CardTableServer({ currentPage, sortBy, deckId }: CardTableServerProps) {
+export async function CardTableServer({ currentPage, sortBy, deckId, search }: CardTableServerProps) {
   const header = await headers();
   const session = await auth.api.getSession({ headers: header });
 
@@ -29,12 +30,12 @@ export async function CardTableServer({ currentPage, sortBy, deckId }: CardTable
   let totalPages: number;
 
   try {
-    const cardsData = await getCardsData(session.user.id, { sortBy, deckId, page: currentPage });
+    const cardsData = await getCardsData(session.user.id, { sortBy, deckId, page: currentPage, searchTerm: search || undefined });
     cards = cardsData.cards;
     total = cardsData.total;
     totalPages = cardsData.totalPages;
   } catch (error) {
-    console.error('CardTableServer: failed to fetch cards', { userId: session.user.id, sortBy, deckId, page: currentPage, error });
+    console.error('CardTableServer: failed to fetch cards', { userId: session.user.id, sortBy, deckId, page: currentPage, search, error });
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 p-6">
         <p className="text-red-700 dark:text-red-400 text-sm">Failed to load cards. Please refresh the page.</p>
@@ -45,7 +46,11 @@ export async function CardTableServer({ currentPage, sortBy, deckId }: CardTable
   if (cards.length === 0) {
     return (
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-12 text-center">
-        <p className="text-slate-500">No cards found. Create your first card to get started!</p>
+        <p className="text-slate-500">
+          {search
+            ? `No cards match "${search}". Try a different search term.`
+            : 'No cards found. Create your first card to get started!'}
+        </p>
       </div>
     );
   }
