@@ -1,4 +1,5 @@
 import { FiltersBarClient } from './filters-bar-client';
+import { SearchInput } from './search-input';
 import { getUserDecks } from '@/app/lib/deck';
 import { auth } from '@/app/lib/auth';
 import { headers } from 'next/headers';
@@ -28,6 +29,8 @@ export async function FiltersBarServer({ currentSortBy, currentDeckId }: Filters
         <Filter className="h-4 w-4 text-slate-500" />
         <span className="text-xs font-bold uppercase tracking-tight text-slate-500">Filters</span>
       </div>
+
+      <SearchInput />
 
       <FiltersBarClient
         sortOptions={sortOptions}
