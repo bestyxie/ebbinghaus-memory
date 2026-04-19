@@ -255,3 +255,149 @@ test.describe('Rich Text Editor - Advanced Features', () => {
     await expect(page.locator('blockquote')).toContainText('This is a quote');
   });
 });
+
+test.describe('Rich Text Editor - Security', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+  });
+
+  test('should sanitize malicious HTML', async ({ page }) => {
+    await page.goto('/dashboard');
+    await openCreateCardModal(page);
+
+    await page.fill('input[name="front"]', 'Test Security');
+
+    const editor = page.locator('.ProseMirror').first();
+
+    // Try to inject script via direct HTML manipulation
+    await editor.evaluate((el: any) => {
+      el.innerHTML = '<p>Safe</p><script>window.xss = "attacked"</script><p>Content</p>';
+    });
+
+    await page.selectOption('select[name="deckId"]', { index: 0 });
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[role="dialog"]', { state: 'hidden' });
+
+    // Go to review and verify script was removed
+    await goToReview(page);
+    await expect(page.locator('text=Safe')).toBeVisible();
+    await expect(page.locator('text=Content')).toBeVisible();
+
+    // Script should not exist in page
+    const hasXss = await page.evaluate(() => typeof (window as any).xss !== 'undefined');
+    expect(hasXss).toBeFalsy();
+  });
+
+  test('should block event handlers', async ({ page }) => {
+    await page.goto('/dashboard');
+    await openCreateCardModal(page);
+
+    await page.fill('input[name="front"]', 'Test Event Handler');
+
+    const editor = page.locator('.ProseMirror').first();
+
+    // Try to inject onclick
+    await editor.evaluate((el: any) => {
+      el.innerHTML = '<p onclick="alert(1)">Click me</p>';
+    });
+
+    await page.selectOption('select[name="deckId"]', { index: 0 });
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[role="dialog"]', { state: 'hidden' });
+
+    await goToReview(page);
+
+    // Alert should not be triggered
+    let alertFired = false;
+    page.on('dialog', () => { alertFired = true; });
+
+    await page.locator('text=Click me').click();
+    await page.waitForTimeout(100);
+
+    expect(alertFired).toBeFalsy();
+  });
+});
+
+test.describe('Rich Text Editor - Edit Card', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+  });
+
+  test('should edit existing card and preserve formatting', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    // Find first card and click edit
+    await page.locator('[aria-label="Edit card"]').first().click();
+    await page.waitForSelector('[role="dialog"]');
+
+    // Modify the back content
+    const editor = page.locator('.ProseMirror').first();
+    await editor.click();
+    await editor.press('End');
+    await editor.type(' - Additional info');
+
+    // Submit
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[role="dialog"]', { state: 'hidden' });
+
+    // Verify changes persisted
+    await goToReview(page);
+    await expect(page.locator('text=Additional info')).toBeVisible();
+  });
+
+  test('should edit plain text card and add formatting', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    // Find a plain text card (one without HTML in back)
+    await page.locator('[aria-label="Edit card"]').first().click();
+    await page.waitForSelector('[role="dialog"]');
+
+    const editor = page.locator('.ProseMirror').first();
+
+    // Get current content (should be plain text)
+    const initialContent = await editor.textContent();
+
+    // Select all and make bold
+    await editor.click();
+    await editor.press('Control+a');
+    await editor.press('Control+b');
+
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[role="dialog"]', { state: 'hidden' });
+
+    // Verify bold applied
+    await goToReview(page);
+    await expect(page.locator('strong').filter({ hasText: initialContent })).toBeVisible();
+  });
+});
+
+test.describe('Rich Text Editor - Backward Compatibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+  });
+
+  test('should display existing plain text cards correctly', async ({ page }) => {
+    await page.goto('/review');
+    await page.waitForSelector('text=Loading', { state: 'hidden' });
+
+    // Plain text should still render
+    const cardContent = page.locator('[class*="text-2xl"]').first();
+    await expect(cardContent).toBeVisible();
+  });
+
+  test('should handle empty content gracefully', async ({ page }) => {
+    await page.goto('/dashboard');
+    await openCreateCardModal(page);
+
+    await page.fill('input[name="front"]', 'Test Empty');
+
+    // Don't fill back, try to submit
+    await page.selectOption('select[name="deckId"]', { index: 0 });
+
+    const submitBtn = page.locator('button[type="submit"]');
+    await submitBtn.click();
+
+    // Should show validation error
+    await expect(page.locator('text=required')).toBeVisible();
+  });
+});
