@@ -33,7 +33,7 @@ const ALLOWED_ATTR = [
 ];
 
 // Custom hook to allow only safe style values
-purify.addHook('uponSanitizeAttribute', (node, data) => {
+purify.addHook('uponSanitizeAttribute', (node: HTMLElement, data: { attrName: string; attrValue: string; attributeName: string }) => {
   if (data.attrName === 'style') {
     const style = data.attrValue as string;
 

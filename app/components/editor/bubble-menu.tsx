@@ -1,9 +1,8 @@
 'use client';
 
 import { Editor } from '@tiptap/react';
-import { BubbleMenu as TiptapBubbleMenu } from '@tiptap/react';
+import { BubbleMenu as TiptapBubbleMenu } from '@tiptap/react/menus';
 import { Bold, Italic, Underline } from 'lucide-react';
-import { Highlight } from '@/app/lib/editor/extensions';
 
 interface BubbleMenuProps {
   editor: Editor | null;
@@ -28,7 +27,6 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
   return (
     <TiptapBubbleMenu
       editor={editor}
-      tippyOptions={{ duration: 100 }}
       className="bubble-menu flex gap-1 p-1 bg-white border border-slate-200 rounded-lg shadow-lg"
     >
       <button

@@ -2,7 +2,7 @@ import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Mark, mergeAttributes } from '@tiptap/core';
+import { Mark, mergeAttributes, type RawCommands } from '@tiptap/core';
 
 // Custom highlight extension with color support
 const Highlight = Mark.create({
@@ -77,14 +77,12 @@ const TextAlign = Extension.create({
 
   addCommands() {
     return {
-      setTextAlignment:
-        (alignment: string) =>
-        ({ commands }) => {
-          return this.options.types.every((type) =>
-            commands.updateAttributes(type, { textAlign: alignment })
-          );
-        },
-    };
+      setTextAlignment: (alignment: string) => ({ commands }: { commands: { updateAttributes: (type: string, attrs: Record<string, unknown>) => boolean } }) => {
+        return this.options.types.every((type: string) =>
+          commands.updateAttributes(type, { textAlign: alignment })
+        );
+      },
+    } satisfies Partial<RawCommands>;
   },
 });
 

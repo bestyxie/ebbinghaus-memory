@@ -40,6 +40,7 @@ export function FixedToolbar({ editor }: FixedToolbarProps) {
   };
 
   const setAlignment = (alignment: 'left' | 'center' | 'right' | 'justify') => {
+    // @ts-expect-error - setTextAlign is a custom extension command
     editor.chain().focus().setTextAlign(alignment).run();
   };
 
