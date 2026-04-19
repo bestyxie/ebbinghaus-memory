@@ -58,6 +58,7 @@ export const cardBaseSchema = z.object({
   front: z.string().min(1),
   back: z.string().min(1),
   note: z.string().nullable(),
+  source: z.string().nullable().optional(),
   nextReviewAt: z.date(),
   interval: z.number().int().min(0),
   easeFactor: z.number().min(1.3),
