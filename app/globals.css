@@ -201,6 +201,21 @@ body {
   outline: none;
 }
 
+/* TipTap Editor Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Bubble menu */
+.bubble-menu {
+  position: absolute;
+  z-index: 50;
+}
+
 @layer utilities {
   .rotate-y-180 {
     transform: rotateY(180deg);
