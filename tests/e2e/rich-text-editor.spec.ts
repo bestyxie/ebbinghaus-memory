@@ -115,3 +115,143 @@ test.describe('Rich Text Editor - Create Card', () => {
     await expect(page.locator('ul li').nth(1)).toContainText('Second item');
   });
 });
+
+test.describe('Rich Text Editor - Bubble Menu', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await page.goto('/dashboard');
+    await openCreateCardModal(page);
+  });
+
+  test('should show bubble menu on text selection', async ({ page }) => {
+    await page.fill('input[name="front"]', 'Test Bubble');
+
+    const editor = page.locator('.ProseMirror').first();
+    await editor.click();
+    await editor.type('Select this text');
+
+    // Select text
+    await editor.press('Control+a');
+
+    // Bubble menu should appear
+    const bubbleMenu = page.locator('.bubble-menu');
+    await expect(bubbleMenu).toBeVisible();
+
+    // Should have bold, italic, underline buttons
+    await expect(bubbleMenu.locator('button')).toHaveCount(3);
+  });
+
+  test('should apply formatting via bubble menu', async ({ page }) => {
+    await page.fill('input[name="front"]', 'Test Bubble Format');
+
+    const editor = page.locator('.ProseMirror').first();
+    await editor.click();
+    await editor.type('Format me');
+    await editor.press('Shift+Home'); // Select "Format me"
+
+    // Click bold in bubble menu
+    const bubbleMenu = page.locator('.bubble-menu');
+    await bubbleMenu.locator('button').first().click(); // Bold button
+
+    await expect(editor.locator('strong')).toContainText('Format me');
+  });
+});
+
+test.describe('Rich Text Editor - Advanced Features', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await page.goto('/dashboard');
+    await openCreateCardModal(page);
+  });
+
+  test('should create card with highlight color', async ({ page }) => {
+    await page.fill('input[name="front"]', 'Test Highlight');
+
+    const editor = page.locator('.ProseMirror').first();
+    await editor.click();
+    await editor.type('Highlighted text');
+    await editor.press('Control+a');
+
+    // Click highlight button and select yellow
+    await page.click('[aria-label="Highlight"]');
+    await page.click('[data-color="yellow"]');
+
+    // Verify highlight applied
+    const highlighted = await editor.locator('mark[style*="background-color: yellow"]');
+    await expect(highlighted).toBeVisible();
+
+    await page.selectOption('select[name="deckId"]', { index: 0 });
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[role="dialog"]', { state: 'hidden' });
+
+    await goToReview(page);
+    await expect(page.locator('mark[style*="background"]')).toBeVisible();
+  });
+
+  test('should create card with text alignment', async ({ page }) => {
+    await page.fill('input[name="front"]', 'Test Alignment');
+
+    const editor = page.locator('.ProseMirror').first();
+    await editor.click();
+
+    // Click center align
+    await page.click('[aria-label="Center align"]');
+    await editor.type('Centered text');
+
+    // Verify alignment applied
+    const aligned = await editor.locator('p[style*="text-align: center"]');
+    await expect(aligned).toBeVisible();
+
+    await page.selectOption('select[name="deckId"]', { index: 0 });
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[role="dialog"]', { state: 'hidden' });
+
+    await goToReview(page);
+    await expect(page.locator('p[style*="text-align: center"]')).toBeVisible();
+  });
+
+  test('should create card with code block', async ({ page }) => {
+    await page.fill('input[name="front"]', 'Test Code');
+
+    const editor = page.locator('.ProseMirror').first();
+    await editor.click();
+
+    // Click code block button
+    await page.click('[aria-label="Code block"]');
+    await editor.type('const x = 42;');
+
+    // Verify code block
+    const codeBlock = await editor.locator('pre code');
+    await expect(codeBlock).toBeVisible();
+    await expect(codeBlock).toContainText('const x = 42;');
+
+    await page.selectOption('select[name="deckId"]', { index: 0 });
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[role="dialog"]', { state: 'hidden' });
+
+    await goToReview(page);
+    await expect(page.locator('pre code')).toContainText('const x = 42;');
+  });
+
+  test('should create card with blockquote', async ({ page }) => {
+    await page.fill('input[name="front"]', 'Test Quote');
+
+    const editor = page.locator('.ProseMirror').first();
+    await editor.click();
+
+    // Click blockquote button
+    await page.click('[aria-label="Blockquote"]');
+    await editor.type('This is a quote');
+
+    const quote = await editor.locator('blockquote');
+    await expect(quote).toBeVisible();
+    await expect(quote).toContainText('This is a quote');
+
+    await page.selectOption('select[name="deckId"]', { index: 0 });
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('[role="dialog"]', { state: 'hidden' });
+
+    await goToReview(page);
+    await expect(page.locator('blockquote')).toContainText('This is a quote');
+  });
+});
