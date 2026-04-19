@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { CardWithDeck } from '@/app/lib/types';
+import { HTMLRenderer } from '@/app/components/editor/html-renderer';
 
 interface FlashCardProps {
   card: CardWithDeck;
@@ -89,9 +90,10 @@ export function FlashCard({ card, isFlipped, onFlip }: FlashCardProps) {
                 <h3 className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">
                   Answer
                 </h3>
-                <div className="text-2xl font-semibold text-gray-900 leading-relaxed">
-                  {card.back}
-                </div>
+                <HTMLRenderer
+                  html={card.back}
+                  className="text-lg text-gray-900 leading-relaxed prose prose-slate max-w-none"
+                />
               </div>
 
               {/* Note */}
