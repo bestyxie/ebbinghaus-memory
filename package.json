@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --port 3001",
+    "dev:next": "next dev --turbopack --port 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -13,7 +13,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "type-check": "tsc --noEmit",
-    "dev:vinext": "vite dev --port 3001 --host",
+    "dev": "vite dev --port 3001 --host",
     "prebuild": "mkdir -p dist/server && touch dist/server/index.js",
     "build:vinext": "vite build",
     "seed": "tsx prisma/seed.ts",
