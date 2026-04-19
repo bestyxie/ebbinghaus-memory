@@ -5,14 +5,10 @@ import { createCard } from "@/app/lib/actions";
 import {
   X,
   Plus,
-  Bold,
-  Italic,
-  Underline,
-  Link,
-  List,
 } from "lucide-react";
 import { DeckSelector } from "./deck-selector";
 import { DifficultySelector } from "./difficulty-selector";
+import { RichTextEditor } from "@/app/components/editor/rich-text-editor";
 
 interface CreateCardModalProps {
   isOpen: boolean;
@@ -22,6 +18,7 @@ interface CreateCardModalProps {
 export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
   const [state, formAction, isPending] = useActionState(createCard, null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<"5" | "4" | "3">("4");
+  const [backContent, setBackContent] = useState("");
   const hasHandledSuccess = useRef(false);
 
   // Close modal on success (revalidatePath handles data refresh automatically)
@@ -29,6 +26,8 @@ export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
     if (state?.success && !isPending && !hasHandledSuccess.current) {
       hasHandledSuccess.current = true;
       onClose();
+      // Reset form after successful creation
+      setBackContent("");
     }
   }, [state?.success, isPending, onClose]);
 
@@ -36,6 +35,7 @@ export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
   useEffect(() => {
     if (!isOpen) {
       hasHandledSuccess.current = false;
+      setBackContent("");
     }
   }, [isOpen]);
 
@@ -83,32 +83,12 @@ export function CreateCardModal({ isOpen, onClose }: CreateCardModalProps) {
           {/* Rich Text Editor */}
           <div>
             <label className="block text-sm font-medium mb-2">Detailed Content</label>
-            <div className="border border-slate-300 rounded-lg overflow-hidden">
-              <div className="flex gap-1 p-2 border-b border-slate-200 bg-slate-50">
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <Bold />
-                </button>
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <Italic />
-                </button>
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <Underline />
-                </button>
-                <div className="w-px h-6 bg-slate-300 mx-1" />
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <Link />
-                </button>
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <List />
-                </button>
-              </div>
-              <textarea
-                name="back"
-                required
-                placeholder="Describe knowledge point in detail..."
-                className="w-full h-36 p-4 resize-none focus:outline-none"
-              />
-            </div>
+            <RichTextEditor
+              value={backContent}
+              onChange={setBackContent}
+              placeholder="Describe knowledge point in detail..."
+              name="back"
+            />
           </div>
 
           {/* Deck Selector */}
