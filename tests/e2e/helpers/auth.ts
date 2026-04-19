@@ -4,17 +4,25 @@ export const TEST_USER = {
 };
 
 export async function login(page: any) {
-  await page.goto('/dashboard', { waitUntil: 'networkidle' });
-  // If redirected to auth, login
+  // Go to dashboard first
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+
   const currentUrl = page.url();
-  if (currentUrl.includes('/auth')) {
+  if (currentUrl.includes('/login')) {
+    // Fill and submit login form using keyboard
     await page.fill('input[name="email"]', TEST_USER.email);
     await page.fill('input[name="password"]', TEST_USER.password);
-    await page.click('button[type="submit"]');
-    await page.waitForURL('/dashboard', { timeout: 10000 });
+
+    // Submit using Enter key on password field
+    await page.press('input[name="password"]', 'Enter');
+
+    // Wait for navigation to dashboard
+    await page.waitForURL('/dashboard', { timeout: 15000 });
+    await page.waitForLoadState('domcontentloaded');
   }
-  // Wait for page to be fully loaded
-  await page.waitForLoadState('networkidle');
+
+  // Wait for page to be stable
+  await page.waitForTimeout(1000);
 }
 
 export async function logout(page: any) {

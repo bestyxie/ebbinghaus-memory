@@ -1,16 +1,19 @@
 export async function openCreateCardModal(page: any) {
-  // Wait for the page to be ready
-  await page.waitForLoadState('networkidle');
+  // Wait for page to be ready
+  await page.waitForLoadState('domcontentloaded');
 
   // Click the "New Point" button to open dropdown
   await page.click('button:has-text("New Point")');
 
-  // Wait for dropdown to appear and click the first "New Point" item
-  await page.waitForSelector('[role="menuitem"]', { timeout: 5000 });
-  await page.click('[role="menuitem"]:has-text("New Point")');
+  // Wait for dropdown to appear
+  await page.waitForSelector('div[class*="shadow-xl"]', { timeout: 5000 });
 
-  // Wait for modal to appear
-  await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+  // Click the first "New Point" button in the dropdown
+  const dropdownButtons = page.locator('div[class*="shadow-xl"] button');
+  await dropdownButtons.first().click();
+
+  // Wait for modal to appear (look for the header text or z-50 overlay)
+  await page.waitForSelector('text=Add New Knowledge Point', { timeout: 5000 });
 }
 
 export async function createCardWithRichText(page: any, front: string, backHtml: string) {
