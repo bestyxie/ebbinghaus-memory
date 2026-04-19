@@ -5,13 +5,9 @@ import { updateCard } from "@/app/lib/actions";
 import {
   X,
   Check,
-  Bold,
-  Italic,
-  Underline,
-  Link,
-  List,
 } from "lucide-react";
 import { CardWithDeck, Deck } from "@/app/lib/types";
+import { RichTextEditor } from "@/app/components/editor/rich-text-editor";
 
 interface EditCardModalProps {
   card: CardWithDeck;
@@ -23,6 +19,12 @@ export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
   const [state, formAction, isPending] = useActionState(updateCard, null);
   const previousIsPending = useRef(false);
   const [decks, setDecks] = useState<Deck[]>([]);
+  const [backContent, setBackContent] = useState(card.back || "");
+
+  // Reset back content when card changes
+  useEffect(() => {
+    setBackContent(card.back || "");
+  }, [card.id]);
 
   // Fetch all decks for the dropdown
   useEffect(() => {
@@ -103,33 +105,12 @@ export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
           {/* Rich Text Editor */}
           <div>
             <label className="block text-sm font-medium mb-2">Detailed Content</label>
-            <div className="border border-slate-300 rounded-lg overflow-hidden">
-              <div className="flex gap-1 p-2 border-b border-slate-200 bg-slate-50">
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <Bold />
-                </button>
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <Italic />
-                </button>
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <Underline />
-                </button>
-                <div className="w-px h-6 bg-slate-300 mx-1" />
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <Link />
-                </button>
-                <button type="button" className="p-2 hover:bg-slate-200 rounded">
-                  <List />
-                </button>
-              </div>
-              <textarea
-                name="back"
-                required
-                defaultValue={card.back}
-                placeholder="Describe knowledge point in detail..."
-                className="w-full h-36 p-4 resize-none focus:outline-none"
-              />
-            </div>
+            <RichTextEditor
+              value={backContent}
+              onChange={setBackContent}
+              placeholder="Describe knowledge point in detail..."
+              name="back"
+            />
           </div>
 
           {/* Deck Selector with default value */}
