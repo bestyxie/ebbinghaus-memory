@@ -14,9 +14,11 @@ const ACTION_BTN_CLASS = 'p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-
 
 interface CardRowProps {
   card: CardWithDeck;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
 }
 
-export function CardRow({ card }: CardRowProps) {
+export function CardRow({ card, isSelected = false, onSelect }: CardRowProps) {
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -94,7 +96,18 @@ export function CardRow({ card }: CardRowProps) {
 
   return (
     <>
-      <tr className={`group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isOverdue ? 'bg-rose-50/10 dark:bg-rose-950/5' : ''}`}>
+      <tr className={`group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isOverdue ? 'bg-rose-50/10 dark:bg-rose-950/5' : ''} ${isSelected ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}`}>
+        {/* Checkbox */}
+        <td className="px-4 py-5 w-10">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onSelect?.(card.id)}
+            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            aria-label={`Select ${card.front}`}
+          />
+        </td>
+
         {/* Knowledge Point */}
         <td className="px-6 py-5">
           <div className="flex flex-col gap-0.5">

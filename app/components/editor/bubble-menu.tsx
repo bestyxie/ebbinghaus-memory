@@ -65,17 +65,21 @@ export function BubbleMenu({ editor }: BubbleMenuProps) {
         >
           <span className="w-4 h-4 rounded-full bg-yellow-200" />
         </button>
-        <div className="absolute top-full right-0 mt-1 hidden group-hover:flex flex-col bg-white border border-slate-200 rounded shadow-lg z-10">
-          {HIGHLIGHT_COLORS.map((color) => (
-            <button
-              key={color.name}
-              type="button"
-              onClick={() => setHighlight(color.value)}
-              className={`w-8 h-8 ${color.class} hover:opacity-80`}
-              aria-label={`Highlight ${color.name}`}
-              data-color={color.name}
-            />
-          ))}
+        <div className="absolute top-full right-0 hidden group-hover:block z-10">
+          <div className="pt-1">
+            <div className="flex flex-col bg-white border border-slate-200 rounded shadow-lg">
+              {HIGHLIGHT_COLORS.map((color) => (
+                <button
+                  key={color.name}
+                  type="button"
+                  onClick={() => setHighlight(color.value)}
+                  className={`w-8 h-8 ${color.class} hover:opacity-80`}
+                  aria-label={`Highlight ${color.name}`}
+                  data-color={color.name}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </TiptapBubbleMenu>

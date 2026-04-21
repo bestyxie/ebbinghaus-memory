@@ -1,5 +1,4 @@
-import { CardRow } from './card-row';
-import { PaginationClient } from './pagination-client';
+import { CardTableClient } from './card-table-client';
 import { getCardsData } from '@/app/lib/dashboard-data';
 import { auth } from '@/app/lib/auth';
 import { headers } from 'next/headers';
@@ -56,30 +55,11 @@ export async function CardTableServer({ currentPage, sortBy, deckId, search }: C
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden mb-8">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px] text-left border-collapse">
-          <caption className="sr-only">
-            List of all knowledge points with their status and familiarity
-          </caption>
-          <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/30 text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
-              <th className="px-6 py-4">Knowledge Point</th>
-              <th className="px-6 py-4">Tags</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Familiarity</th>
-              <th className="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {cards.map((card) => (
-              <CardRow key={card.id} card={card} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <PaginationClient currentPage={currentPage} totalPages={totalPages} total={total} />
-    </div>
+    <CardTableClient
+      cards={cards}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      total={total}
+    />
   );
 }

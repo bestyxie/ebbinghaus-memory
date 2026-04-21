@@ -26,6 +26,7 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: getExtensions(placeholder),
     content: value,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onChange(html);

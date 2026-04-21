@@ -64,3 +64,4 @@ generated/
 
 stitch-export
 
+.playwright-cli
