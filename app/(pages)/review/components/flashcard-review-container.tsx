@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FlashcardStandardView } from './flashcard-standard-view';
 import { OutputExerciseView } from './exercises';
+import { ReviewLoadingView } from './review-loading-view';
 import { ReviewSession, OutputLevel } from '@/app/lib/types';
 import { getOutputLevel } from '@/app/lib/output-exercises';
 import { REVIEW_BATCH_SIZE } from '@/app/lib/constants';
@@ -265,14 +266,7 @@ function FlashcardReviewContainerContent({
   }, [isFlipped, isFlashcardComplete, isSubmitting, handleRating, isOutputExerciseMode]);
 
   if (isLoadingFlashcards) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading flashcards...</p>
-        </div>
-      </div>
-    );
+    return <ReviewLoadingView mode="flashcard" />;
   }
 
   if (flashcardError && !session) {
@@ -343,16 +337,5 @@ function FlashcardReviewContainerContent({
 }
 
 export function FlashcardReviewContainer(props: FlashcardReviewContainerProps) {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    }>
-      <FlashcardReviewContainerContent {...props} />
-    </Suspense>
-  );
+  return <FlashcardReviewContainerContent {...props} />;
 }

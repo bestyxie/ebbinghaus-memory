@@ -56,6 +56,17 @@ next-env.d.ts
 # Claude Code skills (if contains user-specific skills, otherwise keep)
 # .agents/skills/*/user-specific/
 # .claude/skills/user-specific/
+.claude/skills/
+
+# E2E test artifacts
+test-results/
+tests/e2e/storage-state.json
+
+# Temporary YAML files (but keep config files)
+*.yaml
+!playwright.config.yaml
+
+# Build output
 /dist/
 
 generated/
