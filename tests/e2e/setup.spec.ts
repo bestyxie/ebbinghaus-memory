@@ -1,56 +1,71 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 
-test.beforeEach(async ({ page }) => {
-  // Go to login page
-  await page.goto('/login', { waitUntil: 'networkidle' });
+// Create a custom test that saves storage state
+const test = base.extend({
+  // Save storage state after successful login
+  storageState: async ({ page }, use) => {
+    // Go to login page
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+
+    // Fill login form
+    await page.fill('input[name="email"]', 'test@test.com');
+    await page.fill('input[name="password"]', '1234567890');
+
+    // Submit form
+    await page.press('input[name="password"]', 'Enter');
+
+    // Wait for navigation to dashboard (up to 10 seconds)
+    try {
+      await page.waitForURL('/dashboard', { timeout: 10000 });
+      console.log('✅ Login successful!');
+
+      // Wait a bit for page to stabilize
+      await page.waitForTimeout(2000);
+
+      // Save storage state to file
+      await page.context().storageState({ path: 'tests/e2e/storage-state.json' });
+      console.log('✅ Storage state saved to tests/e2e/storage-state.json');
+    } catch (error) {
+      console.log('❌ Login failed. Trying to register...');
+
+      // If login fails, try to register
+      await page.click('text=立即注册');
+      await page.waitForSelector('input[name="name"]', { timeout: 5000 });
+
+      await page.fill('input[name="email"]', 'test@test.com');
+      await page.fill('input[name="password"]', '1234567890');
+      await page.fill('input[name="name"]', 'Test User');
+
+      await page.press('input[name="name"]', 'Enter');
+
+      // Wait for navigation to dashboard
+      await page.waitForURL('/dashboard', { timeout: 10000 });
+      console.log('✅ Registration successful!');
+
+      // Wait for page to stabilize
+      await page.waitForTimeout(2000);
+
+      // Save storage state
+      await page.context().storageState({ path: 'tests/e2e/storage-state.json' });
+      console.log('✅ Storage state saved to tests/e2e/storage-state.json');
+    }
+
+    // Now use the storage state for actual tests
+    await use('tests/e2e/storage-state.json');
+  },
 });
 
-test('setup: ensure test user exists', async ({ page }) => {
-  // First try to login with existing credentials
-  await page.fill('input[name="email"]', 'test@test.com');
-  await page.fill('input[name="password"]', '1234567890');
+test('setup: generate storage state for E2E tests', async ({ page }) => {
+  // This test just needs to run to generate the storage state
+  // The actual work is done in the storageState fixture above
 
-  // Try to submit form using Enter key
-  await page.press('input[name="password"]', 'Enter');
+  // Verify we're on dashboard
+  expect(page.url()).toContain('/dashboard');
 
-  // Wait for navigation or response
-  await page.waitForTimeout(5000);
+  // Verify we're logged in by checking for logout button or user info
+  const logoutBtn = page.locator('text=Logout').or(page.locator('[aria-label*="Logout"]'));
+  await expect(logoutBtn.first()).toBeVisible({ timeout: 5000 });
 
-  console.log('After login attempt, URL:', page.url());
-
-  // Check if we're on dashboard (login successful)
-  if (page.url().includes('/dashboard')) {
-    console.log('Test user already exists, logged in successfully');
-    return;
-  }
-
-  // If still on login page, try to register
-  console.log('Login failed, trying to register user...');
-
-  // Click register button
-  await page.click('text=立即注册');
-
-  // Wait for name field to appear
-  await page.waitForSelector('input[name="name"]', { timeout: 5000 });
-
-  // Fill registration form
-  await page.fill('input[name="email"]', 'test@test.com');
-  await page.fill('input[name="password"]', '1234567890');
-  await page.fill('input[name="name"]', 'Test User');
-
-  // Submit using Enter key
-  await page.press('input[name="name"]', 'Enter');
-
-  // Wait for response
-  await page.waitForTimeout(5000);
-  console.log('After registration, URL:', page.url());
-
-  // Check if we're on dashboard now
-  if (page.url().includes('/dashboard')) {
-    console.log('User registered successfully');
-    return;
-  }
-
-  // If still not on dashboard, something is wrong
-  throw new Error(`Failed to login/register. Final URL: ${page.url()}`);
+  console.log('✅ Setup complete! Storage state is ready for E2E tests.');
 });
