@@ -24,7 +24,7 @@ export function EditCardModal({ card, isOpen, onClose }: EditCardModalProps) {
   // Reset back content when card changes
   useEffect(() => {
     setBackContent(card.back || "");
-  }, [card.id]);
+  }, [card.id, card.back]);
 
   // Fetch all decks for the dropdown
   useEffect(() => {

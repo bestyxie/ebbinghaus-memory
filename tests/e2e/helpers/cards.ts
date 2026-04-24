@@ -56,7 +56,7 @@ export async function openCreateCardModal(page: any) {
         const text = await btn.textContent();
         if (text?.includes('New Point')) {
           console.log('Found New Point button, clicking parent div...');
-          await page.evaluate((el) => {
+          await page.evaluate((el: HTMLElement) => {
             (el as HTMLElement).parentElement?.click();
           }, await page.locator('button:has-text("New Point")').elementHandle());
           await page.waitForTimeout(1000);

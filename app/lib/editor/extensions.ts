@@ -2,7 +2,7 @@ import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Mark, mergeAttributes, type RawCommands } from '@tiptap/core';
+import { Mark, mergeAttributes } from '@tiptap/core';
 
 // Custom highlight extension with color support
 const Highlight = Mark.create({
@@ -82,7 +82,8 @@ const TextAlign = Extension.create({
           commands.updateAttributes(type, { textAlign: alignment })
         );
       },
-    } satisfies Partial<RawCommands>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
   },
 });
 

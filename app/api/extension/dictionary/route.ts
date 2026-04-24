@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     if (dictData && dictData.phonetics) {
       // 找到一个包含纯正文本和音频的项
-      const validPhonetic = dictData.phonetics.find((p: any) => p.text && p.audio);
+      const validPhonetic = dictData.phonetics.find((p: { text?: string; audio?: string }) => p.text && p.audio);
       if (validPhonetic) {
         phoneticText = validPhonetic.text;
         audioUrl = validPhonetic.audio;
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         englishDefinitions: dictData?.meanings || []
       },
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: '服务器请求外部 API 失败' },
       { status: 500 }

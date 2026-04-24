@@ -14,7 +14,8 @@ let hooksRegistered = false;
 function registerHooks() {
   if (!purify || hooksRegistered) return;
 
-  purify.addHook('uponSanitizeAttribute', (node: HTMLElement, data: { attrName: string; attrValue: string; attributeName: string }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (purify as any).addHook('uponSanitizeAttribute', (node: HTMLElement, data: { attrName: string; attrValue: string; attributeName: string }) => {
     if (data.attrName === 'style') {
       const style = data.attrValue as string;
       const allowedPatterns = [

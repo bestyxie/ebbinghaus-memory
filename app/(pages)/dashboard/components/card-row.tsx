@@ -84,16 +84,6 @@ export function CardRow({ card, isSelected = false, onSelect }: CardRowProps) {
     color: deckColor,
   } : undefined;
 
-  // For article cards, get article-specific metadata
-  const getArticleMetadata = () => {
-    if (!isArticleCard) return null;
-    const wordCount = card.wordCount || 0;
-    const blocksCount = card.recallBlocks?.length || 0;
-    return { wordCount, blocksCount };
-  };
-
-  const articleMetadata = getArticleMetadata();
-
   return (
     <>
       <tr className={`group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isOverdue ? 'bg-rose-50/10 dark:bg-rose-950/5' : ''} ${isSelected ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}`}>
