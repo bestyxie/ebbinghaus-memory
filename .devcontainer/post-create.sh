@@ -9,3 +9,5 @@ pnpm install
 
 
 npx -y skills add vercel-labs/agent-browser --global --yes
+
+npm install -g @playwright/cli@latest
