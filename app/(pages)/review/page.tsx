@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ReviewSession } from '@/app/lib/types';
 import { ReviewLoadingView } from './components/review-loading-view';
@@ -130,5 +130,5 @@ function ReviewPageContent() {
 }
 
 export default function ReviewPage() {
-  return <ReviewPageContent />;
+  return <Suspense><ReviewPageContent /></Suspense>;
 }
