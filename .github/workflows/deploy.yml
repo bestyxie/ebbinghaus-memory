@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main # 触发条件：当代码推送到 main 分支时自动执行
+  # 关键：添加这行即可开启手动触发[]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "触发部署的原因"
+        required: false
+        default: "手动紧急修复/重新部署"
 
 jobs:
   deploy-and-migrate:
