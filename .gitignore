@@ -76,3 +76,4 @@ generated/
 stitch-export
 
 .playwright-cli
+.env*.local
