@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare and Migrate Supabase
+name: Deploy to vercel and Migrate Supabase
 
 on:
   push:
