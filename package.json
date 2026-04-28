@@ -17,7 +17,8 @@
     "prebuild": "mkdir -p dist/server && touch dist/server/index.js",
     "build:vinext": "vite build",
     "seed": "tsx prisma/seed.ts",
-    "migrate:output-track": "tsx prisma/migrations/20260403141031_add_output_track_sm2/migrate_output_track.ts"
+    "migrate:output-track": "tsx prisma/migrations/20260403141031_add_output_track_sm2/migrate_output_track.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.29.0",
@@ -54,15 +55,16 @@
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/dompurify": "^3.2.0",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/dompurify": "^3.2.0",
     "@vitejs/plugin-rsc": "^0.5.21",
     "agentation": "^3.0.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
+    "husky": "^9.1.7",
     "prisma": "7.2.0",
     "react-server-dom-webpack": "^19.2.4",
     "tailwindcss": "^4",
