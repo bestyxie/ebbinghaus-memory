@@ -35,6 +35,22 @@ npx prisma studio
 
 ```
 
+`CLAUDE.md` 是地图，不是百科全书。只作为入口索引（控制在约 100 行内），不承载大段细则。知识库放在 `docs/` 结构化目录中，智能体按需导航到更深层上下文，而非一开始就被淹没。
+
+## Docs 写作规范
+
+`docs/` 下所有 `.md` 都会作为 AI 上下文发送，token 即成本。
+
+- **一句话能说清不写两句**。删掉套话、过渡句、总结段。
+- **有 lint 强制执行的规则**：规则名 + 一行摘要，不需要正反示例。
+- **没有 lint 兜底的规则**：最小必要示例（一个 ❌ + 一个 ✅）。
+- **禁止填充语**："原则是…"、"换句话说…"、"需要注意的是…"。
+- 表格优于散文，列表优于段落。
+
+## 开发环境自体验自验证
+
+完成一个阶段的前端开发后，必须通过 `agent-browser` 在浏览器中实际查看效果，不接受"写完代码即完成"。
+
 ## Architecture
 
 ### Tech Stack
@@ -52,18 +68,7 @@ npx prisma studio
 docs/
 ├── README.md                              # 功能文档索引
 ├── architecture.md                        # 高层架构概览与代码导览
-├── ai-features.md                         # AI 辅助记忆：批量生成助记文本（智谱 GLM-4）
-├── article-system.md                      # 文章系统：Markdown 录入 + 召回块 + SM-2 调度
-├── authentication.md                      # 认证系统：better-auth Session 邮箱/密码登录
-├── browser-extension-api.md               # 浏览器插件 API：通过 API Token 外部访问接口
-├── card-lifecycle.md                      # 卡片生命周期：闪卡与文章从创建到复习的完整流转
-├── dashboard.md                           # 仪表盘：学习统计、卡片管理、创建与快速复习入口
-├── database-schema.md                     # 数据库结构：Prisma 7 + PostgreSQL Schema 说明
-├── deck-management.md                     # 牌组管理：卡片的分类容器（名称、颜色、描述）
-├── dual-track-sm2-plan.md                 # 双轨 SM-2 实施计划：输入轨道与输出轨道独立调度
-├── flashcard-management.md                # 闪卡管理：创建、编辑、删除、按牌组分类
-├── review-system.md                       # 复习系统：SM-2 间隔复习 + 4 级渐进式输出练习
-├── srs-algorithm.md                       # SM-2 算法详解：间隔重复调度核心逻辑
+├── features/                              # 现有功能详细说明文档
 ├── exec-plan/                             # 执行计划规范
 |   ├── PLANS.md       #   ExecPlan 规范（计划层级方法论）
 │   ├── TASKS.md       #   任务拆分规范（任务层级方法论）
@@ -75,12 +80,7 @@ docs/
 │   └── completed/     #   已完成的计划（同上结构 + plan-summary.md）
 └── superpowers/                           # Superpowers 功能迭代记录
     ├── plans/                             #   实施计划（含任务清单 checkbox）
-    │   ├── 2026-04-10-browser-extension-flashcard.md  # 浏览器插件创建闪卡
-    │   ├── 2026-04-16-dashboard-text-search.md        # 仪表盘文本搜索
-    │   └── 2026-04-19-rich-text-editor.md             # TipTap 富文本编辑器
     └── specs/                             #   设计规格
-        ├── 2026-04-16-dashboard-text-search-design.md  # 文本搜索设计
-        └── 2026-04-19-rich-text-editor-design.md       # 富文本编辑器设计
 ```
 
 ### Caveat
