@@ -8,6 +8,7 @@ import {
   BarChart3,
   AlertTriangle,
   Settings,
+  Languages,
 } from "lucide-react";
 
 export function Navigation() {
@@ -15,6 +16,7 @@ export function Navigation() {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard", badge: undefined },
+    { href: "/translate", label: "Translate", icon: "Languages", badge: undefined },
     { href: "/settings", label: "Settings", icon: "Settings", badge: undefined },
     // {
     //   href: "/today-review",
@@ -37,6 +39,7 @@ export function Navigation() {
     BarChart3,
     AlertTriangle,
     Settings,
+    Languages,
   };
 
   return (

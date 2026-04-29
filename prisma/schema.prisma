@@ -23,7 +23,8 @@ model User {
   logs      ReviewLog[] // 复习记录
   outputPracticeLogs OutputPracticeLog[] // 输出练习记录
   apiTokens  ApiToken[]  // API tokens for extension access
-  
+  translationTasks TranslationTask[] // 翻译练习任务
+
   @@unique([email])
   @@map("users")
 }
@@ -304,4 +305,54 @@ enum CardState {
   LEARNING   // 正在学习中（短时间内多次重复）
   REVIEW     // 进入复习队列（间隔按天计算）
   RELEARNING // 忘记了，重新学习（惩罚机制）
+}
+
+// 枚举：翻译任务状态
+enum TranslationTaskStatus {
+  PENDING       // 已生成，未翻译
+  COMPLETED     // 已提交翻译
+  NEEDS_REVIEW  // SM-2 调度需要复习
+}
+
+// 8. 翻译练习任务表 (TranslationTask)
+model TranslationTask {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  topic         String                    // 主题，如 "医疗 IT 与实施"
+  difficulty    String                    // basic | advanced | expert
+  sourceText    String   @db.Text         // AI 生成的中文源文本
+
+  // 用户提交
+  userTranslation String? @db.Text        // 用户的英文翻译（null = 未完成）
+
+  // AI 评估结果
+  score         Int?                      // 综合评分 0-100
+  accuracyScore Int?                      // 准确度 0-100
+  fluencyScore  Int?                      // 流利度 0-100
+  vocabScore    Int?                      // 词汇量 0-100
+  aiFeedback    String?  @db.Text         // AI 逐句批注
+  aiPolished    String?  @db.Text         // AI 润色版本
+  aiNativeAlt   String?  @db.Text         // AI 地道表达建议
+
+  // 提示使用
+  hintUsed      Boolean  @default(false)
+  hintWords     Json?                     // string[] 提示的关键词
+
+  // 计时
+  timeSpentMs   Int?                      // 用户花费时间（毫秒）
+
+  // 复习状态（SM-2）
+  status        TranslationTaskStatus @default(PENDING)
+  nextReviewAt  DateTime @default(now())
+  interval      Int      @default(0)
+  easeFactor    Float    @default(2.5)
+  repetitions   Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, nextReviewAt])
+  @@index([userId, status])
 }
