@@ -68,6 +68,9 @@ npx prisma studio
 docs/
 ├── README.md                              # 功能文档索引
 ├── architecture.md                        # 高层架构概览与代码导览
+├── TESTING.md                             # 单元测试规范
+├── TYPESCRIPT.md                          # TypeScript 类型安全指引
+├── product-specs/     # 产品规格与需求（包含竞品体验方式）
 ├── features/                              # 现有功能详细说明文档
 ├── exec-plan/                             # 执行计划规范
 |   ├── PLANS.md       #   ExecPlan 规范（计划层级方法论）
