@@ -41,13 +41,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<CardsRespo
     }
 
     // Build orderBy object based on sortBy parameter
+    const order: 'asc' | 'desc' = sortOrder === 'desc' ? 'desc' : 'asc';
     let orderBy: Record<string, 'asc' | 'desc'> = { nextReviewAt: 'asc' };
     if (sortBy === 'createdAt') {
-      orderBy = { createdAt: sortOrder as 'asc' | 'desc' };
+      orderBy = { createdAt: order };
     } else if (sortBy === 'easeFactor') {
-      orderBy = { easeFactor: sortOrder as 'asc' | 'desc' };
+      orderBy = { easeFactor: order };
     } else if (sortBy === 'nextReviewAt') {
-      orderBy = { nextReviewAt: sortOrder as 'asc' | 'desc' };
+      orderBy = { nextReviewAt: order };
     }
 
     // Run queries sequentially to avoid PrismaPg connection pool issue

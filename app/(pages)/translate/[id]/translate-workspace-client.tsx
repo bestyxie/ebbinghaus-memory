@@ -107,7 +107,7 @@ function difficultyLabel(d: string) {
 
 export function TranslateWorkspaceClient() {
   const params = useParams();
-  const taskId = params.id as string;
+  const taskId = String(params.id ?? '');
 
   const timer = useTimer();
   const [task, setTask] = useState<TaskData | null>(null);
@@ -308,7 +308,7 @@ export function TranslateWorkspaceClient() {
         {phase === 'translating' && (
           <button
             onClick={() => {
-              const arr = task.hintWords as unknown as string[] | null;
+              const arr = task.hintWords;
               if (arr && arr.length > 0) {
                 setShowHints(!showHints);
                 if (!hintUsed) setHintUsed(true);
@@ -322,7 +322,7 @@ export function TranslateWorkspaceClient() {
         )}
         {showHints && task.hintWords && (
           <div className="mt-2 flex flex-wrap gap-2">
-            {(task.hintWords as unknown as string[]).map((word, i) => (
+            {task.hintWords.map((word, i) => (
               <span key={i} className="px-2 py-1 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
                 {word}
               </span>
@@ -433,7 +433,7 @@ export function TranslateWorkspaceClient() {
                   润色优化
                 </div>
                 <button
-                  onClick={() => openCardModal(task.aiPolished!, task.sourceText)}
+                  onClick={() => openCardModal(task.aiPolished ?? '', task.sourceText)}
                   className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" />
@@ -453,7 +453,7 @@ export function TranslateWorkspaceClient() {
                   地道表达进阶
                 </div>
                 <button
-                  onClick={() => openCardModal(task.aiNativeAlt!, task.sourceText)}
+                  onClick={() => openCardModal(task.aiNativeAlt ?? '', task.sourceText)}
                   className="text-xs text-amber-700 hover:text-amber-800 flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" />

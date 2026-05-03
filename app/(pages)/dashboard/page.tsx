@@ -37,7 +37,9 @@ export default async function DashboardPage(props: DashboardPageProps) {
   const searchParams = await props.searchParams;
 
   // Parse and validate search params
-  const sortBy = (searchParams.sortBy || 'nextReviewAt') as SortOption;
+  const sortBy: SortOption = searchParams.sortBy === 'createdAt' || searchParams.sortBy === 'easeFactor'
+    ? searchParams.sortBy
+    : 'nextReviewAt';
   const deckId = searchParams.deckId || null;
   const page = parseInt(searchParams.page || '1', 10);
   const search = searchParams.search || null;

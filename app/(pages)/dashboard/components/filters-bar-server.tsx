@@ -12,10 +12,10 @@ interface FiltersBarServerProps {
   currentDeckId: string | null;
 }
 
-const sortOptions = [
-  { value: 'nextReviewAt' as SortOption, label: 'Next Review' },
-  { value: 'createdAt' as SortOption, label: 'Creation Date' },
-  { value: 'easeFactor' as SortOption, label: 'Familiarity' },
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: 'nextReviewAt', label: 'Next Review' },
+  { value: 'createdAt', label: 'Creation Date' },
+  { value: 'easeFactor', label: 'Familiarity' },
 ];
 
 export async function FiltersBarServer({ currentSortBy, currentDeckId }: FiltersBarServerProps) {

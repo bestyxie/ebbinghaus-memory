@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
           englishSentence: existing.englishSentence,
           chineseSentence: existing.chineseSentence,
           fillBlankTemplate: existing.fillBlankTemplate,
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
           wordList: existing.wordList as string[],
           standardAnswer: existing.standardAnswer,
           contextPrompt: existing.contextPrompt,
@@ -106,6 +107,7 @@ export async function POST(req: NextRequest) {
         englishSentence: exercise.englishSentence,
         chineseSentence: exercise.chineseSentence,
         fillBlankTemplate: exercise.fillBlankTemplate,
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         wordList: exercise.wordList as string[],
         standardAnswer: exercise.standardAnswer,
         contextPrompt: exercise.contextPrompt,

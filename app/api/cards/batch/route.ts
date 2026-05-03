@@ -8,8 +8,8 @@ export async function DELETE(request: NextRequest) {
   if (userId instanceof NextResponse) return userId;
 
   try {
-    const body = await request.json();
-    const { ids } = body as { ids: string[] };
+    const body: { ids: string[] } = await request.json();
+    const { ids } = body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: 'No card IDs provided' }, { status: 400 });

@@ -48,10 +48,14 @@ export async function POST(
     }
 
     // Evaluate with AI
+    const difficultyLevel = task.difficulty === 'basic' ? 'basic' as const
+      : task.difficulty === 'advanced' ? 'advanced' as const
+      : task.difficulty === 'expert' ? 'expert' as const
+      : 'basic' as const;
     const evaluation = await evaluateTranslation(
       task.sourceText,
       userTranslation,
-      task.difficulty as 'basic' | 'advanced' | 'expert'
+      difficultyLevel
     );
 
     if (!evaluation.data) {

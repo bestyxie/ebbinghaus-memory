@@ -111,11 +111,12 @@ export function PopConfirm({
   // Close popup when clicking outside and handle positioning
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target instanceof Node ? event.target : null;
       if (
         popupRef.current &&
-        !popupRef.current.contains(event.target as Node) &&
+        !popupRef.current.contains(target) &&
         triggerRef.current &&
-        !triggerRef.current.contains(event.target as Node)
+        !triggerRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
@@ -178,7 +179,10 @@ export function PopConfirm({
   // Store a reference to the trigger button element
   useEffect(() => {
     if (triggerRef.current && triggerRef.current.children[0]) {
-      buttonRef.current = triggerRef.current.children[0] as HTMLButtonElement;
+      const child = triggerRef.current.children[0];
+      if (child instanceof HTMLButtonElement) {
+        buttonRef.current = child;
+      }
     }
   }, []);
 

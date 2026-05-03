@@ -34,7 +34,7 @@ function extractRecallBlocks(doc: JSONContent): RecallBlock[] {
         const recallMark = node.marks.find((mark) => mark.type === 'recallBlockMark')
         if (recallMark?.attrs?.id) {
           blocks.push({
-            id: recallMark.attrs.id as string,
+            id: String(recallMark.attrs.id),
             startIndex: currentIndex,
             endIndex: currentIndex + text.length,
             content: text,
@@ -262,7 +262,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
         if (node.isText && node.marks) {
           node.marks.forEach((mark) => {
             if (mark.type.name === 'recallBlockMark') {
-              const blockId = mark.attrs.id as string
+              const blockId = String(mark.attrs.id)
               const shouldBeRevealed = revealedBlocks.has(blockId)
               if (mark.attrs.revealed !== shouldBeRevealed) {
                 const newMark = mark.type.create({
@@ -286,7 +286,8 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     const handleEditorClick = useCallback(
       (event: React.MouseEvent) => {
         if (editable) return
-        const target = event.target as HTMLElement
+        if (!(event.target instanceof HTMLElement)) return
+        const target = event.target
         const recallElement = target.closest('[data-recall-id]')
         if (recallElement) {
           const blockId = recallElement.getAttribute('data-recall-id')

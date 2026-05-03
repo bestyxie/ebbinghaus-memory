@@ -50,8 +50,8 @@ function FlashcardReviewContainerContent({
 
   // mode 由后端决定：'input' = 标准闪卡，'output' = 输出练习
   const isOutputExerciseMode = currentItem?.mode === 'output';
-  const outputLevel: OutputLevel | null = isOutputExerciseMode
-    ? getOutputLevel(currentItem!.outputRepetitions || 0)
+  const outputLevel: OutputLevel | null = isOutputExerciseMode && currentItem
+    ? getOutputLevel(currentItem.outputRepetitions || 0)
     : null;
 
   const loadSingleFlashcard = useCallback(async () => {
@@ -100,12 +100,15 @@ function FlashcardReviewContainerContent({
         setCurrentIndex(0);
         setIsFlipped(false);
       } else {
-        setSession(prev => ({
-          ...prev!,
-          items: [...(prev?.items || []), ...data.items],
-          hasMore: data.hasMore,
-          nextCursor: data.nextCursor,
-        }));
+        setSession(prev => {
+          if (!prev) return data;
+          return {
+            ...prev,
+            items: [...prev.items, ...data.items],
+            hasMore: data.hasMore,
+            nextCursor: data.nextCursor,
+          };
+        });
       }
     } catch (err) {
       console.error('Error loading flashcards:', err);
@@ -194,7 +197,7 @@ function FlashcardReviewContainerContent({
       }
 
       const nextIndex = currentIndex + 1;
-      const isLastOverallItem = nextIndex >= flashcardTotal && !session!.hasMore;
+      const isLastOverallItem = nextIndex >= flashcardTotal && !(session?.hasMore ?? false);
 
       // 重置输出练习状态
       setOutputExercisePendingRating(null);

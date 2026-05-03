@@ -6,6 +6,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 const connectionString = `${process.env.DATABASE_URL}`
 
 // Prisma Client 单例模式，避免在开发环境中创建多个实例
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }

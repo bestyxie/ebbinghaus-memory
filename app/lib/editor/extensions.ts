@@ -76,6 +76,7 @@ const TextAlign = Extension.create({
   },
 
   addCommands() {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       setTextAlignment: (alignment: string) => ({ commands }: { commands: { updateAttributes: (type: string, attrs: Record<string, unknown>) => boolean } }) => {
         return this.options.types.every((type: string) =>

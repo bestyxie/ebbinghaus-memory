@@ -52,9 +52,9 @@ export function AIMemoryButton() {
 
       // Filter overdue cards (same as dashboard table with nextReviewAt sorting)
       // This ensures cards are due for review according to the SM-2 algorithm
-      const overdueCards = data.cards
+      const overdueCards: AIMemoryCard[] = data.cards
         .filter((card: { nextReviewAt: string }) => new Date(card.nextReviewAt) <= new Date())
-        .slice(0, 10) as AIMemoryCard[];
+        .slice(0, 10);
 
       if (overdueCards.length === 0) {
         setError('No overdue cards found in the vocabulary tag.');

@@ -8,7 +8,11 @@ const evaluateRequestSchema = z.object({
   targetWord: z.string().min(1),
   standardAnswer: z.string().min(1),
   userAnswer: z.string().min(1),
-  level: z.union([z.number(), z.string()]).transform((v) => parseInt(String(v)) as 1 | 2 | 3 | 4),
+  level: z.union([z.number(), z.string()]).transform((v): 1 | 2 | 3 | 4 => {
+    const n = Number(v);
+    if (n === 1 || n === 2 || n === 3 || n === 4) return n;
+    return 1;
+  }),
 });
 
 /**

@@ -14,10 +14,10 @@ let hooksRegistered = false;
 function registerHooks() {
   if (!purify || hooksRegistered) return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/consistent-type-assertions
   (purify as any).addHook('uponSanitizeAttribute', (node: HTMLElement, data: { attrName: string; attrValue: string; attributeName: string }) => {
     if (data.attrName === 'style') {
-      const style = data.attrValue as string;
+      const style = data.attrValue;
       const allowedPatterns = [
         /^text-align:\s*(left|center|right|justify)\s*;?$/i,
         /^background-color:\s*#[0-9a-f]{3,6}\s*;?$/i,
@@ -28,7 +28,7 @@ function registerHooks() {
       }
     }
     if (data.attrName === 'href') {
-      const href = data.attrValue as string;
+      const href = data.attrValue;
       if (href.startsWith('javascript:') || href.startsWith('data:')) {
         data.attrValue = '';
         node.removeAttribute('href');

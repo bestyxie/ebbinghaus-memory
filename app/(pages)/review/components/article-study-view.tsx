@@ -218,7 +218,7 @@ function ArticleContentWithBlocks({
             const [, status, blockId, blockContent] = match
 
             // Add text before this block
-            if (match.index! > lastIndex) {
+            if (match.index !== undefined && match.index > lastIndex) {
               elements.push(
                 <span key={`text-${index}`}>
                   {children.substring(lastIndex, match.index)}
@@ -237,7 +237,7 @@ function ArticleContentWithBlocks({
               />
             )
 
-            lastIndex = match.index! + match[0].length
+            lastIndex = (match.index ?? 0) + match[0].length
           })
 
           // Add remaining text after last block

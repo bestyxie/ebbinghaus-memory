@@ -41,11 +41,11 @@ export const getCardsData = cache(async (
     outputInterval: number | null;
     outputEaseFactor: number | null;
     outputNextReviewAt: Date | null;
-    state: string;
+    state: 'NEW' | 'LEARNING' | 'REVIEW' | 'RELEARNING';
     userId: string;
     createdAt: Date;
     updatedAt: Date;
-    cardType: string;
+    cardType: 'FLASHCARD' | 'ARTICLE';
     deckId: string | null;
     deckTitle: string | null;
     deckColor: string | null;
@@ -166,7 +166,7 @@ export const getCardsData = cache(async (
   // Transform to CardWithDeck format
   const transformedCards: CardWithDeck[] = rawCards.map((card) => ({
     id: card.id,
-    cardType: card.cardType as 'FLASHCARD' | 'ARTICLE',
+    cardType: card.cardType,
     front: card.front,
     back: card.back, // Excluded for performance
     note: card.note,
@@ -178,15 +178,15 @@ export const getCardsData = cache(async (
     outputInterval: card.outputInterval ?? 0,
     outputEaseFactor: card.outputEaseFactor ?? 2.5,
     outputNextReviewAt: card.outputNextReviewAt ?? null,
-    state: card.state as 'NEW' | 'LEARNING' | 'REVIEW' | 'RELEARNING',
+    state: card.state,
     userId: card.userId,
     createdAt: card.createdAt,
     updatedAt: card.updatedAt,
     deck: card.deckId
       ? {
         id: card.deckId,
-        title: card.deckTitle!,
-        color: card.deckColor!,
+        title: card.deckTitle ?? '',
+        color: card.deckColor ?? '',
       }
       : null,
   }));
