@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Loader2,
@@ -107,7 +107,9 @@ function difficultyLabel(d: string) {
 
 export function TranslateWorkspaceClient() {
   const params = useParams();
+  const router = useRouter();
   const taskId = String(params.id ?? '');
+  const [generatingNext, setGeneratingNext] = useState(false);
 
   const timer = useTimer();
   const [task, setTask] = useState<TaskData | null>(null);
@@ -130,6 +132,18 @@ export function TranslateWorkspaceClient() {
 
   // Auto-save draft to localStorage
   const draftKey = `translate-draft-${taskId}`;
+
+  // Reset working state when navigating to a new task
+  useEffect(() => {
+    setTranslation('');
+    setAnnotations([]);
+    setShowHints(false);
+    setHintUsed(false);
+    setError('');
+    setPhase('loading');
+    setTask(null);
+    setGeneratingNext(false);
+  }, [taskId]);
 
   // Load task data
   useEffect(() => {
@@ -209,6 +223,30 @@ export function TranslateWorkspaceClient() {
     setPhase('translating');
     timer.start();
     textareaRef.current?.focus();
+  }
+
+  // Generate next task with same topic/difficulty
+  async function handleGenerateNext() {
+    if (!task) return;
+    setGeneratingNext(true);
+    setError('');
+    try {
+      const res = await fetch('/api/translate/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: task.topic, difficulty: task.difficulty }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || '生成失败');
+        return;
+      }
+      router.push(`/translate/${data.task.id}`);
+    } catch {
+      setError('网络错误，请重试');
+    } finally {
+      setGeneratingNext(false);
+    }
   }
 
   // Open card creation modal
@@ -473,13 +511,23 @@ export function TranslateWorkspaceClient() {
               <RefreshCw className="w-4 h-4" />
               针对此句再译一次
             </button>
-            <Link
-              href="/translate"
-              className="flex-1 h-10 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-1.5 transition-colors"
+            <button
+              onClick={handleGenerateNext}
+              disabled={generatingNext}
+              className="flex-1 h-10 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 transition-colors"
             >
-              <ChevronRight className="w-4 h-4" />
-              生成下一个任务
-            </Link>
+              {generatingNext ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <ChevronRight className="w-4 h-4" />
+                  生成下一个任务
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
