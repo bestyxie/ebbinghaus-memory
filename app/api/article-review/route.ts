@@ -3,6 +3,7 @@ import { prisma } from '@/app/lib/prisma'
 import { requireAuth } from '@/app/lib/api-helpers'
 import { calculateReview } from '@/app/lib/srs-algorithm'
 import { z } from 'zod'
+import { revalidatePath } from 'next/cache'
 
 // Validation schema for article review submission
 const submitReviewSchema = z.object({
@@ -141,6 +142,8 @@ export async function POST(request: NextRequest) {
         },
       }),
     ])
+
+    revalidatePath('/dashboard')
 
     return NextResponse.json({
       success: true,
