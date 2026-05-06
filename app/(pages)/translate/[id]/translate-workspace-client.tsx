@@ -23,6 +23,11 @@ interface Annotation {
   comment: string;
 }
 
+interface NativeAnnotation {
+  segment: string;
+  comment: string;
+}
+
 interface TaskData {
   id: string;
   topic: string;
@@ -39,6 +44,7 @@ interface TaskData {
   aiFeedback: string | null;
   aiPolished: string | null;
   aiNativeAlt: string | null;
+  aiNativeAnnotations: NativeAnnotation[] | null;
 }
 
 type Phase = 'loading' | 'translating' | 'submitting' | 'result';
@@ -119,6 +125,7 @@ export function TranslateWorkspaceClient() {
   const [hintUsed, setHintUsed] = useState(false);
   const [error, setError] = useState('');
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [nativeAnnotations, setNativeAnnotations] = useState<NativeAnnotation[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Card creation state
@@ -137,6 +144,7 @@ export function TranslateWorkspaceClient() {
   useEffect(() => {
     setTranslation('');
     setAnnotations([]);
+    setNativeAnnotations([]);
     setShowHints(false);
     setHintUsed(false);
     setError('');
@@ -157,6 +165,7 @@ export function TranslateWorkspaceClient() {
 
         if (data.task.status === 'COMPLETED' && data.task.userTranslation) {
           setTranslation(data.task.userTranslation);
+          setNativeAnnotations(data.task.aiNativeAnnotations || []);
           setPhase('result');
         } else {
           // Restore draft if exists
@@ -208,6 +217,7 @@ export function TranslateWorkspaceClient() {
 
       setTask(data.task);
       setAnnotations(data.annotations || []);
+      setNativeAnnotations(data.nativeAnnotations || []);
       setPhase('result');
       localStorage.removeItem(draftKey);
     } catch {
@@ -498,7 +508,25 @@ export function TranslateWorkspaceClient() {
                   整句制卡
                 </button>
               </div>
-              <p className="text-sm text-gray-800 leading-relaxed">{task.aiNativeAlt}</p>
+              {nativeAnnotations.length > 0 ? (
+                <>
+                  <div className="text-sm leading-relaxed mb-3">
+                    {highlightNativeText(task.aiNativeAlt, nativeAnnotations)}
+                  </div>
+                  <div className="space-y-1">
+                    {nativeAnnotations.map((ann, i) => (
+                      <div key={i} className="text-xs flex items-start gap-1.5">
+                        <span>🌟</span>
+                        <span className="text-amber-800">
+                          <strong className="text-amber-900">{ann.segment}</strong> — {ann.comment}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-800 leading-relaxed">{task.aiNativeAlt}</p>
+              )}
             </div>
           )}
 
@@ -642,6 +670,51 @@ function highlightTranslation(text: string, annotations: Annotation[]) {
 
     parts.push(
       <span key={`a-${ann.index}`} className={`${color} px-0.5 rounded-sm`} title={ann.comment}>
+        {ann.segment}
+      </span>
+    );
+
+    lastIndex = ann.index + ann.segment.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(<span key={`t-${lastIndex}`}>{text.slice(lastIndex)}</span>);
+  }
+
+  return parts;
+}
+
+// === Native text highlight helper ===
+
+function highlightNativeText(text: string, annotations: NativeAnnotation[]) {
+  if (!annotations.length) return <span>{text}</span>;
+
+  const sorted = [...annotations]
+    .map((ann) => ({
+      ...ann,
+      index: text.indexOf(ann.segment),
+    }))
+    .filter((ann) => ann.index !== -1)
+    .sort((a, b) => a.index - b.index);
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  for (const ann of sorted) {
+    if (ann.index < lastIndex) continue;
+
+    if (ann.index > lastIndex) {
+      parts.push(
+        <span key={`t-${lastIndex}`}>{text.slice(lastIndex, ann.index)}</span>
+      );
+    }
+
+    parts.push(
+      <span
+        key={`a-${ann.index}`}
+        className="bg-amber-200 text-amber-900 border-b-2 border-amber-400 px-0.5 rounded-sm"
+        title={ann.comment}
+      >
         {ann.segment}
       </span>
     );

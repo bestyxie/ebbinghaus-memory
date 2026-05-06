@@ -335,6 +335,7 @@ model TranslationTask {
   aiFeedback    String?  @db.Text         // AI 逐句批注
   aiPolished    String?  @db.Text         // AI 润色版本
   aiNativeAlt   String?  @db.Text         // AI 地道表达建议
+  aiNativeAnnotations Json?                // 地道表达批注 [{segment, comment}]
 
   // 提示使用
   hintUsed      Boolean  @default(false)

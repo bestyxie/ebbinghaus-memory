@@ -90,6 +90,7 @@ export async function POST(
         aiFeedback: evaluation.data.feedback,
         aiPolished: evaluation.data.polished,
         aiNativeAlt: evaluation.data.nativeAlt,
+        aiNativeAnnotations: evaluation.data.nativeAnnotations ?? undefined,
         status: newStatus,
         nextReviewAt: sm2.nextReviewDate,
         interval: sm2.interval,
@@ -101,6 +102,7 @@ export async function POST(
     return NextResponse.json({
       task: updated,
       annotations: evaluation.data.annotations,
+      nativeAnnotations: evaluation.data.nativeAnnotations,
     });
   } catch (error) {
     console.error('Error in POST /api/translate/[id]/submit:', error);

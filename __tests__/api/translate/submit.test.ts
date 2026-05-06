@@ -56,6 +56,9 @@ const evaluationData = {
     { segment: 'data migration', type: 'good' as const, comment: '术语准确' },
     { segment: 'key factors', type: 'bad' as const, comment: '可用 critical' },
   ],
+  nativeAnnotations: [
+    { segment: 'critical enablers', comment: '比 key factors 更专业地道' },
+  ],
 }
 
 describe('POST /api/translate/[id]/submit', () => {

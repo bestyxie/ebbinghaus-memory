@@ -34,6 +34,10 @@ export interface EvaluateTranslationOutput {
     type: 'good' | 'bad';
     comment: string;
   }>;
+  nativeAnnotations: Array<{
+    segment: string;
+    comment: string;
+  }>;
 }
 
 // === Zod Schemas ===
@@ -54,6 +58,10 @@ const evaluationSchema = z.object({
   annotations: z.array(z.object({
     segment: z.string(),
     type: z.enum(['good', 'bad']),
+    comment: z.string(),
+  })),
+  nativeAnnotations: z.array(z.object({
+    segment: z.string(),
     comment: z.string(),
   })),
 });
@@ -138,6 +146,9 @@ export async function evaluateTranslation(
   "nativeAlt": "<更地道、更专业的母语者替代版本>",
   "annotations": [
     {"segment": "<用户翻译中的确切词组>", "type": "good|bad", "comment": "<简短中文评论>"}
+  ],
+  "nativeAnnotations": [
+    {"segment": "<nativeAlt中的地道表达片段>", "comment": "<解释为什么地道，相比普通表达好在哪里>"}
   ]
 }
 
@@ -149,6 +160,8 @@ export async function evaluateTranslation(
 注意事项:
 - annotations 中的 segment 必须是用户翻译原文中的确切片段（词组或短语）
 - annotations 数组包含 2-4 个批注即可，标出好的用法(good)和有问题的地方(bad)
+- nativeAnnotations 中的 segment 必须是 nativeAlt 文本中的确切片段（词组、短语或搭配）
+- nativeAnnotations 包含 2-4 个批注，聚焦最值得学习的地道表达点，解释其地道之处
 - comment 用中文
 - 只输出 JSON，不要输出 markdown 代码块或其他格式`,
     });
