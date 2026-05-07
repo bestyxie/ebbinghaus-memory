@@ -1,0 +1,114 @@
+
+> web@0.1.0 prebuild /workspace/apps/web
+> mkdir -p dist/server && touch dist/server/index.js
+
+
+> web@0.1.0 build /workspace/apps/web
+> next build
+
+   ▲ Next.js 15.3.6
+   - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 4.1min
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/29) ...
+   Generating static pages (7/29) 
+   Generating static pages (14/29) 
+   Generating static pages (21/29) 
+ ✓ Generating static pages (29/29)
+Error fetching session: Error: Dynamic server usage: Route /article-editor couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/7754.js:1:11715)
+    at l (.next/server/chunks/5616.js:1:8674)
+    at m (.next/server/chunks/9626.js:1:9175)
+    at stringify (<anonymous>) {
+  description: "Route /article-editor couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Error fetching session: Error: Dynamic server usage: Route /review couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/7754.js:1:11715)
+    at l (.next/server/chunks/5616.js:1:8674)
+    at m (.next/server/chunks/9626.js:1:9175)
+    at stringify (<anonymous>) {
+  description: "Route /review couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Error fetching session: Error: Dynamic server usage: Route / couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/7754.js:1:11715)
+    at l (.next/server/chunks/5616.js:1:8674)
+    at m (.next/server/chunks/9626.js:1:9175)
+    at stringify (<anonymous>) {
+  description: "Route / couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Error fetching session: Error: Dynamic server usage: Route /settings couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/7754.js:1:11715)
+    at l (.next/server/chunks/5616.js:1:8674)
+    at m (.next/server/chunks/9626.js:1:9175)
+    at stringify (<anonymous>) {
+  description: "Route /settings couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Error fetching session: Error: Dynamic server usage: Route /translate couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at y (.next/server/chunks/7754.js:1:11715)
+    at l (.next/server/chunks/5616.js:1:8674)
+    at m (.next/server/chunks/9626.js:1:9175)
+    at stringify (<anonymous>) {
+  description: "Route /translate couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                   Size  First Load JS
+┌ ƒ /                                        226 B         102 kB
+├ ○ /_not-found                              978 B         103 kB
+├ ƒ /api/ai/generate-memory-text             226 B         102 kB
+├ ƒ /api/article-cards                       226 B         102 kB
+├ ƒ /api/article-cards/[id]                  226 B         102 kB
+├ ƒ /api/article-cards/[id]/recall-blocks    226 B         102 kB
+├ ƒ /api/article-review                      226 B         102 kB
+├ ƒ /api/article-review/[id]                 226 B         102 kB
+├ ƒ /api/auth/[...nextauth]                  226 B         102 kB
+├ ƒ /api/cards/[id]                          226 B         102 kB
+├ ƒ /api/cards/batch                         226 B         102 kB
+├ ƒ /api/dashboard/cards                     226 B         102 kB
+├ ƒ /api/dashboard/stats                     226 B         102 kB
+├ ƒ /api/decks                               226 B         102 kB
+├ ƒ /api/decks/[id]                          226 B         102 kB
+├ ƒ /api/decks/with-count                    226 B         102 kB
+├ ƒ /api/extension/cards                     226 B         102 kB
+├ ƒ /api/extension/decks                     226 B         102 kB
+├ ƒ /api/extension/dictionary                226 B         102 kB
+├ ƒ /api/output-exercises/evaluate           226 B         102 kB
+├ ƒ /api/output-exercises/generate           226 B         102 kB
+├ ƒ /api/review                              226 B         102 kB
+├ ƒ /api/review/[id]                         226 B         102 kB
+├ ƒ /api/tokens                              226 B         102 kB
+├ ƒ /api/tokens/[id]                         226 B         102 kB
+├ ƒ /api/translate/[id]/create-card          226 B         102 kB
+├ ƒ /api/translate/[id]/submit               226 B         102 kB
+├ ƒ /api/translate/generate                  226 B         102 kB
+├ ƒ /api/translate/tasks                     226 B         102 kB
+├ ƒ /api/translate/tasks/[id]                226 B         102 kB
+├ ƒ /article-editor                        14.5 kB         271 kB
+├ ƒ /dashboard                             38.4 kB         299 kB
+├ ○ /login                                 2.65 kB         105 kB
+├ ○ /register                                790 B         103 kB
+├ ƒ /review                                85.2 kB         222 kB
+├ ƒ /seed                                    226 B         102 kB
+├ ƒ /settings                              2.76 kB         105 kB
+├ ƒ /translate                              3.4 kB         109 kB
+└ ƒ /translate/[id]                        5.05 kB         111 kB
++ First Load JS shared by all               102 kB
+  ├ chunks/02b46980-cf61d19fe8da124a.js    53.2 kB
+  ├ chunks/239-95d8fcc48aa29c8e.js         46.8 kB
+  └ other shared chunks (total)            1.93 kB
+
+
+ƒ Middleware                               32.6 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

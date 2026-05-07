@@ -6,33 +6,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Ebbinghaus Memory - a spaced repetition flashcard app implementing the Ebbinghaus forgetting curve and SM-2 algorithm. Built with Next.js 15, Prisma, PostgreSQL, and better-auth.
 
+## Monorepo Structure
+
+```
+/
+├── apps/web/          # Next.js 应用（页面、API、Prisma、auth）
+├── packages/shared/   # @ebbinghaus/shared（跨端类型、Zod schemas、常量）
+├── docs/              # 文档
+├── pnpm-workspace.yaml
+├── turbo.json
+└── package.json       # workspace root
+```
+
 ## Development Commands
 
 ```bash
-# Development server (with Turbopack)
+# Development server
 pnpm dev
 
-# Production build
+# Production build (all packages)
 pnpm build
 
-# Start production server
-pnpm start
-
-# Lint
+# Lint (all packages)
 pnpm lint
 
-# type check
+# Type check (all packages)
 pnpm type-check
 
-# Generate Prisma client (after schema changes)
-npx prisma generate
+# Test (all packages)
+pnpm test
 
-# Run database migrations
-npx prisma migrate dev
+# Commands for specific workspace
+pnpm --filter web dev
+pnpm --filter web test
+pnpm --filter @ebbinghaus/shared type-check
 
-# Open Prisma Studio (database GUI)
-npx prisma studio
-
+# Prisma commands (run from apps/web)
+cd apps/web && npx prisma generate
+cd apps/web && npx prisma migrate dev
 ```
 
 `CLAUDE.md` 是地图，不是百科全书。只作为入口索引（控制在约 100 行内），不承载大段细则。知识库放在 `docs/` 结构化目录中，智能体按需导航到更深层上下文，而非一开始就被淹没。
@@ -55,7 +66,8 @@ npx prisma studio
 
 ### Tech Stack
 
-- **Next.js 15** with App Router (using Turbopack for dev)
+- **pnpm workspaces** + **Turborepo** for monorepo management
+- **Next.js 15** with App Router (using vinext/Vite for dev)
 - **React 19** with TypeScript
 - **Prisma 7** with PostgreSQL
 - **better-auth** 1.5.3 for authentication

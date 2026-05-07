@@ -24,9 +24,10 @@ Before starting any task, read the root `CLAUDE.md` file for comprehensive proje
 
 ### File Structure Preferences
 
-- Use route groups for authenticated pages: `app/(pages)/`
-- Keep utility functions in `app/lib/`
-- Place validation schemas in `app/lib/zod.ts`
+- Use route groups for authenticated pages: `apps/web/app/(pages)/`
+- Keep utility functions in `apps/web/app/lib/`
+- Shared types and schemas: `packages/shared/src/`
+- Import shared types via `@ebbinghaus/shared`
 - Organize components by feature/section
 
 ### Code Style
@@ -35,13 +36,14 @@ Before starting any task, read the root `CLAUDE.md` file for comprehensive proje
 
 ## Critical Files Reference
 
-| File                       | Purpose                    |
-| -------------------------- | -------------------------- |
-| `CLAUDE.md` (root)         | Full project documentation |
-| `app/lib/srs-algorithm.ts` | SM-2 algorithm core        |
-| `app/lib/prisma.ts`        | Prisma client              |
-| `prisma/schema.prisma`     | Database schema            |
-| `app/(pages)/layout.tsx`   | Authenticated layout       |
-| `auth.config.ts`           | Auth configuration         |
+| File                                | Purpose                    |
+| ----------------------------------- | -------------------------- |
+| `CLAUDE.md` (root)                  | Full project documentation |
+| `packages/shared/src/types.ts`      | Cross-platform types       |
+| `packages/shared/src/zod.ts`        | Zod validation schemas     |
+| `apps/web/app/lib/srs-algorithm.ts` | SM-2 algorithm core        |
+| `apps/web/app/lib/prisma.ts`        | Prisma client              |
+| `apps/web/prisma/schema.prisma`     | Database schema            |
+| `apps/web/app/(pages)/layout.tsx`   | Authenticated layout       |
 
 Always ask clarifying questions when there are multiple valid approaches to a task.
