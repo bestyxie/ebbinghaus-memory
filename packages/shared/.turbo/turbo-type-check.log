@@ -1,4 +1,0 @@
-
-> @ebbinghaus/shared@0.0.0 type-check /workspace/packages/shared
-> tsc --noEmit
-
