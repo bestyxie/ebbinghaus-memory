@@ -30,6 +30,7 @@ export const createCardSchema = z.object({
   back: z.string().min(1, "Content is required"),
   note: z.string().optional(),
   deckId: z.string().optional(),
+  source: z.string().optional(),
   quality: z.enum(["5", "4", "3"]),
 })
 

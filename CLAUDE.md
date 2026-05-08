@@ -11,6 +11,7 @@ Ebbinghaus Memory — 基于 SM-2 算法的间隔重复记忆卡片应用。Next
 ```
 /
 ├── apps/web/          # Next.js 应用（页面、API、Prisma、auth）
+├── apps/extension/    # Chrome 扩展（Plasmo · 词汇捕获 · 后台同步）
 ├── packages/shared/   # @ebbinghaus/shared（跨端类型、Zod schemas、常量）
 ├── docs/              # 文档与规范
 ├── pnpm-workspace.yaml
@@ -23,6 +24,7 @@ Ebbinghaus Memory — 基于 SM-2 算法的间隔重复记忆卡片应用。Next
 ```bash
 pnpm dev / type-check / test / lint / build          # 全局
 pnpm --filter web dev / test                         # 单包
+pnpm --filter extension dev / build / test           # 扩展
 cd apps/web && npx prisma generate / migrate dev     # Prisma
 ```
 

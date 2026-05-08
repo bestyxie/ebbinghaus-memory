@@ -46,5 +46,8 @@ Before starting any task, read the root `CLAUDE.md` file for comprehensive proje
 | `apps/web/app/lib/prisma.ts`        | Prisma client              |
 | `apps/web/prisma/schema.prisma`     | Database schema            |
 | `apps/web/app/(pages)/layout.tsx`   | Authenticated layout       |
+| `apps/extension/`                   | Chrome 扩展（Plasmo）      |
+| `apps/extension/lib/ebbinghaus-api.ts` | Extension API client    |
+| `apps/extension/background/`        | 后台同步队列               |
 | `docs/architecture.md`              | 高层架构详情与代码导览     |
 | `docs/features/`                    | 各功能模块详细说明         |

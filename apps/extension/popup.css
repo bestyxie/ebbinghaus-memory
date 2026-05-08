@@ -1,0 +1,269 @@
+/* Popup styles */
+.popup-container {
+  width: 400px;
+  height: 600px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1a1a1a;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.popup-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.settings-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.settings-button:hover {
+  background: #f3f4f6;
+}
+
+.popup-main {
+  padding: 20px;
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 0;
+}
+
+.skeleton-line {
+  height: 20px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: pulse 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    background-position: 200% 0;
+  }
+  50% {
+    background-position: -200% 0;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  gap: 12px;
+}
+
+.illustration {
+  font-size: 64px;
+}
+
+.empty-text {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.empty-helper {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.secondary-cta {
+  padding: 8px 16px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.secondary-cta:hover {
+  background: #e5e7eb;
+}
+
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.status-badge.synced {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.error {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.status-badge.rate_limited {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.no_auth {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.queue-info {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin: -8px 0 16px;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  gap: 12px;
+}
+
+.error-icon {
+  font-size: 48px;
+}
+
+.error-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.error-message {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.saved-count {
+  font-size: 48px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.action-button.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.action-button.primary:hover {
+  background: #2563eb;
+}
+
+.action-button.secondary {
+  background: #f3f4f6;
+  color: #1a1a1a;
+}
+
+.action-button.secondary:hover {
+  background: #e5e7eb;
+}
+
+.site-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.site-toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-toggle-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.site-toggle-domain {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.site-toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #d1d5db;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.site-toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.site-toggle-switch.active {
+  background: #3b82f6;
+}
+
+.site-toggle-switch.active::after {
+  transform: translateX(20px);
+}

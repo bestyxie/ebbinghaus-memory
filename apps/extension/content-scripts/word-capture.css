@@ -1,0 +1,223 @@
+/* Hunter Plugin Tooltip Styles */
+
+.hunter-translate-button {
+  position: absolute;
+  z-index: 2147483647;
+  width: 32px;
+  height: 32px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  transition: all 0.15s ease;
+  animation: hunter-scale-in 0.15s ease-out;
+}
+
+.hunter-translate-button:hover {
+  background: #f3f4f6;
+  border-color: #3b82f6;
+  transform: scale(1.05);
+}
+
+.hunter-translate-button:active {
+  transform: scale(0.95);
+}
+
+@keyframes hunter-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hunter-tooltip {
+  position: absolute;
+  z-index: 2147483647;
+  width: 300px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  animation: hunter-fade-in 0.15s ease-out;
+}
+
+@keyframes hunter-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hunter-close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.hunter-close-button:hover {
+  background: #f3f4f6;
+  color: #1a1a1a;
+}
+
+.hunter-word {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+  padding-right: 32px; /* Space for close button */
+}
+
+.hunter-pronunciation {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 12px;
+  font-family: 'Lucida Sans Unicode', 'Arial Unicode MS', sans-serif;
+}
+
+.hunter-definition {
+  margin-bottom: 16px;
+  color: #374151;
+}
+
+.hunter-save-button {
+  width: 100%;
+  padding: 10px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hunter-save-button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.hunter-save-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.hunter-save-button.saved {
+  background: #10b981;
+}
+
+/* Loading state */
+.hunter-tooltip-loading .hunter-loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.hunter-api-key-warning {
+  margin-top: 8px;
+  padding: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.hunter-api-key-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.hunter-loading-skeleton .skeleton-line {
+  height: 16px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: hunter-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.hunter-loading-skeleton .skeleton-line.short {
+  width: 60%;
+}
+
+@keyframes hunter-skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error state */
+.hunter-tooltip-error {
+  position: absolute;
+  border-left: 4px solid #ef4444;
+}
+
+.hunter-error-message {
+  color: #ef4444;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.hunter-retry-button {
+  width: 100%;
+  padding: 10px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.hunter-retry-button:hover {
+  background: #dc2626;
+}
+
+/* Confetti animation for first save */
+@keyframes hunter-confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.hunter-save-button.saved::before {
+  content: '✓';
+  margin-right: 4px;
+}
