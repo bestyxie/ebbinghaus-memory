@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Ebbinghaus Memory - a spaced repetition flashcard app implementing the Ebbinghaus forgetting curve and SM-2 algorithm. Built with Next.js 15, Prisma, PostgreSQL, and better-auth.
+Ebbinghaus Memory — 基于 SM-2 算法的间隔重复记忆卡片应用。Next.js 15 · Prisma 7 · PostgreSQL · better-auth · Tailwind CSS 4。
 
 ## Monorepo Structure
 
@@ -12,92 +12,52 @@ Ebbinghaus Memory - a spaced repetition flashcard app implementing the Ebbinghau
 /
 ├── apps/web/          # Next.js 应用（页面、API、Prisma、auth）
 ├── packages/shared/   # @ebbinghaus/shared（跨端类型、Zod schemas、常量）
-├── docs/              # 文档
+├── docs/              # 文档与规范
 ├── pnpm-workspace.yaml
 ├── turbo.json
-└── package.json       # workspace root
+└── package.json
 ```
 
-## Development Commands
+## Dev Commands
 
 ```bash
-# Development server
-pnpm dev
-
-# Production build (all packages)
-pnpm build
-
-# Lint (all packages)
-pnpm lint
-
-# Type check (all packages)
-pnpm type-check
-
-# Test (all packages)
-pnpm test
-
-# Commands for specific workspace
-pnpm --filter web dev
-pnpm --filter web test
-pnpm --filter @ebbinghaus/shared type-check
-
-# Prisma commands (run from apps/web)
-cd apps/web && npx prisma generate
-cd apps/web && npx prisma migrate dev
+pnpm dev / type-check / test / lint / build          # 全局
+pnpm --filter web dev / test                         # 单包
+cd apps/web && npx prisma generate / migrate dev     # Prisma
 ```
 
-`CLAUDE.md` 是地图，不是百科全书。只作为入口索引（控制在约 100 行内），不承载大段细则。知识库放在 `docs/` 结构化目录中，智能体按需导航到更深层上下文，而非一开始就被淹没。
+## Architecture Invariants
 
-## Docs 写作规范
-
-`docs/` 下所有 `.md` 都会作为 AI 上下文发送，token 即成本。
-
-- **一句话能说清不写两句**。删掉套话、过渡句、总结段。
-- **有 lint 强制执行的规则**：规则名 + 一行摘要，不需要正反示例。
-- **没有 lint 兜底的规则**：最小必要示例（一个 ❌ + 一个 ✅）。
-- **禁止填充语**："原则是…"、"换句话说…"、"需要注意的是…"。
-- 表格优于散文，列表优于段落。
+- `srs-algorithm.ts` 纯函数，不碰 DB/网络/全局状态
+- `app/lib/` 不导入 React/Next.js（auth.ts cookies、dashboard-data.ts React.cache 例外）
+- API 返回 JSON，页面渲染 HTML，边界严格
+- 每个 API 路由首行 `requireAuth()`，无路由级 middleware 做 API auth
+- 验证在边界做（Zod），lib 内部信任输入已验证
+- Card SM-2 状态是扁平列，双轨系统（input + output track）
 
 ## 开发环境自体验自验证
 
-完成一个阶段的前端开发后，必须通过 `agent-browser` 在浏览器中实际查看效果，不接受"写完代码即完成"。
+完成前端开发后，必须通过 `agent-browser` 在浏览器实际查看效果。
 
-## Architecture
+## 规范索引（详细内容见 docs/）
 
-### Tech Stack
+| 规范       | 文件                      | 要点                                               |
+| ---------- | ------------------------- | -------------------------------------------------- |
+| TypeScript | `docs/TYPESCRIPT.md`      | 禁 `any`/`as`/`!`/`@ts-ignore`（lint 强制）        |
+| 测试       | `docs/TESTING.md`         | vitest，100% 覆盖，`__internal` 模式，纵向切片     |
+| ExecPlan   | `docs/exec-plan/PLANS.md` | 渐进式迭代，自包含活文档，偏差即修正               |
+| 任务拆分   | `docs/exec-plan/TASKS.md` | 纵向切片，只拆下一个，同一时刻最多一个 in-progress |
+| 架构详情   | `docs/architecture.md`    | 代码导览、跨切面关注、性能优化                     |
+| 功能文档   | `docs/features/*.md`      | 各功能模块详细说明                                 |
+| 产品规格   | `docs/production-specs/`  | 产品需求与设计规格                                 |
 
-- **pnpm workspaces** + **Turborepo** for monorepo management
-- **Next.js 15** with App Router (using vinext/Vite for dev)
-- **React 19** with TypeScript
-- **Prisma 7** with PostgreSQL
-- **better-auth** 1.5.3 for authentication
-- **Tailwind CSS 4**
-- **Zod** for validation
+## Docs 写作规范
 
-### Docs
+- `docs/` 下 token 即成本：一句话能说清不写两句。
+- **有 lint 强制执行的规则**：规则名 + 一行摘要，不需要正反示例。
+- **没有 lint 兜底的规则**：最小必要示例（一个 ❌ + 一个 ✅）。
+- **禁止填充语**："原则是…"、"换句话说…"、"需要注意的是…"。
 
-```
-docs/
-├── README.md                              # 功能文档索引
-├── architecture.md                        # 高层架构概览与代码导览
-├── TESTING.md                             # 单元测试规范
-├── TYPESCRIPT.md                          # TypeScript 类型安全指引
-├── product-specs/     # 产品规格与需求（包含竞品体验方式）
-├── features/                              # 现有功能详细说明文档
-├── exec-plan/                             # 执行计划规范
-|   ├── PLANS.md       #   ExecPlan 规范（计划层级方法论）
-│   ├── TASKS.md       #   任务拆分规范（任务层级方法论）
-│   ├── active/        #   进行中的计划（每个计划是一个目录）
-│   │   └── <序号>-<描述>/
-│   │       ├── plan.md          # 原始计划
-│   │       ├── tasks.md         # 任务调度台
-│   │       └── tasks/           # 各 task 详情文件
-│   └── completed/     #   已完成的计划（同上结构 + plan-summary.md）
-└── superpowers/                           # Superpowers 功能迭代记录
-    ├── plans/                             #   实施计划（含任务清单 checkbox）
-    └── specs/                             #   设计规格
-```
+## Caveat
 
-### Caveat
-
-- The `Tag` interface (`{ id, name, color }`) maps to the `Deck` model fields: `id → id`, `name → title`, `color → color`
+- `Tag` interface (`{ id, name, color }`) maps to `Deck` model: `id → id`, `name → title`, `color → color`

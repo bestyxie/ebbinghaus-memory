@@ -32,18 +32,19 @@ Before starting any task, read the root `CLAUDE.md` file for comprehensive proje
 
 ### Code Style
 
-- avoid using type 'any' as much as possible
+- No `any`, no `as` assertions, no `!` non-null assertions, no `@ts-ignore`（all lint-enforced）
+- Shared types/schemas: `import { ... } from '@ebbinghaus/shared'`
 
 ## Critical Files Reference
 
 | File                                | Purpose                    |
 | ----------------------------------- | -------------------------- |
-| `CLAUDE.md` (root)                  | Full project documentation |
+| `CLAUDE.md` (root)                  | 规范总入口（TypeScript/测试/ExecPlan/架构） |
 | `packages/shared/src/types.ts`      | Cross-platform types       |
 | `packages/shared/src/zod.ts`        | Zod validation schemas     |
 | `apps/web/app/lib/srs-algorithm.ts` | SM-2 algorithm core        |
 | `apps/web/app/lib/prisma.ts`        | Prisma client              |
 | `apps/web/prisma/schema.prisma`     | Database schema            |
 | `apps/web/app/(pages)/layout.tsx`   | Authenticated layout       |
-
-Always ask clarifying questions when there are multiple valid approaches to a task.
+| `docs/architecture.md`              | 高层架构详情与代码导览     |
+| `docs/features/`                    | 各功能模块详细说明         |
