@@ -13,5 +13,11 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "turbo": "^2"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "^19.2.6",
+      "react-dom": "^19.2.6"
+    }
   }
 }

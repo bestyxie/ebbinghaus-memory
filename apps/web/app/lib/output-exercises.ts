@@ -4,7 +4,7 @@
  */
 
 import { generateObject } from 'ai';
-import { zhipu } from 'zhipu-ai-provider';
+import { aiProvider, AI_MODEL } from './ai-provider';
 import { z } from 'zod';
 import type { OutputLevel } from '@ebbinghaus/shared';
 
@@ -49,7 +49,7 @@ export async function generateOutputExercise(
 
   try {
     const result = await generateObject({
-      model: zhipu('glm-4'),
+      model: aiProvider(AI_MODEL),
       temperature: 0.7,
       schema: exerciseGenerationSchema,
       prompt: `你是一个英语学习专家。请为以下词汇生成输出练习内容。
@@ -156,7 +156,7 @@ export async function evaluateOutputAnswer(
 
   try {
     const result = await generateObject({
-      model: zhipu('glm-4'),
+      model: aiProvider(AI_MODEL),
       temperature: 0.3,
       schema: evaluationSchema,
       prompt: `你是一个英语教学专家。请评估学生的英语答案。

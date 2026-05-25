@@ -4,7 +4,7 @@
  */
 
 import { generateObject, generateText } from 'ai';
-import { zhipu } from 'zhipu-ai-provider';
+import { aiProvider, AI_MODEL } from './ai-provider';
 import { z } from 'zod';
 
 // === 类型定义 ===
@@ -83,7 +83,7 @@ export async function generateTranslationSource(
 
   try {
     const result = await generateObject({
-      model: zhipu('glm-4'),
+      model: aiProvider(AI_MODEL),
       temperature: 0.8,
       schema: generationSchema,
       prompt: `你是一个专业的中文场景翻译出题专家。请为以下主题和难度生成一个中文句子，供用户翻译成英文。
@@ -126,7 +126,7 @@ export async function evaluateTranslation(
 ): Promise<{ data: EvaluateTranslationOutput | null; error?: string }> {
   try {
     const result = await generateText({
-      model: zhipu('glm-4'),
+      model: aiProvider(AI_MODEL),
       temperature: 0.3,
       prompt: `你是一个资深的英语翻译教学专家。请评估学生的中译英翻译。
 

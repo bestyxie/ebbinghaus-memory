@@ -4,7 +4,7 @@
  */
 
 import { generateText } from 'ai';
-import { zhipu } from 'zhipu-ai-provider';
+import { aiProvider, AI_MODEL } from './ai-provider';
 
 /**
  * Memory text generation request
@@ -43,7 +43,7 @@ export async function generateMemoryText(cardFronts: string[]): Promise<Generate
 
   try {
     const result = await generateText({
-      model: zhipu('glm-4'),
+      model: aiProvider(AI_MODEL),
       prompt: `你是一个语言学习专家。以下是 ${cardFronts.length} 个需要记忆的单词/知识点，请生成辅助记忆的文本：
 
 ${wordsList}
