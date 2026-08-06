@@ -3,7 +3,7 @@
  * AI-powered exercise generation and evaluation for output-based learning
  */
 
-import { generateObject } from 'ai';
+import { generateText } from 'ai';
 import { aiProvider, AI_MODEL } from './ai-provider';
 import { z } from 'zod';
 import type { OutputLevel } from '@ebbinghaus/shared';
@@ -48,10 +48,9 @@ export async function generateOutputExercise(
   const { targetWord, definition, note } = input;
 
   try {
-    const result = await generateObject({
+    const result = await generateText({
       model: aiProvider(AI_MODEL),
       temperature: 0.7,
-      schema: exerciseGenerationSchema,
       prompt: `你是一个英语学习专家。请为以下词汇生成输出练习内容。
 
 目标词汇: ${targetWord}
@@ -74,6 +73,16 @@ ${note ? `助记提示: ${note}` : ''}
 - wordList 保持原句顺序，包含标点
 - contextPrompt 要有趣且具有启发性
 
+严格按以下 JSON 格式返回，不要输出任何其他内容，不要输出 markdown 代码块:
+{
+  "englishSentence": "使用该词汇的自然英文句子",
+  "chineseSentence": "中文翻译",
+  "fillBlankTemplate": "填空版本，目标词替换为 _____",
+  "wordList": ["按", "句子", "顺序", "的", "单词", "和", "标点"],
+  "standardAnswer": "标准英文句子",
+  "contextPrompt": "中文情景描述"
+}
+
 示例:
 目标词: ephemeral
 释义: 短暂的，瞬息万变的
@@ -88,7 +97,14 @@ ${note ? `助记提示: ${note}` : ''}
 }`,
     });
 
-    const parsed = exerciseGenerationSchema.safeParse(result.object);
+    let jsonStr = result.text.trim();
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1].trim();
+    }
+
+    const raw = JSON.parse(jsonStr);
+    const parsed = exerciseGenerationSchema.safeParse(raw);
 
     if (!parsed.success) {
       console.error('Failed to parse AI response:', parsed.error);
@@ -155,10 +171,9 @@ export async function evaluateOutputAnswer(
   const levelName = level === 3 ? '翻译练习' : '情景造句';
 
   try {
-    const result = await generateObject({
+    const result = await generateText({
       model: aiProvider(AI_MODEL),
       temperature: 0.3,
-      schema: evaluationSchema,
       prompt: `你是一个英语教学专家。请评估学生的英语答案。
 
 目标词汇: ${targetWord}
@@ -194,10 +209,25 @@ export async function evaluateOutputAnswer(
 - partial: 至少一个维度在 50-79分
 - incorrect: 所有维度 < 50分
 
-请以JSON格式返回评估结果。`,
+严格按以下 JSON 格式返回，不要输出任何其他内容，不要输出 markdown 代码块:
+{
+  "vocabScore": <0-100>,
+  "grammarScore": <0-100>,
+  "nativeScore": <0-100>,
+  "feedback": "<简洁中文反馈>",
+  "suggestedAnswer": "<参考答案>",
+  "overall": "correct" | "partial" | "incorrect"
+}`,
     });
 
-    const parsed = evaluationSchema.safeParse(result.object);
+    let jsonStr = result.text.trim();
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1].trim();
+    }
+
+    const raw = JSON.parse(jsonStr);
+    const parsed = evaluationSchema.safeParse(raw);
 
     if (!parsed.success) {
       console.error('Failed to parse AI evaluation:', parsed.error);

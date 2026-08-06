@@ -3,7 +3,7 @@
  * AI-powered translation task generation and evaluation
  */
 
-import { generateObject, generateText } from 'ai';
+import { generateText } from 'ai';
 import { aiProvider, AI_MODEL } from './ai-provider';
 import { z } from 'zod';
 
@@ -82,10 +82,9 @@ export async function generateTranslationSource(
   const { topic, difficulty } = input;
 
   try {
-    const result = await generateObject({
+    const result = await generateText({
       model: aiProvider(AI_MODEL),
       temperature: 0.8,
-      schema: generationSchema,
       prompt: `你是一个专业的中文场景翻译出题专家。请为以下主题和难度生成一个中文句子，供用户翻译成英文。
 
 主题: ${topic}
@@ -97,12 +96,21 @@ export async function generateTranslationSource(
 3. 包含与主题相关的专业术语或表达
 4. hintWords: 提供 2-5 个翻译这句话时可能用到的英文关键词汇（用户求助时展示）
 
-以 JSON 格式返回:
-- sourceText: 中文源文本
-- hintWords: 英文关键词数组`,
+严格按以下 JSON 格式返回，不要输出任何其他内容，不要输出 markdown 代码块:
+{
+  "sourceText": "<中文源文本>",
+  "hintWords": ["<英文关键词1>", "<关键词2>"]
+}`,
     });
 
-    const parsed = generationSchema.safeParse(result.object);
+    let jsonStr = result.text.trim();
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1].trim();
+    }
+
+    const raw = JSON.parse(jsonStr);
+    const parsed = generationSchema.safeParse(raw);
     if (!parsed.success) {
       return { data: null, error: 'Failed to parse AI response' };
     }
