@@ -10,7 +10,10 @@ describe('toFlashcardDTO', () => {
     definition: 'lasting for a very short time',
     context: {
       sentence: 'The beauty of the ephemeral is that it\'s temporary.',
-      source_url: 'https://example.com/article',
+      source_url: 'https://example.com/article#:~:text=ephemeral',
+      source_anchor: { sel: 'body > article > p', ctx: 'the ephemeral nature', occ: 1 },
+      source_title: 'The Ephemeral Self',
+      captured_at: '2026-08-10T12:00:00Z',
     },
     timestamp: 1000,
     retryCount: 0,
@@ -28,8 +31,28 @@ describe('toFlashcardDTO', () => {
     expect(toFlashcardDTO(queued).note).toBe('The beauty of the ephemeral is that it\'s temporary.');
   });
 
-  it('maps context.source_url to source', () => {
-    expect(toFlashcardDTO(queued).source).toBe('https://example.com/article');
+  it('maps context.source_url to sourceUrl', () => {
+    expect(toFlashcardDTO(queued).sourceUrl).toBe('https://example.com/article#:~:text=ephemeral');
+  });
+
+  it('maps word to sourceWord', () => {
+    expect(toFlashcardDTO(queued).sourceWord).toBe('ephemeral');
+  });
+
+  it('sets sourceProvenance to chrome-extension', () => {
+    expect(toFlashcardDTO(queued).sourceProvenance).toBe('chrome-extension');
+  });
+
+  it('maps context.source_anchor to sourceAnchor', () => {
+    expect(toFlashcardDTO(queued).sourceAnchor).toEqual({ sel: 'body > article > p', ctx: 'the ephemeral nature', occ: 1 });
+  });
+
+  it('maps context.source_title to sourceTitle', () => {
+    expect(toFlashcardDTO(queued).sourceTitle).toBe('The Ephemeral Self');
+  });
+
+  it('maps context.captured_at to capturedAt', () => {
+    expect(toFlashcardDTO(queued).capturedAt).toBe('2026-08-10T12:00:00Z');
   });
 
   it('does not include word, definition, context, pronunciation, timestamp, or retryCount', () => {
@@ -99,7 +122,9 @@ describe('EbbinghausAPI', () => {
       front: 'ephemeral',
       back: 'lasting for a very short time',
       note: 'The beauty of the ephemeral is that it\'s temporary.',
-      source: 'https://example.com/article',
+      sourceUrl: 'https://example.com/article',
+      sourceWord: 'ephemeral',
+      sourceProvenance: 'chrome-extension',
     };
 
     (global.fetch as any).mockResolvedValueOnce({
@@ -121,7 +146,9 @@ describe('EbbinghausAPI', () => {
       front: 'ephemeral',
       back: 'lasting for a very short time',
       note: 'The beauty of the ephemeral is that it\'s temporary.',
-      source: 'https://example.com/article',
+      sourceUrl: 'https://example.com/article',
+      sourceWord: 'ephemeral',
+      sourceProvenance: 'chrome-extension',
     };
 
     (global.fetch as any).mockResolvedValueOnce({
@@ -140,7 +167,9 @@ describe('EbbinghausAPI', () => {
       front: 'ephemeral',
       back: 'lasting for a very short time',
       note: 'The beauty of the ephemeral is that it\'s temporary.',
-      source: 'https://example.com/article',
+      sourceUrl: 'https://example.com/article',
+      sourceWord: 'ephemeral',
+      sourceProvenance: 'chrome-extension',
     });
   });
 
@@ -168,7 +197,9 @@ describe('EbbinghausAPI', () => {
       front: 'test',
       back: 'test definition',
       note: 'test sentence',
-      source: 'https://example.com',
+      sourceUrl: 'https://example.com',
+      sourceWord: 'test',
+      sourceProvenance: 'chrome-extension',
     };
 
     (global.fetch as any).mockResolvedValueOnce({
@@ -188,7 +219,9 @@ describe('EbbinghausAPI', () => {
       front: 'test',
       back: 'test definition',
       note: 'test sentence',
-      source: 'https://example.com',
+      sourceUrl: 'https://example.com',
+      sourceWord: 'test',
+      sourceProvenance: 'chrome-extension',
     };
 
     (global.fetch as any).mockResolvedValueOnce({
@@ -209,7 +242,9 @@ describe('EbbinghausAPI', () => {
       front: 'test',
       back: 'test definition',
       note: 'test sentence',
-      source: 'https://example.com',
+      sourceUrl: 'https://example.com',
+      sourceWord: 'test',
+      sourceProvenance: 'chrome-extension',
     };
 
     (global.fetch as any).mockResolvedValueOnce({
@@ -224,12 +259,14 @@ describe('EbbinghausAPI', () => {
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        words: [
+        cards: [
           {
             id: 'word_12345',
-            word: 'ephemeral',
-            definition: 'lasting for a very short time',
-            saved_at: '2026-04-10T10:30:00Z',
+            front: 'ephemeral',
+            back: 'lasting for a very short time',
+            sourceUrl: 'https://example.com/article',
+            sourceTitle: null,
+            createdAt: '2026-04-10T10:30:00Z',
           },
         ],
         total: 1,
@@ -239,15 +276,15 @@ describe('EbbinghausAPI', () => {
     });
 
     const result = await api.listWords();
-    expect(result.words).toHaveLength(1);
-    expect(result.words[0].word).toBe('ephemeral');
+    expect(result.cards).toHaveLength(1);
+    expect(result.cards[0].front).toBe('ephemeral');
   });
 
   it('should validate API key successfully', async () => {
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        words: [],
+        cards: [],
         total: 0,
         limit: 1,
         offset: 0,

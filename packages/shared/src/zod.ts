@@ -24,14 +24,37 @@ export const memoryItemSchema = z.object({
   next_review: z.number(),
 })
 
+// 来源定位载荷 —— CSS 路径 + 上下文 + 父块内出现序号
+export const sourceAnchorSchema = z.object({
+  sel: z.string().min(1, "CSS selector is required"),
+  ctx: z.string().min(1, "Context text is required"),
+  occ: z.number().int().positive("Occurrence must be a positive integer"),
+})
+
+// 卡片来源 —— 五字段原子化：全有或全无
+export const cardSourceSchema = z.object({
+  sourceUrl: z.string().url("Source URL must be a valid URL"),
+  sourceWord: z.string().min(1, "Source word is required"),
+  sourceAnchor: sourceAnchorSchema,
+  sourceTitle: z.string().min(1, "Source title is required"),
+  capturedAt: z.string().datetime("Captured at must be an ISO 8601 datetime"),
+})
+
 // 卡片创建验证
 export const createCardSchema = z.object({
   front: z.string().min(1, "Title is required"),
   back: z.string().min(1, "Content is required"),
   note: z.string().optional(),
   deckId: z.string().optional(),
-  source: z.string().optional(),
   quality: z.enum(["5", "4", "3"]),
+  // 来源定位（五字段原子化）
+  sourceUrl: z.string().url().optional(),
+  sourceWord: z.string().optional(),
+  sourceAnchor: sourceAnchorSchema.optional(),
+  sourceTitle: z.string().optional(),
+  capturedAt: z.string().datetime().optional(),
+  // provenance 标识（独立可空）
+  sourceProvenance: z.string().optional(),
 })
 
 // 卡片编辑验证
@@ -59,7 +82,14 @@ export const cardBaseSchema = z.object({
   front: z.string().min(1),
   back: z.string().min(1),
   note: z.string().nullable(),
-  source: z.string().nullable().optional(),
+  // 来源定位（五字段原子化：全有或全无）
+  sourceUrl: z.string().nullable().optional(),
+  sourceWord: z.string().nullable().optional(),
+  sourceAnchor: z.any().nullable().optional(), // JSON field, Prisma returns JsonValue
+  sourceTitle: z.string().nullable().optional(),
+  capturedAt: z.date().nullable().optional(),
+  // provenance 标识（独立可空）
+  sourceProvenance: z.string().nullable().optional(),
   nextReviewAt: z.date(),
   interval: z.number().int().min(0),
   easeFactor: z.number().min(1.3),

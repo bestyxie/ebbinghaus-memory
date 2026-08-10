@@ -40,7 +40,7 @@ const mockCard = {
   id: 'card_1',
   front: 'deploy',
   back: '部署',
-  source: 'translate',
+  sourceProvenance: 'translate',
   cardType: 'FLASHCARD',
   state: 'NEW',
   userId: USER_ID,
@@ -65,7 +65,7 @@ describe('POST /api/translate/[id]/create-card', () => {
     const createData = vi.mocked(prisma.card.create).mock.calls[0][0].data
     expect(createData.front).toBe('deploy')
     expect(createData.back).toBe('部署')
-    expect(createData.source).toBe('translate')
+    expect(createData.sourceProvenance).toBe('translate')
     expect(createData.cardType).toBe('FLASHCARD')
     expect(createData.state).toBe('NEW')
     expect(createData.userId).toBe(USER_ID)

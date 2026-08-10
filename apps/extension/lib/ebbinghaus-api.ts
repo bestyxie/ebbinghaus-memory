@@ -17,11 +17,12 @@ export interface WordResponse {
 }
 
 export interface WordsListResponse {
-  words: Array<{
+  cards: Array<{
     id: string
     front: string
     back: string
-    source: string
+    sourceUrl: string | null
+    sourceTitle: string | null
     createdAt: string
   }>
   total?: number

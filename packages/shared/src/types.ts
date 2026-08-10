@@ -10,11 +10,17 @@ import {
   recallBlockSchema,
   createArticleCardSchema,
   updateArticleCardSchema,
+  sourceAnchorSchema,
+  cardSourceSchema,
 } from './zod'
 
 // === 基础类型 (从 Zod 派生) ===
 export type Card = z.infer<typeof cardBaseSchema>
 export type Deck = z.infer<typeof deckBaseSchema>
+
+// === 来源定位类型 ===
+export type SourceAnchor = z.infer<typeof sourceAnchorSchema>
+export type CardSource = z.infer<typeof cardSourceSchema>
 
 // === 输入类型 (用于创建/更新) ===
 export type CreateCardInput = z.infer<typeof createCardSchema>

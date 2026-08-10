@@ -6,6 +6,9 @@ import TranslateButton from '@/components/TranslateButton'
 import CaptureTooltip from '@/components/CaptureTooltip'
 import { extractSentenceContext } from '@/utils/extract-sentence-context'
 import { calculateTooltipPosition } from '@/utils/calculate-tooltip-position'
+import { computeSourceAnchor } from '@/utils/compute-source-anchor'
+import { buildTextFragmentUrl } from '@/utils/build-text-fragment'
+import type { SourceAnchor } from '@/lib/storage'
 
 // Main content script
 function WordCapture() {
@@ -15,6 +18,9 @@ function WordCapture() {
     word: string
     sentence: string
     sourceUrl: string
+    sourceAnchor: SourceAnchor
+    sourceTitle: string
+    capturedAt: string
     buttonPosition: { top: number; left: number }
     tooltipPosition: { top: number; left: number }
   } | null>(null)
@@ -22,6 +28,9 @@ function WordCapture() {
     word: string
     sentence: string
     sourceUrl: string
+    sourceAnchor: SourceAnchor
+    sourceTitle: string
+    capturedAt: string
     position: { top: number; left: number }
   } | null>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -82,10 +91,22 @@ function WordCapture() {
 
       const sentence = extractSentenceContext(fullText, selectedText)
 
+      const sourceAnchor = computeSourceAnchor(range, selectedText)
+      const sourceTitle = document.title || ''
+      const capturedAt = new Date().toISOString()
+      const sourceUrl = buildTextFragmentUrl(
+        window.location.href,
+        selectedText,
+        sourceAnchor.ctx
+      )
+
       setTranslateButtonData({
         word: selectedText,
         sentence,
-        sourceUrl: window.location.href,
+        sourceUrl,
+        sourceAnchor,
+        sourceTitle,
+        capturedAt,
         buttonPosition,
         tooltipPosition,
       })
@@ -155,6 +176,9 @@ function WordCapture() {
       word: translateButtonData.word,
       sentence: translateButtonData.sentence,
       sourceUrl: translateButtonData.sourceUrl,
+      sourceAnchor: translateButtonData.sourceAnchor,
+      sourceTitle: translateButtonData.sourceTitle,
+      capturedAt: translateButtonData.capturedAt,
       position: translateButtonData.tooltipPosition,
     })
     setShowTranslateButton(false)

@@ -128,8 +128,14 @@ model Card {
   wordCount     Int?     // 字数统计
   readTimeMins  Int?     // 预计阅读时间（分钟）
 
-  // 来源（可选，记录卡片的数据来源，如 "chrome-extension"、"import" 等）
-  source      String?
+  // 来源定位（五字段原子化：全有或全无）
+  sourceUrl        String?   @db.VarChar(2048)   // 捕获页绝对 URL（含 Text Fragment）
+  sourceWord       String?                        // 捕获时的精确单词/短语
+  sourceAnchor     Json?                          // 定位载荷 { sel, ctx, occ }
+  sourceTitle      String?   @db.VarChar(512)     // 捕获时页面标题（UI 标签）
+  capturedAt       DateTime?                      // 捕获时间
+  // provenance 标识（独立可空）
+  sourceProvenance String?   @db.VarChar(64)      // 'chrome-extension' | 'translate' | 'import' | ...
 
   // 文章学习元数据
   totalStudyTimeMs Int? @default(0) // 总学习时间（毫秒）

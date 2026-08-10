@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/app/lib/api-helpers'
 import { prisma } from '@/app/lib/prisma'
-import { calculateInitialEaseFactor } from '@ebbinghaus/shared'
+import { calculateInitialEaseFactor, sourceAnchorSchema } from '@ebbinghaus/shared'
 import { z } from 'zod'
 
 const createExtensionCardSchema = z.object({
@@ -10,7 +10,12 @@ const createExtensionCardSchema = z.object({
   note: z.string().optional(),
   deckId: z.string().optional(),
   quality: z.number().int().min(3).max(5).default(4),
-  source: z.string().optional(),
+  sourceUrl: z.string().url().optional(),
+  sourceWord: z.string().optional(),
+  sourceAnchor: sourceAnchorSchema.optional(),
+  sourceTitle: z.string().optional(),
+  capturedAt: z.string().datetime().optional(),
+  sourceProvenance: z.string().optional(),
 })
 
 const createExtensionCardsSchema = z.array(createExtensionCardSchema).min(1, 'At least one card is required')
@@ -26,9 +31,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required query parameter: source' }, { status: 400 })
   }
 
+  const isUrl = /^https?:\/\//.test(source)
+  const where = isUrl
+    ? { userId, sourceUrl: { startsWith: source } }
+    : { userId, sourceProvenance: source }
+
   const cards = await prisma.card.findMany({
-    where: { userId, source },
-    select: { id: true, front: true, back: true, source: true, createdAt: true },
+    where,
+    select: { id: true, front: true, back: true, sourceUrl: true, sourceTitle: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -68,13 +78,18 @@ export async function POST(request: NextRequest) {
     // Create all cards
     const createdCards = await Promise.all(
       cardsData.map((cardData) => {
-        const { front, back, note, deckId, quality, source } = cardData
+        const { front, back, note, deckId, quality, sourceUrl, sourceWord, sourceAnchor, sourceTitle, capturedAt, sourceProvenance } = cardData
         return prisma.card.create({
           data: {
             front,
             back,
             note: note ?? null,
-            source: source ?? null,
+            sourceUrl: sourceUrl ?? null,
+            sourceWord: sourceWord ?? null,
+            ...(sourceAnchor && { sourceAnchor }),
+            sourceTitle: sourceTitle ?? null,
+            capturedAt: capturedAt ? new Date(capturedAt) : null,
+            sourceProvenance: sourceProvenance ?? null,
             userId,
             nextReviewAt: new Date(),
             interval: 0,
@@ -96,7 +111,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { front, back, note, deckId, quality, source } = parsed.data
+    const { front, back, note, deckId, quality, sourceUrl, sourceWord, sourceAnchor, sourceTitle, capturedAt, sourceProvenance } = parsed.data
 
     if (deckId) {
       const deck = await prisma.deck.findFirst({
@@ -112,7 +127,12 @@ export async function POST(request: NextRequest) {
         front,
         back,
         note: note ?? null,
-        source: source ?? null,
+        sourceUrl: sourceUrl ?? null,
+        sourceWord: sourceWord ?? null,
+        ...(sourceAnchor && { sourceAnchor }),
+        sourceTitle: sourceTitle ?? null,
+        capturedAt: capturedAt ? new Date(capturedAt) : null,
+        sourceProvenance: sourceProvenance ?? null,
         userId,
         nextReviewAt: new Date(),
         interval: 0,

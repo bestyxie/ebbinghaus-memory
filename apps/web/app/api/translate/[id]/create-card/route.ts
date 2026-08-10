@@ -41,7 +41,7 @@ export async function POST(
         cardType: 'FLASHCARD',
         front,
         back,
-        source: 'translate',
+        sourceProvenance: 'translate',
         state: 'NEW',
       },
     });

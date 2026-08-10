@@ -38,7 +38,7 @@ function WordDrawer() {
       const api = new EbbinghausAPI(apiKey)
       const response = await api.listWords(100, 0, currentUrl)
 
-      const rawWords = response.words || response.cards || response.data || []
+      const rawWords = response.cards || []
       const apiWords: PageWord[] = (rawWords as Array<Record<string, string>>).map((w: Record<string, string>) => ({
         id: w.id,
         word: w.front || w.word,

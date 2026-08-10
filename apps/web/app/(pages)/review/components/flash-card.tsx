@@ -107,29 +107,27 @@ export function FlashCard({ card, isFlipped, onFlip }: FlashCardProps) {
               )}
 
               {/* Source */}
-              {card.source && (
+              {(card.sourceUrl || card.sourceProvenance) && (
                 <div className={card.note ? '' : 'pt-4 border-t border-blue-200'}>
                   <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                     Source
                   </h3>
-                  {(() => {
-                    try {
-                      new URL(card.source);
-                      return (
-                        <a
-                          href={card.source}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-base text-blue-600 hover:text-blue-800 underline break-all"
-                        >
-                          {card.source}
-                        </a>
-                      );
-                    } catch {
-                      return <p className="text-base text-gray-600 break-all">{card.source}</p>;
-                    }
-                  })()}
+                  {card.sourceUrl ? (
+                    <a
+                      href={card.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-base text-blue-600 hover:text-blue-800 underline break-all"
+                    >
+                      {card.sourceTitle || card.sourceUrl}
+                      {card.sourceWord && (
+                        <span className="text-blue-400 no-underline ml-1">↗ <em>{card.sourceWord}</em></span>
+                      )}
+                    </a>
+                  ) : (
+                    <p className="text-base text-gray-600 break-all">{card.sourceProvenance}</p>
+                  )}
                 </div>
               )}
             </div>

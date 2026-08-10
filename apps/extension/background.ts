@@ -43,4 +43,22 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 setupMessageHandler()
 
+chrome.webNavigation.onCompleted.addListener((details) => {
+  if (details.frameId !== 0) return
+  const url = details.url
+  if (!url.includes(':~:text=')) return
+
+  chrome.tabs.sendMessage(details.tabId, {
+    action: 'ebbinghaus-source-locate',
+    url,
+  }).catch(() => {
+    setTimeout(() => {
+      chrome.tabs.sendMessage(details.tabId, {
+        action: 'ebbinghaus-source-locate',
+        url,
+      }).catch(() => {})
+    }, 500)
+  })
+})
+
 console.log('Hunter Plugin service worker loaded')

@@ -2,17 +2,20 @@ import { useState, useEffect } from 'react'
 
 import { DictionaryAPI } from '@/lib/dictionary-api'
 import { hunterStorage } from '@/lib/storage'
-import type { QueuedWord, Settings } from '@/lib/storage'
+import type { QueuedWord, Settings, SourceAnchor } from '@/lib/storage'
 
 interface TooltipProps {
   word: string
   sentence: string
   sourceUrl: string
+  sourceAnchor: SourceAnchor
+  sourceTitle: string
+  capturedAt: string
   position: { top: number; left: number }
   onClose: () => void
 }
 
-function CaptureTooltip({ word, sentence, sourceUrl, position, onClose }: TooltipProps) {
+function CaptureTooltip({ word, sentence, sourceUrl, sourceAnchor, sourceTitle, capturedAt, position, onClose }: TooltipProps) {
   const [definition, setDefinition] = useState<{
     word: string
     phonetic: string
@@ -96,6 +99,9 @@ function CaptureTooltip({ word, sentence, sourceUrl, position, onClose }: Toolti
       context: {
         sentence,
         source_url: sourceUrl,
+        source_anchor: sourceAnchor,
+        source_title: sourceTitle,
+        captured_at: capturedAt,
       },
       retryCount: 0,
     }

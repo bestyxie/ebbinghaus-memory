@@ -189,17 +189,44 @@ describe('POST /api/extension/cards', () => {
       expect(createData.note).toBe('remember: short-lived')
     })
 
-    it('accepts source field', async () => {
+    it('accepts sourceUrl and sourceProvenance fields', async () => {
       vi.mocked(prisma.card.create).mockResolvedValue(createdCard as never)
 
       await POST(postRequest({
         front: 'ephemeral',
         back: 'lasting briefly',
-        source: 'chrome-extension',
+        sourceUrl: 'https://example.com/article',
+        sourceWord: 'ephemeral',
+        sourceProvenance: 'chrome-extension',
       }))
 
       const createData = vi.mocked(prisma.card.create).mock.calls[0][0].data
-      expect(createData.source).toBe('chrome-extension')
+      expect(createData.sourceUrl).toBe('https://example.com/article')
+      expect(createData.sourceWord).toBe('ephemeral')
+      expect(createData.sourceProvenance).toBe('chrome-extension')
+    })
+
+    it('accepts full source block with anchor, title, and capturedAt', async () => {
+      vi.mocked(prisma.card.create).mockResolvedValue(createdCard as never)
+
+      await POST(postRequest({
+        front: 'ephemeral',
+        back: 'lasting briefly',
+        sourceUrl: 'https://example.com/article#:~:text=ephemeral',
+        sourceWord: 'ephemeral',
+        sourceAnchor: { sel: 'body > article > p', ctx: 'the ephemeral nature', occ: 1 },
+        sourceTitle: 'The Ephemeral Self',
+        capturedAt: '2026-08-10T12:00:00Z',
+        sourceProvenance: 'chrome-extension',
+      }))
+
+      const createData = vi.mocked(prisma.card.create).mock.calls[0][0].data
+      expect(createData.sourceUrl).toBe('https://example.com/article#:~:text=ephemeral')
+      expect(createData.sourceWord).toBe('ephemeral')
+      expect(createData.sourceAnchor).toEqual({ sel: 'body > article > p', ctx: 'the ephemeral nature', occ: 1 })
+      expect(createData.sourceTitle).toBe('The Ephemeral Self')
+      expect(createData.capturedAt).toEqual(new Date('2026-08-10T12:00:00Z'))
+      expect(createData.sourceProvenance).toBe('chrome-extension')
     })
 
     it('uses default quality 4 when not provided', async () => {
@@ -229,20 +256,38 @@ describe('GET /api/extension/cards', () => {
     })
   }
 
-  it('returns cards filtered by source parameter', async () => {
+  it('returns cards filtered by provenance when source is non-URL', async () => {
     const mockCards = [
-      { id: 'card_1', front: 'test word', back: 'test meaning', source: 'extension', createdAt: new Date() },
+      { id: 'card_1', front: 'test word', back: 'test meaning', sourceUrl: 'https://example.com', sourceTitle: null, createdAt: new Date() },
     ]
     vi.mocked(prisma.card.findMany).mockResolvedValue(mockCards as never)
 
-    const res = await GET(getRequest('http://localhost/api/extension/cards?source=extension'))
+    const res = await GET(getRequest('http://localhost/api/extension/cards?source=chrome-extension'))
     const body = await res.json()
 
     expect(res.status).toBe(200)
     expect(body.cards).toHaveLength(1)
     expect(prisma.card.findMany).toHaveBeenCalledWith({
-      where: { userId: USER_ID, source: 'extension' },
-      select: { id: true, front: true, back: true, source: true, createdAt: true },
+      where: { userId: USER_ID, sourceProvenance: 'chrome-extension' },
+      select: { id: true, front: true, back: true, sourceUrl: true, sourceTitle: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    })
+  })
+
+  it('returns cards filtered by sourceUrl (startsWith) when source is a URL', async () => {
+    const mockCards = [
+      { id: 'card_1', front: 'ephemeral', back: 'short-lived', sourceUrl: 'https://openai.com/index/harness-engineering/#:~:text=ephemeral', sourceTitle: 'Harness Engineering', createdAt: new Date() },
+    ]
+    vi.mocked(prisma.card.findMany).mockResolvedValue(mockCards as never)
+
+    const res = await GET(getRequest('http://localhost/api/extension/cards?source=https%3A%2F%2Fopenai.com%2Findex%2Fharness-engineering%2F'))
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.cards).toHaveLength(1)
+    expect(prisma.card.findMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID, sourceUrl: { startsWith: 'https://openai.com/index/harness-engineering/' } },
+      select: { id: true, front: true, back: true, sourceUrl: true, sourceTitle: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
     })
   })

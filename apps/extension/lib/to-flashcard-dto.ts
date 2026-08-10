@@ -8,6 +8,11 @@ export function toFlashcardDTO(word: QueuedWord): FlashcardDTO {
     front: word.word,
     back: word.definition,
     note: word.context.sentence,
-    source: word.context.source_url,
+    sourceUrl: word.context.source_url,
+    sourceWord: word.word,
+    ...(word.context.source_anchor && { sourceAnchor: word.context.source_anchor }),
+    ...(word.context.source_title && { sourceTitle: word.context.source_title }),
+    ...(word.context.captured_at && { capturedAt: word.context.captured_at }),
+    sourceProvenance: 'chrome-extension',
   }
 }

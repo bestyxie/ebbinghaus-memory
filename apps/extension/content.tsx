@@ -437,4 +437,70 @@ if (typeof window !== 'undefined') {
   })
 }
 
+// Source locate: scroll to + highlight word on third-party pages
+if (typeof window !== 'undefined') {
+  chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    if (message.action !== 'ebbinghaus-source-locate') return true
+
+    const { url } = message as { url: string }
+    if (!url || !url.includes(':~:text=')) return true
+
+    const hashIndex = url.indexOf('#:~:text=')
+    if (hashIndex === -1) return true
+    const raw = url.substring(hashIndex + '#:~:text='.length)
+
+    // Parse [prefix-]text[,-suffix]
+    let text = raw
+    const suffixMatch = text.match(/,-([^,]+)$/)
+    if (suffixMatch) text = text.substring(0, suffixMatch.index)
+    const prefixMatch = text.match(/^([^,]+)-(.+)$/)
+    if (prefixMatch) text = prefixMatch[2]
+    const fragmentText = text.trim()
+    if (!fragmentText) return true
+
+    const HIGHLIGHT_CLASS = 'ebbinghaus-source-highlight'
+    const HIGHLIGHT_STYLE = 'background-color: #ffd54f; color: #000; padding: 0 2px; border-radius: 2px;'
+
+    const tryLocate = (retryCount: number) => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+      let node: Node | null
+      while ((node = walker.nextNode())) {
+        if (!node.textContent) continue
+        const nodeText = node.textContent
+        const matchIndex = nodeText.indexOf(fragmentText)
+        if (matchIndex === -1) continue
+
+        const parent = node.parentElement
+        if (!parent) continue
+
+        try {
+          const range = document.createRange()
+          range.setStart(node, matchIndex)
+          range.setEnd(node, matchIndex + fragmentText.length)
+
+          const mark = document.createElement('mark')
+          mark.className = HIGHLIGHT_CLASS
+          mark.setAttribute('style', HIGHLIGHT_STYLE)
+          range.surroundContents(mark)
+
+          if (typeof mark.scrollIntoView === 'function') {
+            mark.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        } catch {
+          // surroundContents fails when range crosses element boundaries
+        }
+        return
+      }
+
+      if (retryCount < 8) {
+        const delay = Math.min(100 * Math.pow(1.6, retryCount), 1600)
+        setTimeout(() => tryLocate(retryCount + 1), delay)
+      }
+    }
+
+    tryLocate(0)
+    return true
+  })
+}
+
 export default HunterContent

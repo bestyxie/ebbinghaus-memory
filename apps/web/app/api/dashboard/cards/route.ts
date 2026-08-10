@@ -22,7 +22,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<CardsRespo
     const where: {
       userId: string;
       cardDecks?: { some: { deckId: string; deck?: { deletedAt: null } } };
-      source?: string;
+      sourceProvenance?: string;
     } = { userId };
 
     if (deckId) {
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<CardsRespo
     }
 
     if (source) {
-      where.source = source;
+      where.sourceProvenance = source;
     }
 
     // Build orderBy object based on sortBy parameter

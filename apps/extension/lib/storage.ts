@@ -3,6 +3,12 @@
 
 import { Storage } from '@plasmohq/storage';
 
+export interface SourceAnchor {
+  sel: string;
+  ctx: string;
+  occ: number;
+}
+
 // TypeScript interfaces matching API_SPEC.md
 export interface QueuedWord {
   word: string;
@@ -11,6 +17,9 @@ export interface QueuedWord {
   context: {
     sentence: string;
     source_url: string;
+    source_anchor?: SourceAnchor;
+    source_title?: string;
+    captured_at?: string;
   };
   timestamp: number;
   retryCount: number;

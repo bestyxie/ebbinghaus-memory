@@ -46,6 +46,7 @@
   },
   "manifest": {
     "host_permissions": [
+      "<all_urls>",
       "https://api.dictionaryapi.dev/*",
       "http://localhost:3001/*",
       "http://localhost/*",
@@ -54,7 +55,8 @@
     "permissions": [
       "activeTab",
       "storage",
-      "alarms"
+      "alarms",
+      "webNavigation"
     ]
   }
 }
