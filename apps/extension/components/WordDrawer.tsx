@@ -19,7 +19,49 @@ function WordDrawer() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasApiKey, setHasApiKey] = useState(false)
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
+  const currentUrl = typeof window !== 'undefined' ? window.location.href.split('#')[0] : ''
+
+  const locateInPage = useCallback((word: string) => {
+    const HIGHLIGHT_CLASS = 'ebbinghaus-source-highlight'
+    const HIGHLIGHT_STYLE = 'background-color: #ffd54f; color: #000; padding: 0 2px; border-radius: 2px;'
+
+    document.querySelectorAll('.' + HIGHLIGHT_CLASS).forEach((el) => {
+      const parent = el.parentElement
+      if (!parent) return
+      const text = document.createTextNode(el.textContent || '')
+      parent.replaceChild(text, el)
+      parent.normalize()
+    })
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+    let node: Node | null
+    while ((node = walker.nextNode())) {
+      if (!node.textContent) continue
+      const matchIndex = node.textContent.indexOf(word)
+      if (matchIndex === -1) continue
+
+      const parent = node.parentElement
+      if (!parent) continue
+
+      try {
+        const textNode = node as Text
+        const before = textNode.splitText(matchIndex)
+        before.splitText(word.length)
+        const mark = document.createElement('span')
+        mark.className = HIGHLIGHT_CLASS
+        mark.setAttribute('style', HIGHLIGHT_STYLE)
+        mark.textContent = before.textContent
+        parent.insertBefore(mark, before.nextSibling)
+        parent.removeChild(before)
+        if (typeof mark.scrollIntoView === 'function') {
+          mark.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      } catch {
+        // ignore
+      }
+      return
+    }
+  }, [])
 
   const fetchWords = useCallback(async () => {
     setLoading(true)
@@ -166,7 +208,12 @@ function WordDrawer() {
           {!loading && words.length > 0 && (
             <div className="hunter-drawer-list">
               {words.map((w, i) => (
-                <div key={w.id || `${w.word}-${i}`} className="hunter-drawer-card">
+                <div
+                  key={w.id || `${w.word}-${i}`}
+                  className="hunter-drawer-card"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => locateInPage(w.word)}
+                >
                   <div className="hunter-drawer-card-header">
                     <span className="hunter-drawer-card-word">{w.word}</span>
                     {w.pending && <span className="hunter-drawer-pending-badge">syncing</span>}
