@@ -474,20 +474,27 @@ if (typeof window !== 'undefined') {
         if (!parent) continue
 
         try {
-          const range = document.createRange()
-          range.setStart(node, matchIndex)
-          range.setEnd(node, matchIndex + fragmentText.length)
+          // Split text node at match boundaries, wrap matched word in <span>
+          const textNode = node as Text
+          const before = textNode.splitText(matchIndex)
+          const matched = before.splitText(fragmentText.length)
 
-          const mark = document.createElement('mark')
+          const mark = document.createElement('span')
           mark.className = HIGHLIGHT_CLASS
           mark.setAttribute('style', HIGHLIGHT_STYLE)
-          range.surroundContents(mark)
+          mark.textContent = before.textContent
+
+          parent.insertBefore(mark, matched)
+          parent.removeChild(before)
 
           if (typeof mark.scrollIntoView === 'function') {
             mark.scrollIntoView({ behavior: 'smooth', block: 'center' })
           }
         } catch {
-          // surroundContents fails when range crosses element boundaries
+          // fallback: scroll to parent element only
+          if (typeof parent.scrollIntoView === 'function') {
+            parent.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
         }
         return
       }
