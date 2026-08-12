@@ -50,10 +50,6 @@ function WordCapture() {
         return
       }
 
-      if (selectedText.length > 50) {
-        return
-      }
-
       const activeElement = document.activeElement
       if (activeElement && (
         activeElement.tagName === 'INPUT' ||
@@ -126,7 +122,6 @@ function WordCapture() {
     }
 
     document.addEventListener('mouseup', debouncedSelection)
-    document.addEventListener('selectionchange', debouncedSelection)
 
     document.addEventListener('keyup', (e) => {
       if (e.shiftKey) {
@@ -136,7 +131,6 @@ function WordCapture() {
 
     return () => {
       document.removeEventListener('mouseup', debouncedSelection)
-      document.removeEventListener('selectionchange', debouncedSelection)
       clearTimeout(selectionTimeout)
     }
   }, [showTranslateButton, showTooltip])
