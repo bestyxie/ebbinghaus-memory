@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Settings,
   Languages,
+  GraduationCap,
 } from "lucide-react";
 
 export function Navigation() {
@@ -17,6 +18,7 @@ export function Navigation() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard", badge: undefined },
     { href: "/translate", label: "Translate", icon: "Languages", badge: undefined },
+    { href: "/courses", label: "Courses", icon: "GraduationCap", badge: undefined },
     { href: "/settings", label: "Settings", icon: "Settings", badge: undefined },
     // {
     //   href: "/today-review",
@@ -40,13 +42,14 @@ export function Navigation() {
     AlertTriangle,
     Settings,
     Languages,
+    GraduationCap,
   };
 
   return (
     <div className="px-2 py-2">
       {navItems.map((item) => {
         const Icon = iconMap[item.icon];
-        const isActive = pathname === item.href;
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (
           <Link
