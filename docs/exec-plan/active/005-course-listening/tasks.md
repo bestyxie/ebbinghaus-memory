@@ -8,11 +8,11 @@ T2 后课程 API 全通：`POST/GET /api/courses`（multipart 上传含可选封
 
 ## 下一个待执行任务
 
-**当前**: T3 (003-list-upload-pages)
+**当前**: T4 (004-learn-page)
 
 ## 任务列表
 
 - [x] T1: 数据模型 + shared schema + 转写 lib — tasks/001-schema-transcribe-lib.md
 - [x] T2: 上传/媒体/转写 API — tasks/002-api-routes.md
-- [ ] T3: 课程列表 + 上传页 — tasks/003-list-upload-pages.md
+- [x] T3: 课程列表 + 上传页 — tasks/003-list-upload-pages.md
 - [ ] T4: 学习页听写交互 — tasks/004-learn-page.md

@@ -22,7 +22,7 @@ Outcomes & Retrospective 章节必须随工作进展保持更新。
 
 - [x] (2026-08-15) T1: 数据模型 + shared schema + 转写 lib — 完成；migrate/test/type-check/lint 全绿
 - [x] (2026-08-15) T2: 上传/媒体/转写 API — 完成；真实语音端到端验证通过（上传→转写→READY 时间戳正确、Range 206、越权 404/307、删除级联清理文件）
-- [ ] T3: 课程列表 + 上传页
+- [x] (2026-08-15) T3: 课程列表 + 上传页 — 完成；agent-browser 实测：列表渲染/导航入口/浏览器上传/FAILED 重试成功
 - [ ] T4: 学习页听写交互
 
 ## Surprises & Discoveries
@@ -49,6 +49,12 @@ Outcomes & Retrospective 章节必须随工作进展保持更新。
 
 - Observation: NextResponse 构造函数不直接接受 `Readable.toWeb()` 的 `ReadableStream<any>`（TS2345），且 lint 禁 `as` 断言。解法：手写 ReadableStream<Uint8Array> 包装 reader（无断言、类型精确）。
   Evidence: media route 初版报错，包装后 type-check + lint 双绿。
+
+- Observation: gstack browse 每次调用重启 server，浏览器 cookie 不跨调用持久——登录流程必须放进单条 `chain`。且 UI 登录（server action redirect）在 headless 里偶发导航不落地；可靠路径是 curl 登录拿 cookie 文件 → `cookie-import /tmp/cookies.json` → 同链内 goto。
+  Evidence: 分步调用时 `cookies` 恒为 `[]`，url 回落 /login；单链 + cookie-import 后 `/courses` 渲染完整卡片。
+
+- Observation: opencode.ai 偶发 Connect Timeout（Cloudflare 地址连不上），转写会 FAILED——API 已按 FAILED + error 落库，列表页"重试转写"按钮重发即成功。这是网络层瞬态，不是代码缺陷。
+  Evidence: 一次 transcribe 502（error: Cannot connect to API: Connect Timeout）后重试 200。
 
 ## Decision Log
 
