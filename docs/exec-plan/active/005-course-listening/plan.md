@@ -21,7 +21,7 @@ Outcomes & Retrospective 章节必须随工作进展保持更新。
 ## Progress
 
 - [x] (2026-08-15) T1: 数据模型 + shared schema + 转写 lib — 完成；migrate/test/type-check/lint 全绿
-- [ ] T2: 上传/媒体/转写 API
+- [x] (2026-08-15) T2: 上传/媒体/转写 API — 完成；真实语音端到端验证通过（上传→转写→READY 时间戳正确、Range 206、越权 404/307、删除级联清理文件）
 - [ ] T3: 课程列表 + 上传页
 - [ ] T4: 学习页听写交互
 
@@ -39,6 +39,16 @@ Outcomes & Retrospective 章节必须随工作进展保持更新。
 
 - Observation: ai SDK v6 FilePart 字段名是 mediaType 而非 mimeType。
   Evidence: @ai-sdk/provider-utils FilePart 接口定义。
+
+- Observation: opencode.ai 端点**不支持** glm-4.6-flash（设计阶段信息过时）。逐一实测 27 个模型：仅 `mimo-v2.5` 真正接受 `input_audio` 并能转写（glm-5.x 会静默返回"没有多模态能力"的 reasoning、gpt-5.6-luna 返回空 content、其余直接报错）。`/v1/audio/transcriptions` 端点不存在（返回 HTML）。
+  Evidence: `GET /v1/models` 列表 + 逐模型 `input_audio` 探测；mimo-v2.5 对真实语音返回正确时间戳 JSON `{"sentences":[{"text":"Hello world.","startMs":0,"endMs":1000},...]}`。
+  Decision: 默认转写模型改为 `mimo-v2.5`（可用 `AI_TRANSCRIBE_MODEL` 覆盖）。mimo 是 reasoning 模型，max_tokens 需给足（lib 走 generateText 默认值，实测 2 句语音正常返回；长音频若截断需调大）。
+
+- Observation: 纯音频正弦波（无语音）送 mimo-v2.5 会返回"我无法处理音频"的自然语言而非 JSON——转写失败路径因此覆盖（parseTranscriptionResponse 返回 error，route 写 FAILED）。
+  Evidence: sine wave curl 测试返回 "I cannot hear or process audio files."。
+
+- Observation: NextResponse 构造函数不直接接受 `Readable.toWeb()` 的 `ReadableStream<any>`（TS2345），且 lint 禁 `as` 断言。解法：手写 ReadableStream<Uint8Array> 包装 reader（无断言、类型精确）。
+  Evidence: media route 初版报错，包装后 type-check + lint 双绿。
 
 ## Decision Log
 
