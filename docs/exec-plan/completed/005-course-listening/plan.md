@@ -23,7 +23,7 @@ Outcomes & Retrospective 章节必须随工作进展保持更新。
 - [x] (2026-08-15) T1: 数据模型 + shared schema + 转写 lib — 完成；migrate/test/type-check/lint 全绿
 - [x] (2026-08-15) T2: 上传/媒体/转写 API — 完成；真实语音端到端验证通过（上传→转写→READY 时间戳正确、Range 206、越权 404/307、删除级联清理文件）
 - [x] (2026-08-15) T3: 课程列表 + 上传页 — 完成；agent-browser 实测：列表渲染/导航入口/浏览器上传/FAILED 重试成功
-- [ ] T4: 学习页听写交互
+- [x] (2026-08-15) T4: 学习页听写交互 — 完成；agent-browser 全流程实测：错词红/对词绿、改错重判、专有名词免输、显示答案、完成页、刷新持久化、中断续学
 
 ## Surprises & Discoveries
 
@@ -56,6 +56,12 @@ Outcomes & Retrospective 章节必须随工作进展保持更新。
 - Observation: opencode.ai 偶发 Connect Timeout（Cloudflare 地址连不上），转写会 FAILED——API 已按 FAILED + error 落库，列表页"重试转写"按钮重发即成功。这是网络层瞬态，不是代码缺陷。
   Evidence: 一次 transcribe 502（error: Cannot connect to API: Connect Timeout）后重试 200。
 
+- Observation: Prisma 1:1 关系（Course→CourseProgress）include 带过滤返回对象/null 而非数组——初版用 `Array.isArray(progress) ? progress[0] : null` 导致进度永远 null（写库成功但读不出）。
+  Evidence: psql 查 CourseProgress 行存在，GET 详情 progress:null；改为对象/null 兼容读取后修复。
+
+- Observation: 设计迭代——错词框"锁定 span 显示删除线+正确词"改为"保持 input 可编辑 + placeholder 提示正确答案"，更贴合"只可修改错误的单词"需求且键盘流不中断。
+  Evidence: 用户需求原文 + 浏览器实测删除线 span 无法直接修改。
+
 ## Decision Log
 
 - Decision: 转写用 GLM-4.6-Flash（opencode.ai 端点），返回逐句时间戳 JSON
@@ -80,7 +86,14 @@ Outcomes & Retrospective 章节必须随工作进展保持更新。
 
 ## Outcomes & Retrospective
 
-（完成后填写）
+成果：课程听力学习全链路上线——上传（可选封面/视频自动截帧）→ mimo-v2.5 转写（逐句时间戳）→ glm-5.1 专有名词标记 → 列表管理（状态/进度/重试/删除）→ 学习页空格键听写流（专有名词免输、错红对绿、改错重判、显示答案、回车进下一句）→ 进度持久化与续学、完成页。全部 API 首行 requireAuth；新增 44 个单测（dictation-flow 15 + course-transcribe 13 + course-media 8 + shared course-schema 8）；type-check/lint/test 三绿；agent-browser 真实语音全流程验证通过。
+
+差距与经验：
+1. 设计阶段选的 glm-4.6-flash 转写模型在端点上不存在——模型能力要实测验证，不能依赖过时信息。27 模型逐一探测才找到 mimo-v2.5。
+2. 本机 PG10 与 Prisma 7 shadow DB 不兼容（DROP DATABASE WITH (FORCE) 是 PG13+ 语法），migrate dev 全线不可用；手写 SQL + migrate deploy 绕过。升级 PG 前，后续迁移沿用此法。
+3. 1:1 关系 include 的返回形态（对象 vs 数组）踩坑一次，进度读写不对称造成"写了读不到"。
+
+对比原始目标：听力模式 MVP 完整交付。口语模式、ffmpeg 音轨抽取、听错词生成 SM-2 卡片、移动端适配均未做（明确 out of scope，归后续计划）。
 
 ## Context and Orientation
 
