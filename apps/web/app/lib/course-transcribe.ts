@@ -11,8 +11,8 @@ import {
   type TranscriptSentence,
 } from '@ebbinghaus/shared'
 
-/** 转写模型（opencode.ai 端点免费音频转写） */
-const TRANSCRIBE_MODEL = process.env.AI_TRANSCRIBE_MODEL ?? 'glm-4.6-flash'
+/** 转写模型（opencode.ai 端点实测唯一支持音频输入的模型） */
+const TRANSCRIBE_MODEL = process.env.AI_TRANSCRIBE_MODEL ?? 'mimo-v2.5'
 
 /** 专有名词标记分批大小 */
 const PROPER_NOUN_BATCH_SIZE = 40
