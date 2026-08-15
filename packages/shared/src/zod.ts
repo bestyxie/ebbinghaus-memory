@@ -180,3 +180,36 @@ export const updateRecallBlocksSchema = z.object({
   cardId: z.string().cuid(),
   recallBlocks: z.array(recallBlockSchema),
 })
+
+// === 课程听力学习 ===
+
+// 转写句内单词（isProperNoun = 地名/人名，学习页免输）
+export const transcriptWordSchema = z.object({
+  text: z.string().min(1),
+  isProperNoun: z.boolean(),
+})
+
+// 转写句（带毫秒时间戳，用于按句 seek 播放）
+export const transcriptSentenceSchema = z.object({
+  idx: z.number().int().min(0),
+  text: z.string().min(1),
+  startMs: z.number().int().min(0),
+  endMs: z.number().int().min(0),
+  words: z.array(transcriptWordSchema),
+})
+
+export const transcriptSchema = z.array(transcriptSentenceSchema)
+
+// 转写模型返回的原始句（无 words，需后续标记专有名词）
+export const rawTranscriptionSentenceSchema = z.object({
+  text: z.string().min(1),
+  startMs: z.number().int().min(0),
+  endMs: z.number().int().min(0),
+})
+
+// 学习进度更新
+export const updateCourseProgressSchema = z.object({
+  sentenceIndex: z.number().int().min(0),
+  completedSentenceIds: z.array(z.number().int().min(0)),
+  status: z.enum(['IN_PROGRESS', 'COMPLETED']),
+})

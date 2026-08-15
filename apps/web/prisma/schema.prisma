@@ -24,6 +24,8 @@ model User {
   outputPracticeLogs OutputPracticeLog[] // 输出练习记录
   apiTokens  ApiToken[]  // API tokens for extension access
   translationTasks TranslationTask[] // 翻译练习任务
+  courses    Course[] // 听力课程
+  courseProgresses CourseProgress[] // 课程学习进度
 
   @@unique([email])
   @@map("users")
@@ -284,6 +286,49 @@ model ReviewLog {
   @@index([userId, rating]) // 索引：计算用户留存率
 }
 
+// 9. 课程表 (Course) — 一个音视频文件 = 一门听力课程
+model Course {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+
+  title     String
+  mediaType MediaType   // AUDIO | VIDEO
+  mediaPath String      // media/ 目录下相对路径
+  coverPath String?     // 可选封面图相对路径
+  durationMs Int        // 媒体时长（毫秒）
+
+  status    CourseStatus @default(PROCESSING)
+  error     String?     // FAILED 时的失败原因
+
+  // 转写结果 [{ idx, text, startMs, endMs, words: [{ text, isProperNoun }] }]
+  transcript Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  progress  CourseProgress?
+
+  @@index([userId, status])
+}
+
+// 10. 课程学习进度表 — 每用户每课程一行，不进 SM-2
+model CourseProgress {
+  id           String @id @default(cuid())
+  courseId     String @unique
+  course       Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+
+  sentenceIndex       Int @default(0) // 当前句（0-based）
+  completedSentenceIds Int[] @default([]) // 已完成句 idx
+  status              CourseProgressStatus @default(IN_PROGRESS)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId])
+}
+
 model ApiToken {
   id          String    @id @default(cuid())
   name        String    // User-given label, e.g. "Chrome Extension"
@@ -318,6 +363,25 @@ enum TranslationTaskStatus {
   PENDING       // 已生成，未翻译
   COMPLETED     // 已提交翻译
   NEEDS_REVIEW  // SM-2 调度需要复习
+}
+
+// 枚举：课程媒体类型
+enum MediaType {
+  AUDIO
+  VIDEO
+}
+
+// 枚举：课程状态
+enum CourseStatus {
+  PROCESSING // 已上传，待转写
+  READY      // 转写完成，可学习
+  FAILED     // 转写失败
+}
+
+// 枚举：课程学习进度状态
+enum CourseProgressStatus {
+  IN_PROGRESS
+  COMPLETED
 }
 
 // 8. 翻译练习任务表 (TranslationTask)

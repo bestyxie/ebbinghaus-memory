@@ -12,6 +12,10 @@ import {
   updateArticleCardSchema,
   sourceAnchorSchema,
   cardSourceSchema,
+  transcriptWordSchema,
+  transcriptSentenceSchema,
+  transcriptSchema,
+  updateCourseProgressSchema,
 } from './zod'
 
 // === 基础类型 (从 Zod 派生) ===
@@ -153,4 +157,32 @@ export interface OutputPracticeLog {
   aiFeedback: string | null
   aiSuggestedAnswer: string | null
   practicedAt: Date
+}
+
+// === 课程听力学习 ===
+export type TranscriptWord = z.infer<typeof transcriptWordSchema>
+export type TranscriptSentence = z.infer<typeof transcriptSentenceSchema>
+export type Transcript = z.infer<typeof transcriptSchema>
+export type UpdateCourseProgressInput = z.infer<typeof updateCourseProgressSchema>
+
+export type MediaTypeValue = 'AUDIO' | 'VIDEO'
+export type CourseStatusValue = 'PROCESSING' | 'READY' | 'FAILED'
+export type CourseProgressStatusValue = 'IN_PROGRESS' | 'COMPLETED'
+
+// 课程列表项（不含 transcript 全文）
+export interface CourseSummary {
+  id: string
+  title: string
+  mediaType: MediaTypeValue
+  coverPath: string | null
+  durationMs: number
+  status: CourseStatusValue
+  error: string | null
+  sentenceCount: number
+  createdAt: string
+  progress: {
+    sentenceIndex: number
+    completedSentenceIds: number[]
+    status: CourseProgressStatusValue
+  } | null
 }
