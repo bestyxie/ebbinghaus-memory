@@ -20,14 +20,25 @@ Outcomes & Retrospective 章节必须随工作进展保持更新。
 
 ## Progress
 
-- [ ] T1: 数据模型 + shared schema + 转写 lib
+- [x] (2026-08-15) T1: 数据模型 + shared schema + 转写 lib — 完成；migrate/test/type-check/lint 全绿
 - [ ] T2: 上传/媒体/转写 API
 - [ ] T3: 课程列表 + 上传页
 - [ ] T4: 学习页听写交互
 
 ## Surprises & Discoveries
 
-（待记录）
+- Observation: web lint 在 HEAD 上崩溃（`context.getSource is not a function`）。根因：mobile 脚手架的 eslint-config-expo@8 引入 eslint-plugin-react-hooks@4.6.2，pnpm 提升后从 apps/web 的 eslint.config.mjs 位置 resolve react-hooks 会命中 4.6.2（ESLint 9 下调用已废弃 API 崩溃）。修复：web 显式 devDependency eslint-plugin-react-hooks@^5.2.0。
+  Evidence: probe flat config 输出 resolved path .../eslint-plugin-react-hooks@4.6.2_eslint@8.57.1/...；加依赖后 `next lint` 通过。
+
+- Observation: 本机 Postgres 10.3（Postgres.app var-10）不支持 `DROP DATABASE ... WITH (FORCE)`（PG13+ 语法）。Prisma 7 migrate dev 在 shadow DB 生命周期清理时对每条语句报 syntax error，随后 init migration 重放报 `type "CardState" already exists`（P3006）。SHADOW_DATABASE_URL 指向的 ebbinghus_shadow 库本身是干净的——Prisma 7 新引擎自建 `prisma_migrate_shadow_db_<uuid>` 临时库，清理失败导致脏状态复现。
+  Evidence: postgresql.log 反复出现 `syntax error at or near "WITH"` + `DROP DATABASE IF EXISTS "prisma_migrate_shadow_db_..." WITH (FORCE)`。
+  说明：绕过方案 = 手写迁移 SQL + `prisma migrate deploy`（不走 shadow DB）。后续迁移沿用此法，直到 Postgres 升级 ≥13。
+
+- Observation: prisma.config.ts 的 migrations 选项不支持 shadowDatabaseUrl 字段（TS2353）；migrate diff 命令的 --shadow-database-url flag 也已在 Prisma 7 移除。
+  Evidence: type-check 报错与 CLI usage 输出。
+
+- Observation: ai SDK v6 FilePart 字段名是 mediaType 而非 mimeType。
+  Evidence: @ai-sdk/provider-utils FilePart 接口定义。
 
 ## Decision Log
 
