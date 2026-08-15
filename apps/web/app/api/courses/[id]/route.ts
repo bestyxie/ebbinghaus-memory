@@ -26,7 +26,11 @@ export async function GET(
     }
 
     const parsed = transcriptSchema.safeParse(course.transcript)
-    const progressRow = Array.isArray(course.progress) ? course.progress[0] : null
+    // 1:1 关系：include 带过滤返回对象或 null
+    const progressList = course.progress
+    const progressRow = Array.isArray(progressList)
+      ? progressList[0]
+      : progressList
     return NextResponse.json({
       course: {
         id: course.id,
