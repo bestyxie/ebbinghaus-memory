@@ -74,3 +74,4 @@ stitch-export
 .playwright-cli
 .turbo/
 apps/web/media/
+.gstack/
