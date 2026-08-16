@@ -8,6 +8,25 @@ const MAX_MEDIA_BYTES = 100 * 1024 * 1024
 
 type Phase = 'form' | 'uploading' | 'transcribing' | 'error'
 
+/** 读媒体文件真实时长（毫秒）；读不出返回 null */
+async function readMediaDurationMs(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const el = document.createElement('audio')
+    el.preload = 'metadata'
+    el.src = url
+    const done = (v: number | null) => {
+      URL.revokeObjectURL(url)
+      resolve(v)
+    }
+    el.onloadedmetadata = () => {
+      done(Number.isFinite(el.duration) && el.duration > 0 ? Math.round(el.duration * 1000) : null)
+    }
+    el.onerror = () => done(null)
+    setTimeout(() => done(null), 5000)
+  })
+}
+
 /** 视频截第一帧为 jpeg Blob（无封面时自动生成） */
 async function captureFirstFrame(file: File): Promise<Blob | null> {
   return new Promise((resolve) => {
@@ -122,7 +141,13 @@ export function NewCourseClient() {
       }
 
       setPhase('transcribing')
-      const transcriptRes = await fetch(`/api/courses/${uploadData.course.id}/transcribe`, { method: 'POST' })
+      // 浏览器读真实时长随转写请求上报，服务端用于校准模型时间戳漂移
+      const durationMs = await readMediaDurationMs(mediaFile)
+      const transcriptRes = await fetch(`/api/courses/${uploadData.course.id}/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ durationMs }),
+      })
       if (!transcriptRes.ok) {
         const d: { error?: string } = await transcriptRes.json().catch(() => ({}))
         throw new Error(d.error ?? '转写失败')

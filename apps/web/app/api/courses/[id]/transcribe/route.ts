@@ -3,10 +3,20 @@ import { readFile } from 'fs/promises'
 import { prisma } from '@/app/lib/prisma'
 import { requireAuth } from '@/app/lib/api-helpers'
 import { absoluteMediaPath } from '@/app/lib/course-media'
-import { callTranscriptionModel, markProperNouns } from '@/app/lib/course-transcribe'
+import { callTranscriptionModel, markProperNouns, calibrateTimestamps } from '@/app/lib/course-transcribe'
 import { transcriptSchema } from '@ebbinghaus/shared'
 
 export const maxDuration = 300 // 转写可能耗时 1-2 分钟
+
+/** 从 unknown 读取对象字段 */
+function fieldOf(data: unknown, key: string): unknown {
+  if (typeof data !== 'object' || data === null) return undefined
+  const record: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(data)) {
+    record[k] = v
+  }
+  return record[key]
+}
 
 /**
  * POST /api/courses/[id]/transcribe — 触发转写（同步等待完成）
@@ -44,15 +54,27 @@ export async function POST(
       return NextResponse.json({ error }, { status: 502 })
     }
 
+    // 用客户端上报的真实时长校准模型时间戳漂移（可选 body: { durationMs }）
+    let reportedDurationMs: number | null = null
+    try {
+      const body: unknown = await request.json()
+      const d = fieldOf(body, 'durationMs')
+      reportedDurationMs = typeof d === 'number' && d > 0 ? d : null
+    } catch {
+      // 无 body（如列表页重试）时跳过校准
+    }
+    const calibrated = calibrateTimestamps(transcription.sentences, reportedDurationMs ?? (course.durationMs || null))
+
     // 标记专有名词
-    const marked = await markProperNouns(transcription.sentences)
+    const marked = await markProperNouns(calibrated)
     if (marked.error || marked.result.length === 0) {
       const error = marked.error ?? 'Proper noun marking returned nothing'
       await prisma.course.update({ where: { id }, data: { status: 'FAILED', error } })
       return NextResponse.json({ error }, { status: 502 })
     }
 
-    const durationMs = marked.result[marked.result.length - 1].endMs
+    // 课程时长优先真实上报值；时间轴已按它校准，末句 endMs 与之接近
+    const durationMs = reportedDurationMs ?? marked.result[marked.result.length - 1].endMs
     await prisma.course.update({
       where: { id },
       data: {

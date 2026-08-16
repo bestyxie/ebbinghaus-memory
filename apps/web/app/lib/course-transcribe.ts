@@ -86,6 +86,30 @@ export function parseTranscriptionResponse(raw: string): { sentences: RawSentenc
 }
 
 /**
+ * 时间戳校准：转写模型（mimo-v2.5）的时间戳存在系统性漂移（实测整体压缩 ~8%），
+ * 导致句子音频被提前切断、要求听写的词没播出来。
+ * 用媒体真实时长把模型时间轴线性缩放到真实时间轴：
+ * scale = realDuration / modelLastEnd。偏差 <5% 视为噪声不校准。
+ */
+export function calibrateTimestamps(
+  sentences: RawSentence[],
+  realDurationMs: number | null | undefined,
+): RawSentence[] {
+  if (!realDurationMs || realDurationMs <= 0 || sentences.length === 0) return sentences
+  const lastEnd = sentences[sentences.length - 1].endMs
+  if (lastEnd <= 0) return sentences
+  const scale = realDurationMs / lastEnd
+  // 实测漂移为时间轴整体压缩（模型 < 真实），只校准压缩侧；偏差 <5% 视为噪声
+  if (scale <= 1 || scale > 1.5) return sentences
+  if (scale - 1 < 0.05) return sentences
+  return sentences.map((s) => ({
+    ...s,
+    startMs: Math.round(s.startMs * scale),
+    endMs: Math.round(s.endMs * scale),
+  }))
+}
+
+/**
  * 解析专有名词标记模型返回的 JSON，组装最终 TranscriptSentence 数组
  * 模型需返回 { marks: [{ text, isProperNoun }[]] }（与输入句一一对应）
  */

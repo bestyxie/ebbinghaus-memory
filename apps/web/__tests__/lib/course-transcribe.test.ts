@@ -6,6 +6,7 @@ import {
   parseTranscriptionResponse,
   parseProperNounResponse,
   extractJsonObject,
+  calibrateTimestamps,
 } from '@/app/lib/course-transcribe'
 
 describe('normalizeWord', () => {
@@ -185,5 +186,37 @@ describe('extractJsonObject', () => {
   it('errors on unterminated JSON', () => {
     const { error } = extractJsonObject('{"sentences": [')
     expect(error).toContain('Unterminated')
+  })
+})
+
+describe('calibrateTimestamps', () => {
+  const sentences = [
+    { text: 'First.', startMs: 1000, endMs: 2000 },
+    { text: 'Second.', startMs: 2500, endMs: 8000 },
+  ]
+
+  it('scales timestamps when model drift is significant', () => {
+    // model says 8s end, real audio 10s → scale 1.25
+    const out = calibrateTimestamps(sentences, 10000)
+    expect(out[0].startMs).toBe(1250)
+    expect(out[1].endMs).toBe(10000)
+  })
+
+  it('no-op when drift under 5%', () => {
+    const out = calibrateTimestamps(sentences, 8200)
+    expect(out[0].startMs).toBe(1000)
+    expect(out[1].endMs).toBe(8000)
+  })
+
+  it('no-op on missing/invalid duration', () => {
+    expect(calibrateTimestamps(sentences, null)).toEqual(sentences)
+    expect(calibrateTimestamps(sentences, 0)).toEqual(sentences)
+    expect(calibrateTimestamps(sentences, undefined)).toEqual(sentences)
+  })
+
+  it('no-op on absurd scale (guard against bad input)', () => {
+    // 100x → model completely misread; raw values safer than trusting either
+    const out = calibrateTimestamps(sentences, 800000)
+    expect(out).toEqual(sentences)
   })
 })
