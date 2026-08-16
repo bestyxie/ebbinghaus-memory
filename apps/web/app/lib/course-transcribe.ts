@@ -1,6 +1,7 @@
 /**
  * 课程听力转写模块
- * 音视频 → GLM-4.6-Flash 逐句转写（带时间戳）→ glm-5.1 标记专有名词
+ * 音视频 → Groq Whisper（词/句级时间戳）转写 → glm-5.1 标记专有名词
+ * 无 GROQ_API_KEY 时回落 mimo-v2.5（时间戳不可靠，仅保底）
  */
 
 import { generateText } from 'ai'
@@ -11,8 +12,14 @@ import {
   type TranscriptSentence,
 } from '@ebbinghaus/shared'
 
-/** 转写模型（opencode.ai 端点实测唯一支持音频输入的模型） */
-const TRANSCRIBE_MODEL = process.env.AI_TRANSCRIBE_MODEL ?? 'mimo-v2.5'
+/** 回落转写模型（opencode.ai 端点） */
+const FALLBACK_TRANSCRIBE_MODEL = process.env.AI_TRANSCRIBE_MODEL ?? 'mimo-v2.5'
+
+/** Groq Whisper 模型（免费档，句级时间戳精确） */
+const GROQ_MODEL = process.env.GROQ_TRANSCRIBE_MODEL ?? 'whisper-large-v3-turbo'
+
+/** Groq 单文件上限 25MB */
+const GROQ_MAX_BYTES = 25 * 1024 * 1024
 
 /** 专有名词标记分批大小 */
 const PROPER_NOUN_BATCH_SIZE = 40
@@ -184,9 +191,186 @@ export function extractJsonObject(raw: string): { json: string; error?: string }
 }
 
 /**
- * 调用转写模型：媒体文件 base64 → 逐句时间戳
- * 直接 fetch 端点（不走 ai SDK）：mimo-v2.5 是推理模型，长音频时转写结果可能
- * 全部落在 reasoning_content 通道而 content 为空，ai SDK 只读 content 会丢失。
+ * Groq 单次转写调用：音频片段 Buffer → 句级时间戳（相对片段起点）
+ */
+async function groqTranscribeChunk(
+  chunk: Buffer,
+  key: string,
+): Promise<{ sentences: RawSentence[]; error?: string }> {
+  const form = new FormData()
+  form.append('file', new Blob([new Uint8Array(chunk)], { type: 'audio/wav' }), 'chunk.wav')
+  form.append('model', GROQ_MODEL)
+  form.append('response_format', 'verbose_json')
+  form.append('timestamp_granularities[]', 'segment')
+
+  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}` },
+    body: form,
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    return { sentences: [], error: `Groq API ${res.status}: ${body.slice(0, 200)}` }
+  }
+  const data: unknown = await res.json()
+  const segments = field(data, 'segments')
+  if (!Array.isArray(segments)) {
+    return { sentences: [], error: 'Groq returned no segments' }
+  }
+  const sentences: RawSentence[] = []
+  for (const seg of segments) {
+    const rawText = field(seg, 'text')
+    const text = typeof rawText === 'string' ? rawText.trim() : ''
+    const start = field(seg, 'start')
+    const end = field(seg, 'end')
+    if (!text || typeof start !== 'number' || typeof end !== 'number') continue
+    sentences.push({ text, startMs: Math.round(start * 1000), endMs: Math.round(end * 1000) })
+  }
+  return { sentences }
+}
+
+/**
+ * 调用 Groq Whisper：媒体文件 Buffer（mp3/m4a/wav 原格式）→ 句级时间戳
+ *
+ * 分块策略（~25s/块）：Whisper 对含片头静音+重复内容的整段音频会整块跳读
+ * （实测 englishpod 整段上传丢掉 2.5-30s 的对话），分块后每块独立解码无此问题。
+ * 原始 Buffer 无法在服务端安全切片 → 要求调用方提供 wav PCM 才能按字节切；
+ * 非 wav 输入走整段上传（多数文件 OK，个别片头静音文件可能跳读）。
+ */
+export async function callGroqTranscription(
+  file: { buffer: Buffer; mime: string },
+  chunkedWav?: Buffer,
+): Promise<{ sentences: RawSentence[]; error?: string }> {
+  const key = process.env.GROQ_API_KEY
+  if (!key) return { sentences: [], error: 'GROQ_API_KEY not configured' }
+  if (file.buffer.length > GROQ_MAX_BYTES && !chunkedWav) {
+    return { sentences: [], error: `File exceeds Groq 25MB limit (${(file.buffer.length / 1024 / 1024).toFixed(1)}MB)` }
+  }
+  try {
+    if (!chunkedWav) {
+      // 整段上传（原格式）
+      const ext = file.mime.includes('wav') ? 'wav' : file.mime.includes('mp4') && file.mime.startsWith('video') ? 'mp4' : 'mp3'
+      const form = new FormData()
+      form.append('file', new Blob([new Uint8Array(file.buffer)], { type: file.mime }), `audio.${ext}`)
+      form.append('model', GROQ_MODEL)
+      form.append('response_format', 'verbose_json')
+      form.append('timestamp_granularities[]', 'segment')
+      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}` },
+        body: form,
+      })
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        return { sentences: [], error: `Groq API ${res.status}: ${body.slice(0, 200)}` }
+      }
+      const data: unknown = await res.json()
+      const segments = field(data, 'segments')
+      const sentences = parseGroqSegments(segments)
+      if (sentences.error || sentences.sentences.length === 0) {
+        return { sentences: [], error: sentences.error ?? 'Groq returned no usable segments' }
+      }
+      return { sentences: sentences.sentences }
+    }
+
+    // 分块路径：16kHz 单声道 wav，按采样字节切 ~25s 块，块间 2s 重叠去重
+    const SAMPLE_RATE = 16000
+    const BYTES_PER_SAMPLE = 2
+    const HEADER = 44 // 标准 RIFF 头
+    const dataLen = chunkedWav.length - HEADER
+    const totalSec = dataLen / (SAMPLE_RATE * BYTES_PER_SAMPLE)
+    const CHUNK_SEC = 25
+    const OVERLAP_SEC = 2
+
+    const all: RawSentence[] = []
+    let cursorSec = 0
+    let chunkIndex = 0
+    while (cursorSec < totalSec - 0.5) {
+      const chunkEnd = Math.min(cursorSec + CHUNK_SEC, totalSec)
+      const startByte = HEADER + Math.round(cursorSec * SAMPLE_RATE * BYTES_PER_SAMPLE)
+      const endByte = HEADER + Math.round(chunkEnd * SAMPLE_RATE * BYTES_PER_SAMPLE)
+      const wav = makeWavHeader(endByte - startByte)
+      const chunk = Buffer.concat([wav, chunkedWav.subarray(startByte, endByte)])
+
+      const result = await groqTranscribeChunk(chunk, key)
+      if (result.error) return { sentences: [], error: result.error }
+
+      const overlapMs = chunkIndex === 0 ? 0 : OVERLAP_SEC * 1000
+      const offsetMs = Math.round(cursorSec * 1000)
+      for (const s of result.sentences) {
+        const absStart = offsetMs + s.startMs
+        // 跳过与上一块重叠区的句子（上一块已覆盖）
+        if (absStart < offsetMs + overlapMs - 300 && chunkIndex > 0) continue
+        all.push({ text: s.text, startMs: absStart, endMs: offsetMs + s.endMs })
+      }
+      cursorSec = chunkEnd - OVERLAP_SEC
+      if (chunkEnd >= totalSec) break
+      chunkIndex++
+    }
+
+    if (all.length === 0) {
+      return { sentences: [], error: 'Groq chunked transcription returned nothing' }
+    }
+    all.sort((a, b) => a.startMs - b.startMs)
+    return { sentences: dedupeOverlapSentences(all) }
+  } catch (e) {
+    return { sentences: [], error: e instanceof Error ? e.message : 'Groq transcription failed' }
+  }
+}
+
+/** 解析 Groq verbose_json 的 segments 数组 */
+function parseGroqSegments(segments: unknown): { sentences: RawSentence[]; error?: string } {
+  if (!Array.isArray(segments)) return { sentences: [], error: 'Groq returned no segments' }
+  const sentences: RawSentence[] = []
+  for (const seg of segments) {
+    const rawText = field(seg, 'text')
+    const text = typeof rawText === 'string' ? rawText.trim() : ''
+    const start = field(seg, 'start')
+    const end = field(seg, 'end')
+    if (!text || typeof start !== 'number' || typeof end !== 'number') continue
+    sentences.push({ text, startMs: Math.round(start * 1000), endMs: Math.round(end * 1000) })
+  }
+  return { sentences }
+}
+
+/** 构造 16kHz 单声道 16bit wav 头 */
+function makeWavHeader(dataBytes: number): Buffer {
+  const header = Buffer.alloc(44)
+  header.write('RIFF', 0)
+  header.writeUInt32LE(36 + dataBytes, 4)
+  header.write('WAVE', 8)
+  header.write('fmt ', 12)
+  header.writeUInt32LE(16, 16)
+  header.writeUInt16LE(1, 20) // PCM
+  header.writeUInt16LE(1, 22) // mono
+  header.writeUInt32LE(16000, 24)
+  header.writeUInt32LE(32000, 28) // byte rate
+  header.writeUInt16LE(2, 32)
+  header.writeUInt16LE(16, 34)
+  header.write('data', 36)
+  header.writeUInt32LE(dataBytes, 40)
+  return header
+}
+
+/** 去掉块重叠产生的重复/近似句子（按起始时间+文本前缀） */
+function dedupeOverlapSentences(sentences: RawSentence[]): RawSentence[] {
+  const out: RawSentence[] = []
+  for (const s of sentences) {
+    const dup = out.some(
+      (kept) =>
+        Math.abs(kept.startMs - s.startMs) < 1500 &&
+        (kept.text.slice(0, 20).toLowerCase() === s.text.slice(0, 20).toLowerCase() ||
+          kept.text.includes(s.text) ||
+          s.text.includes(kept.text)),
+    )
+    if (!dup) out.push(s)
+  }
+  return out
+}
+
+/**
+ * 回落转写（mimo-v2.5）：时间戳不可靠（系统性漂移），仅在未配置 Groq 时使用
+ * 直接 fetch 端点（不走 ai SDK）：mimo 是推理模型，结果可能全落在 reasoning_content
  */
 export async function callTranscriptionModel(
   base64: string,
@@ -201,7 +385,7 @@ export async function callTranscriptionModel(
         Authorization: `Bearer ${process.env.AI_API_KEY ?? ''}`,
       },
       body: JSON.stringify({
-        model: TRANSCRIBE_MODEL,
+        model: FALLBACK_TRANSCRIBE_MODEL,
         messages: [
           {
             role: 'user',
