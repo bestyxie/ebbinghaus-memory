@@ -76,14 +76,19 @@ export async function POST(
     const wav = await toStandardWav(absoluteMediaPath(course.mediaPath))
     let transcription = await callGroqTranscription({ buffer, mime }, wav ?? undefined)
     let engine = 'groq'
+    let groqError: string | null = null
     if (transcription.error) {
-      console.warn(`Groq transcription unavailable (${transcription.error}); falling back to mimo`)
+      groqError = transcription.error
+      console.warn(`Groq transcription unavailable (${groqError}); falling back to mimo`)
       engine = 'mimo-fallback'
       const base64 = buffer.toString('base64')
       transcription = await callTranscriptionModel(base64, course.mediaType)
     }
     if (transcription.error || transcription.sentences.length === 0) {
-      const error = transcription.error ?? 'Empty transcription'
+      // 保留 Groq 原始错误，避免回落层错误掩盖真实原因（如代理未开 403）
+      const error = groqError
+        ? `Groq: ${groqError}（回落 mimo 也失败: ${transcription.error ?? 'empty'}）`
+        : transcription.error ?? 'Empty transcription'
       await prisma.course.update({ where: { id }, data: { status: 'FAILED', error } })
       return NextResponse.json({ error }, { status: 502 })
     }
