@@ -22,7 +22,8 @@ const GROQ_MODEL = process.env.GROQ_TRANSCRIBE_MODEL ?? 'whisper-large-v3-turbo'
 const GROQ_MAX_BYTES = 25 * 1024 * 1024
 
 /** 专有名词标记分批大小 */
-const PROPER_NOUN_BATCH_SIZE = 40
+// 20 句/批：输出为逐词 JSON，40 句时输出 token 轻松超 6k（TPM 8k 上限）
+const PROPER_NOUN_BATCH_SIZE = 20
 
 /** 转写模型返回的原始句（无 words） */
 export interface RawSentence {
@@ -464,7 +465,8 @@ function readMessage(data: unknown): { content: string; reasoning: string } {
 }
 
 /**
- * 调用 glm-5.1 分批标记专有名词，返回完整 transcript
+ * 调用 LLM 分批标记专有名词，返回完整 transcript
+ * 主通道：Groq gpt-oss-120b（免费，与转写共用 key）；失败回落 opencode glm-5.1
  */
 export async function markProperNouns(
   sentences: RawSentence[],
@@ -477,24 +479,71 @@ export async function markProperNouns(
     const allMarks: unknown[] = []
     for (const batch of batches) {
       const numbered = batch.map((s, i) => `${i + 1}. ${s.text}`).join('\n')
-      const result = await generateText({
-        model: aiProvider(AI_MODEL),
-        prompt: `For each sentence below, split it into words (whitespace-separated, keep original form). Mark proper nouns (person names, place names, brand/organization names) with isProperNoun=true; all other words false.
+      const prompt = `For each numbered sentence, list EVERY word in order as JSON objects with isProperNoun=true only for person/place/organization/brand names; all other words false. Keep original word form.
 
 Sentences:
 ${numbered}
 
-Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — one inner array per sentence, same order, words in original order. No markdown.`,
-        temperature: 0,
-      })
-      const extracted = extractJsonObject(result.text)
+Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — one inner array per sentence, same order, words in original order. No markdown.`
+      let resultText = ''
+      const groqKey = process.env.GROQ_API_KEY
+      if (groqKey) {
+        // 主通道：Groq 免费 LLM（与转写共用额度体系）
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
+          body: JSON.stringify({
+            model: process.env.GROQ_MARK_MODEL ?? 'openai/gpt-oss-120b',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0,
+            // gpt-oss-120b 免费档 TPM=8000，max_tokens 计入 TPM，必须留 prompt 余量
+            max_tokens: 6000,
+          }),
+        })
+        if (res.ok) {
+          const data: unknown = await res.json()
+          const content = readMessage(data).content
+          resultText = content
+        } else if (res.status === 429 || res.status === 413) {
+          // TPM 等限流：等窗口重置后重试一次（max_tokens 计入 TPM，需给足余量）
+          await new Promise<void>((r) => setTimeout(r, 60_000))
+          const retry = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
+            body: JSON.stringify({
+              model: process.env.GROQ_MARK_MODEL ?? 'openai/gpt-oss-120b',
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0,
+              max_tokens: 6000,
+            }),
+          })
+          if (retry.ok) {
+            const data: unknown = await retry.json()
+            resultText = readMessage(data).content
+          } else {
+            console.warn(`Groq mark model retry failed (${retry.status}); falling back to glm`)
+          }
+        } else {
+          console.warn(`Groq mark model unavailable (${res.status}); falling back to glm`)
+        }
+      }
+      if (!resultText) {
+        // 回落：opencode glm-5.1
+        const result = await generateText({
+          model: aiProvider(AI_MODEL),
+          prompt,
+          temperature: 0,
+        })
+        resultText = result.text
+      }
+      const extracted = extractJsonObject(resultText)
       const data: unknown = extracted.error ? undefined : JSON.parse(extracted.json)
       const marks = jsonField(data, 'marks')
       if (!Array.isArray(marks) || marks.length !== batch.length) {
         // 该批解析失败/截断/数量不符：降级为全 false 标记（parseProperNounResponse 对
         // 空数组有逐句兜底），不让整门课程失败
         console.warn(
-          `Proper noun batch degraded (${extracted.error ?? `marks ${Array.isArray(marks) ? marks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(result.text).slice(0, 120)}`,
+          `Proper noun batch degraded (${extracted.error ?? `marks ${Array.isArray(marks) ? marks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(resultText).slice(0, 120)}`,
         )
         for (let i = 0; i < batch.length; i++) {
           allMarks.push([])
