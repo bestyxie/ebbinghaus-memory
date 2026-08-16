@@ -51,3 +51,4 @@
 - 转写同步等待（长音频页面需挂 1-2 分钟；失败可重试）
 - 视频整体送转写（无 ffmpeg 抽轨），>100MB 拒绝
 - opencode.ai 偶发网络超时 → FAILED → 列表页重试即恢复
+- mimo-v2.5 是推理模型：转写结果可能落在 reasoning_content 通道（lib 已做 content/reasoning 双通道读取 + 大括号配对提取）；专有名词批次截断时降级为该批全 false，不阻断转写
