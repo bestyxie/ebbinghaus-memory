@@ -5,7 +5,7 @@
 ## 流程
 
 1. `/courses/new` 上传音视频（≤100MB，可选封面；视频未传封面自动截第一帧 jpeg）
-2. 转写：**mimo-v2.5**（opencode.ai 端点，`AI_TRANSCRIBE_MODEL` 可覆盖）返回逐句时间戳 JSON；随后 glm-5.1 按 40 句/批标记专有名词（地名/人名，学习时免输）
+2. 转写：**Groq whisper-large-v3-turbo**（`GROQ_API_KEY`，免费档每天 8h 音频）ffmpeg 转 16kHz wav 后 25s 分块上传（规避 Whisper 对片头静音+重复内容的整段跳读），句级时间戳真实对齐；随后 glm-5.1 标记专有名词（地名/人名，学习时免输）。未配置 Groq key 或网络不可达时回落 mimo-v2.5（时间戳不可靠，仅保底）
 3. `/courses/[id]` 学习：单 `<audio>` 按 `startMs..endMs` seek 播放，每句自动连播两遍
 
 ## 学习页交互
@@ -49,6 +49,7 @@
 ## 已知限制
 
 - 转写同步等待（长音频页面需挂 1-2 分钟；失败可重试）
-- 视频整体送转写（无 ffmpeg 抽轨），>100MB 拒绝
-- opencode.ai 偶发网络超时 → FAILED → 列表页重试即恢复
-- mimo-v2.5 是推理模型：转写结果可能落在 reasoning_content 通道（lib 已做 content/reasoning 双通道读取 + 大括号配对提取）；专有名词批次截断时降级为该批全 false，不阻断转写
+- 视频整体送转写（无 ffmpeg 抽轨），>100MB 拒绝；Groq 单请求上限 25MB（分块 wav 路径天然规避）
+- **Groq API 地区封锁**：中国大陆等地区直连返回 403（key 未验证即被 CF 边缘拦截）。本地开发需代理；Vercel/GitHub Actions 部署环境不受影响。无代理时自动回落 mimo（时间戳质量下降）
+- 本地开发依赖 ffmpeg（分块转码）；缺失时退回整段上传，个别"片头静音+重复内容"音频可能跳读
+- mimo-v2.5 回落路径：推理模型结果可能落 reasoning_content（已双通道读取）；专有名词批次截断降级为全 false，不阻断转写
