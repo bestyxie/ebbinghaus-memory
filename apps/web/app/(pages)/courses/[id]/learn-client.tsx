@@ -164,6 +164,24 @@ export function LearnCourseClient() {
     }
   }
 
+  // 完成态按回车进下一句：done 后词全为 span、cursor=-1 无焦点输入框，
+  // input 的 onKeyDown 收不到 Enter，必须在 window 上监听
+  useEffect(() => {
+    if (!dictation || dictation.phase !== 'done') return
+    const onEnter = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return
+      // 焦点在按钮上时让原生 Enter 触发 click（否则会双重推进跳句）
+      if (e.target instanceof HTMLElement && e.target.tagName === 'BUTTON') return
+      e.preventDefault()
+      nextSentence()
+    }
+    window.addEventListener('keydown', onEnter)
+    return () => {
+      window.removeEventListener('keydown', onEnter)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dictation, sentenceIndex, sentences.length])
+
   // === 交互处理器 ===
 
   function doCompare(state: DictationState) {
@@ -190,12 +208,6 @@ export function LearnCourseClient() {
       if (r.moved) {
         e.preventDefault()
         setDictation(r.state)
-      }
-    } else if (e.key === 'Enter') {
-      // 完成态下回车进下一句
-      if (dictation.phase === 'done') {
-        e.preventDefault()
-        nextSentence()
       }
     }
   }
