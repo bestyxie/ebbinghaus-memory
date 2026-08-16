@@ -71,8 +71,31 @@ export function useSentenceAudio(audioRef: React.RefObject<HTMLAudioElement | nu
   /** 打断播放 */
   const stop = useCallback(() => {
     playRunId.current++
-    audioRef.current?.pause()
+    const audio = audioRef.current
+    if (audio) {
+      audio.pause()
+      // 归零 currentTime，防止解锁后浏览器从暂停点自动续播
+      try {
+        audio.currentTime = 0
+      } catch {
+        // 未加载 metadata 时会抛错，忽略
+      }
+    }
   }, [audioRef])
+
+  // 页面隐藏（锁屏/切后台/切标签页）时打断播放链：
+  // 否则挂起的 play() promise 与 sleep 定时器在恢复可见后一起苏醒，叠加出"解锁自动播两遍"
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        stop()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [stop])
 
   return { playTwice, stop, currentRun: activeRunId }
 }
