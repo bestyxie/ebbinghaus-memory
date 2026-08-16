@@ -125,37 +125,125 @@ export function parseProperNounResponse(raw: string, sentences: RawSentence[]): 
 // === 模型调用 ===
 
 /**
+ * 从模型回复文本中提取第一个完整 JSON 对象（容错：思考通道混入叙述文字、代码围栏）
+ */
+export function extractJsonObject(raw: string): { json: string; error?: string } {
+  const start = raw.indexOf('{')
+  if (start === -1) return { json: '', error: 'No JSON object in response' }
+  let depth = 0
+  let inString = false
+  let escaped = false
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i]
+    if (escaped) {
+      escaped = false
+      continue
+    }
+    if (ch === '\\') {
+      escaped = true
+      continue
+    }
+    if (ch === '"') {
+      inString = !inString
+      continue
+    }
+    if (inString) continue
+    if (ch === '{') depth++
+    if (ch === '}') {
+      depth--
+      if (depth === 0) {
+        return { json: raw.slice(start, i + 1) }
+      }
+    }
+  }
+  return { json: '', error: 'Unterminated JSON object in response' }
+}
+
+/**
  * 调用转写模型：媒体文件 base64 → 逐句时间戳
+ * 直接 fetch 端点（不走 ai SDK）：mimo-v2.5 是推理模型，长音频时转写结果可能
+ * 全部落在 reasoning_content 通道而 content 为空，ai SDK 只读 content 会丢失。
  */
 export async function callTranscriptionModel(
   base64: string,
   mediaType: 'AUDIO' | 'VIDEO',
 ): Promise<{ sentences: RawSentence[]; error?: string }> {
-  const mime = mediaType === 'VIDEO' ? 'video/mp4' : 'audio/mpeg'
+  const format = mediaType === 'VIDEO' ? 'mp4' : 'mp3'
   try {
-    const result = await generateText({
-      model: aiProvider(TRANSCRIBE_MODEL),
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'file',
-              data: base64,
-              mediaType: mime,
-            },
-            {
-              type: 'text',
-              text: `Transcribe this ${mediaType.toLowerCase()} to text. Return ONLY a JSON object: {"sentences": [{"text": "...", "startMs": 123, "endMs": 456}]}. Split into natural sentences. Timestamps in milliseconds from file start. No markdown, no explanations.`,
-            },
-          ],
-        },
-      ],
-      temperature: 0,
+    const res = await fetch(`${process.env.AI_BASE_URL ?? 'https://opencode.ai/zen/go/v1'}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.AI_API_KEY ?? ''}`,
+      },
+      body: JSON.stringify({
+        model: TRANSCRIBE_MODEL,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'input_audio', input_audio: { data: base64, format } },
+              {
+                type: 'text',
+                text: `Transcribe this ${mediaType.toLowerCase()} to text. Return ONLY a JSON object: {"sentences": [{"text": "...", "startMs": 123, "endMs": 456}]}. Split into natural sentences. Timestamps in milliseconds from file start. No markdown, no explanations.`,
+              },
+            ],
+          },
+        ],
+        temperature: 0,
+        max_tokens: 8000,
+      }),
     })
-    return parseTranscriptionResponse(result.text)
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      return { sentences: [], error: `Transcription API ${res.status}: ${body.slice(0, 200)}` }
+    }
+    const text = await res.text()
+    let data: unknown
+    try {
+      data = JSON.parse(text)
+    } catch {
+      return {
+        sentences: [],
+        error: `Transcription API returned invalid JSON body (${text.length} bytes): ${text.slice(0, 150)}`,
+      }
+    }
+    const message = readMessage(data)
+    // content 优先；为空时回落 reasoning_content（mimo 推理通道）
+    const raw = message.content || message.reasoning || ''
+    if (!raw) {
+      return { sentences: [], error: 'Transcription model returned empty content' }
+    }
+    const extracted = extractJsonObject(raw)
+    if (extracted.error) {
+      return { sentences: [], error: `Transcription response is not valid JSON: ${extracted.error}` }
+    }
+    return parseTranscriptionResponse(extracted.json)
   } catch (e) {
     return { sentences: [], error: e instanceof Error ? e.message : 'Transcription model call failed' }
+  }
+}
+
+/** 从 unknown 读取一层对象字段（非对象/字段缺失返回 undefined） */
+function field(data: unknown, key: string): unknown {
+  if (typeof data !== 'object' || data === null) return undefined
+  const record: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(data)) {
+    record[k] = v
+  }
+  return record[key]
+}
+
+/** 从 chat completions 响应中安全读取 content / reasoning 文本 */
+function readMessage(data: unknown): { content: string; reasoning: string } {
+  const choices = field(data, 'choices')
+  if (!Array.isArray(choices) || choices.length === 0) return { content: '', reasoning: '' }
+  const msg = field(choices[0], 'message')
+  const content = field(msg, 'content')
+  const reasoning = field(msg, 'reasoning_content')
+  return {
+    content: typeof content === 'string' ? content : '',
+    reasoning: typeof reasoning === 'string' ? reasoning : '',
   }
 }
 
@@ -183,10 +271,19 @@ ${numbered}
 Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — one inner array per sentence, same order, words in original order. No markdown.`,
         temperature: 0,
       })
-      const data: unknown = JSON.parse(stripCodeFence(result.text))
+      const extracted = extractJsonObject(result.text)
+      const data: unknown = extracted.error ? undefined : JSON.parse(extracted.json)
       const marks = jsonField(data, 'marks')
-      if (!Array.isArray(marks)) {
-        return { result: [], error: 'Proper noun batch response invalid' }
+      if (!Array.isArray(marks) || marks.length !== batch.length) {
+        // 该批解析失败/截断/数量不符：降级为全 false 标记（parseProperNounResponse 对
+        // 空数组有逐句兜底），不让整门课程失败
+        console.warn(
+          `Proper noun batch degraded (${extracted.error ?? `marks ${Array.isArray(marks) ? marks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(result.text).slice(0, 120)}`,
+        )
+        for (let i = 0; i < batch.length; i++) {
+          allMarks.push([])
+        }
+        continue
       }
       allMarks.push(...marks)
     }

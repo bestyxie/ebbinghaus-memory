@@ -5,6 +5,7 @@ import {
   compareWord,
   parseTranscriptionResponse,
   parseProperNounResponse,
+  extractJsonObject,
 } from '@/app/lib/course-transcribe'
 
 describe('normalizeWord', () => {
@@ -145,5 +146,44 @@ describe('parseProperNounResponse', () => {
     const raw = JSON.stringify({ marks: [[{ text: 'x', isProperNoun: false }]] })
     const { error } = parseProperNounResponse(raw, sentences)
     expect(error).toContain('mismatch')
+  })
+})
+
+describe('extractJsonObject', () => {
+  it('extracts JSON from plain response', () => {
+    const { json, error } = extractJsonObject('{"sentences":[]}')
+    expect(error).toBeUndefined()
+    expect(JSON.parse(json)).toEqual({ sentences: [] })
+  })
+
+  it('extracts JSON from reasoning-style narration with prose around it', () => {
+    const raw = 'Let me transcribe. {"sentences":[{"text":"Hi.","startMs":0,"endMs":100}]} Done.'
+    const { json, error } = extractJsonObject(raw)
+    expect(error).toBeUndefined()
+    expect(JSON.parse(json).sentences).toHaveLength(1)
+  })
+
+  it('handles braces inside string values', () => {
+    const raw = 'note {"sentences":[{"text":"a {b} c","startMs":0,"endMs":1}]} end'
+    const { json, error } = extractJsonObject(raw)
+    expect(error).toBeUndefined()
+    expect(JSON.parse(json).sentences[0].text).toBe('a {b} c')
+  })
+
+  it('handles escaped quotes in strings', () => {
+    const raw = '{"sentences":[{"text":"say \\"hi\\"","startMs":0,"endMs":1}]}'
+    const { json, error } = extractJsonObject(raw)
+    expect(error).toBeUndefined()
+    expect(JSON.parse(json).sentences[0].text).toBe('say "hi"')
+  })
+
+  it('errors when no JSON present', () => {
+    const { error } = extractJsonObject('no json here')
+    expect(error).toContain('No JSON')
+  })
+
+  it('errors on unterminated JSON', () => {
+    const { error } = extractJsonObject('{"sentences": [')
+    expect(error).toContain('Unterminated')
   })
 })
