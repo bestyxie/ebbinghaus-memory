@@ -528,7 +528,34 @@ Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — o
         }
       }
       if (!resultText) {
-        // 回落：opencode glm-5.1
+        // 回落 1：opencode zen 免费 deepseek（共享池，偶发限流 → 重试一次）
+        const zenKey = process.env.AI_API_KEY
+        for (let attempt = 0; attempt < 2 && !resultText; attempt++) {
+          if (attempt > 0) await new Promise<void>((r) => setTimeout(r, 15_000))
+          try {
+            const zen = await fetch('https://opencode.ai/zen/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${zenKey ?? ''}` },
+              body: JSON.stringify({
+                model: process.env.ZEN_MARK_MODEL ?? 'deepseek-v4-flash-free',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0,
+                max_tokens: 6000,
+              }),
+            })
+            if (zen.ok) {
+              const data: unknown = await zen.json()
+              resultText = readMessage(data).content
+            } else {
+              console.warn(`zen mark attempt ${attempt + 1} failed (${zen.status})`)
+            }
+          } catch (e) {
+            console.warn(`zen mark attempt ${attempt + 1} error: ${e instanceof Error ? e.message : 'unknown'}`)
+          }
+        }
+      }
+      if (!resultText) {
+        // 回落 2：opencode glm-5.1
         const result = await generateText({
           model: aiProvider(AI_MODEL),
           prompt,
