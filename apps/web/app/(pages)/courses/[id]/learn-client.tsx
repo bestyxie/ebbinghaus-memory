@@ -56,8 +56,9 @@ function wordBoxClass(word: DictationState['words'][number], focused: boolean): 
 }
 
 function inputWidth(word: DictationState['words'][number]): number {
-  // 宽度随实际输入动态扩展，保证单词完整可见（min 3ch）；句子容器 flex-wrap 自动换行
-  return Math.max(word.expected.length, word.input.length, 3)
+  // 宽度按词长分配且随实际输入扩展（min 3ch）。
+  // border-box 下 N ch 含 px-1 内边距（≈1ch），补 1ch 保证字符完整可见；句子 flex-wrap 自动换行
+  return Math.max(word.expected.length, word.input.length, 3) + 1
 }
 
 export function LearnCourseClient() {
