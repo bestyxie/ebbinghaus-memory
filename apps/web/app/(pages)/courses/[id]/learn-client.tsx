@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 
 import Link from 'next/link'
-import { ArrowLeft, Eye, Loader2, Play, Send, Trophy } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Loader2, Play, Send, Trophy } from 'lucide-react'
 import type { Transcript, UpdateCourseProgressInput } from '@ebbinghaus/shared'
 import {
   initDictation,
@@ -161,6 +161,12 @@ export function LearnCourseClient() {
   function nextSentence() {
     if (sentenceIndex < sentences.length - 1) {
       enterSentence(sentenceIndex + 1)
+    }
+  }
+
+  function prevSentence() {
+    if (sentenceIndex > 0) {
+      enterSentence(sentenceIndex - 1)
     }
   }
 
@@ -410,13 +416,22 @@ export function LearnCourseClient() {
       )}
 
       {/* 底部按钮 */}
-      <div className="flex items-center justify-center gap-3 pt-6 border-t border-gray-100">
+      <div className="flex items-center justify-between gap-3 pt-6 border-t border-gray-100">
         <button
-          onClick={onReplay}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
+          onClick={prevSentence}
+          disabled={sentenceIndex === 0}
+          title="上一句"
+          className="p-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
         >
-          <Play className="w-4 h-4" /> 播放语音
+          <ChevronLeft className="w-4 h-4" />
         </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onReplay}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
+          >
+            <Play className="w-4 h-4" /> 播放语音
+          </button>
         <button
           onClick={onSubmit}
           disabled={!dictation || dictation.phase === 'done'}
@@ -430,6 +445,15 @@ export function LearnCourseClient() {
           className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-50"
         >
           <Eye className="w-4 h-4" /> 显示正确答案
+        </button>
+        </div>
+        <button
+          onClick={nextSentence}
+          disabled={sentenceIndex >= sentences.length - 1}
+          title="下一句"
+          className="p-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+        >
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>
