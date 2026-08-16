@@ -285,6 +285,9 @@ export async function callGroqTranscription(
     const all: RawSentence[] = []
     let cursorSec = 0
     let chunkIndex = 0
+    // Groq 免费档 20 RPM：连续分块会触顶（429）。块间间隔 3.2s 匀速发送；
+    // 429 时按 Retry-After 退避一次
+    const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
     while (cursorSec < totalSec - 0.5) {
       const chunkEnd = Math.min(cursorSec + CHUNK_SEC, totalSec)
       const startByte = HEADER + Math.round(cursorSec * SAMPLE_RATE * BYTES_PER_SAMPLE)
@@ -292,7 +295,12 @@ export async function callGroqTranscription(
       const wav = makeWavHeader(endByte - startByte)
       const chunk = Buffer.concat([wav, chunkedWav.subarray(startByte, endByte)])
 
-      const result = await groqTranscribeChunk(chunk, key)
+      if (chunkIndex > 0) await sleep(3200)
+      let result = await groqTranscribeChunk(chunk, key)
+      if (result.error && result.error.includes('429')) {
+        await sleep(60_000) // RPM 窗口重置
+        result = await groqTranscribeChunk(chunk, key)
+      }
       if (result.error) return { sentences: [], error: result.error }
 
       const overlapMs = chunkIndex === 0 ? 0 : OVERLAP_SEC * 1000

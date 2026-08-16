@@ -7,7 +7,7 @@ import path from 'path'
 import { prisma } from '@/app/lib/prisma'
 import { requireAuth } from '@/app/lib/api-helpers'
 import { absoluteMediaPath } from '@/app/lib/course-media'
-import { callGroqTranscription, callTranscriptionModel, markProperNouns, calibrateTimestamps } from '@/app/lib/course-transcribe'
+import { callGroqTranscription, callTranscriptionModel, markProperNouns, calibrateTimestamps, tokenizeSentence } from '@/app/lib/course-transcribe'
 import { transcriptSchema } from '@ebbinghaus/shared'
 
 const execFileAsync = promisify(execFile)
@@ -107,29 +107,35 @@ export async function POST(
         ? transcription.sentences
         : calibrateTimestamps(transcription.sentences, reportedDurationMs ?? (course.durationMs || null))
 
-    // 标记专有名词
+    // 标记专有名词；失败时降级为全 false（界面变为所有词都要输入），不让整门课失败
     const marked = await markProperNouns(calibrated)
+    let finalResult = marked.result
     if (marked.error || marked.result.length === 0) {
-      const error = marked.error ?? 'Proper noun marking returned nothing'
-      await prisma.course.update({ where: { id }, data: { status: 'FAILED', error } })
-      return NextResponse.json({ error }, { status: 502 })
+      console.warn(`Proper noun marking failed (${marked.error}); degrading to all-false marks`)
+      finalResult = calibrated.map((s, i) => ({
+        idx: i,
+        text: s.text,
+        startMs: s.startMs,
+        endMs: s.endMs,
+        words: tokenizeSentence(s.text).map((text) => ({ text, isProperNoun: false })),
+      }))
     }
 
     // 课程时长优先真实上报值；时间轴已按它校准，末句 endMs 与之接近
-    const durationMs = reportedDurationMs ?? marked.result[marked.result.length - 1].endMs
+    const durationMs = reportedDurationMs ?? finalResult[finalResult.length - 1].endMs
     await prisma.course.update({
       where: { id },
       data: {
-        transcript: marked.result,
+        transcript: finalResult,
         durationMs,
         status: 'READY',
         error: null,
       },
     })
 
-    const parsed = transcriptSchema.safeParse(marked.result)
+    const parsed = transcriptSchema.safeParse(finalResult)
     return NextResponse.json({
-      sentenceCount: parsed.success ? parsed.data.length : marked.result.length,
+      sentenceCount: parsed.success ? parsed.data.length : finalResult.length,
       durationMs,
     })
   } catch (error) {
