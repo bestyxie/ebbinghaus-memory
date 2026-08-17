@@ -11,7 +11,6 @@ import {
   handleSpace,
   handleBackspace,
   compareAll,
-  revealAll,
   type DictationState,
 } from '@/app/lib/dictation-flow'
 import { useSentenceAudio } from './use-sentence-audio'
@@ -43,10 +42,10 @@ function wordBoxClass(word: DictationState['words'][number], focused: boolean): 
   }
   if (word.locked && word.verdict === 'wrong') {
     // 错词保持可改：红框输入态
-    return `${base} border-red-400 text-red-600 bg-red-50`
+    return `${base} border-red-400 text-red-600 bg-red-50 animate-shake-x`
   }
   if (!word.locked && word.verdict === 'wrong') {
-    return `${base} border-red-400 text-red-600 bg-red-50`
+    return `${base} border-red-400 text-red-600 bg-red-50 animate-shake-x`
   }
   if (word.locked && word.verdict === 'revealed') {
     return `${base} border-gray-300 text-gray-800 bg-gray-50`
@@ -72,6 +71,7 @@ export function LearnCourseClient() {
 
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [dictation, setDictation] = useState<DictationState | null>(null)
+  const [showAnswer, setShowAnswer] = useState(false)
   const [completedIds, setCompletedIds] = useState<number[]>([])
   const [finished, setFinished] = useState(false)
   const completedRef = useRef<Set<number>>(new Set())
@@ -115,6 +115,7 @@ export function LearnCourseClient() {
       if (!s) return
       setSentenceIndex(idx)
       setDictation(initDictation(s.words))
+      setShowAnswer(false)
       playTwice(s.startMs, s.endMs)
     },
     [sentences, playTwice],
@@ -244,9 +245,8 @@ export function LearnCourseClient() {
   }
 
   function onReveal() {
-    if (!dictation || dictation.phase === 'done') return
-    setDictation(revealAll(dictation))
-    completeSentence()
+    if (!sentence) return
+    setShowAnswer((v) => !v)
   }
 
   function onReplay() {
@@ -350,6 +350,14 @@ export function LearnCourseClient() {
         <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
       </div>
 
+      {/* 正确答案提示：进度条下方独立展示，不干扰输入框 */}
+      {showAnswer && sentence && (
+        <div className="mb-8 p-4 rounded-xl border border-amber-200 bg-amber-50">
+          <p className="text-sm text-gray-500 mb-1">正确答案</p>
+          <p className="text-base text-gray-800 leading-relaxed">{sentence.text}</p>
+        </div>
+      )}
+
       {/* 隐藏 audio 元素（视频也只用音轨） */}
       <audio ref={audioRef} src={`/api/courses/${course.id}/media`} preload="auto" className="hidden" />
 
@@ -441,10 +449,14 @@ export function LearnCourseClient() {
         </button>
         <button
           onClick={onReveal}
-          disabled={!dictation || dictation.phase === 'done'}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          disabled={!sentence}
+          className={`inline-flex items-center gap-1.5 px-4 py-2.5 border text-sm rounded-lg transition-colors ${
+            showAnswer
+              ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+          } disabled:opacity-50`}
         >
-          <Eye className="w-4 h-4" /> 显示正确答案
+          <Eye className="w-4 h-4" /> {showAnswer ? '隐藏正确答案' : '显示正确答案'}
         </button>
         </div>
         <button
