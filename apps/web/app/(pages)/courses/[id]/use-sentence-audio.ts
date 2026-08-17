@@ -8,6 +8,8 @@ import { useCallback, useEffect, useRef } from 'react'
 export function useSentenceAudio(audioRef: React.RefObject<HTMLAudioElement | null>) {
   const playRunId = useRef(0)
   const activeRunId = useRef(0)
+  const rateRef = useRef(1)
+  const countRef = useRef(2)
 
   useEffect(() => {
     // 卸载时停播
@@ -36,6 +38,7 @@ export function useSentenceAudio(audioRef: React.RefObject<HTMLAudioElement | nu
           audio.removeEventListener('ended', onEnded)
           resolve()
         }
+        audio.playbackRate = rateRef.current
         const onTimeUpdate = () => {
           if (audio.currentTime * 1000 >= endMs) {
             audio.pause()
@@ -51,19 +54,23 @@ export function useSentenceAudio(audioRef: React.RefObject<HTMLAudioElement | nu
     [audioRef],
   )
 
-  /** 连播两遍；再次调用打断上一次 */
-  const playTwice = useCallback(
+  /** 连播 N 遍（次数由 setPlayCount 设置，默认 2）；再次调用打断上一次 */
+  const playSentence = useCallback(
     async (startMs: number, endMs: number) => {
       playRunId.current++
       const runId = playRunId.current
       activeRunId.current = runId
       const audio = audioRef.current
       if (audio) audio.pause()
-      await playOnce(startMs, endMs, runId)
-      if (playRunId.current !== runId) return
-      await sleep(400)
-      if (playRunId.current !== runId) return
-      await playOnce(startMs, endMs, runId)
+      const times = Math.max(1, countRef.current)
+      for (let i = 0; i < times; i++) {
+        await playOnce(startMs, endMs, runId)
+        if (playRunId.current !== runId) return
+        if (i < times - 1) {
+          await sleep(400)
+          if (playRunId.current !== runId) return
+        }
+      }
     },
     [playOnce, audioRef],
   )
@@ -83,6 +90,21 @@ export function useSentenceAudio(audioRef: React.RefObject<HTMLAudioElement | nu
     }
   }, [audioRef])
 
+  /** 设置播放速度（0.5 ~ 2）；立即生效 */
+  const setRate = useCallback(
+    (rate: number) => {
+      rateRef.current = rate
+      const audio = audioRef.current
+      if (audio) audio.playbackRate = rate
+    },
+    [audioRef],
+  )
+
+  /** 设置每次播放次数（最少 1） */
+  const setPlayCount = useCallback((count: number) => {
+    countRef.current = Math.max(1, count)
+  }, [])
+
   // 页面隐藏（锁屏/切后台/切标签页）时打断播放链：
   // 否则挂起的 play() promise 与 sleep 定时器在恢复可见后一起苏醒，叠加出"解锁自动播两遍"
   useEffect(() => {
@@ -97,5 +119,5 @@ export function useSentenceAudio(audioRef: React.RefObject<HTMLAudioElement | nu
     }
   }, [stop])
 
-  return { playTwice, stop, currentRun: activeRunId }
+  return { playTwice: playSentence, stop, setRate, setPlayCount, currentRun: activeRunId }
 }

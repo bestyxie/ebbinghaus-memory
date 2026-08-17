@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 
 import Link from 'next/link'
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Loader2, Play, Send, Trophy } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Gauge, Loader2, Play, Repeat, Send, Trophy } from 'lucide-react'
 import type { Transcript, UpdateCourseProgressInput } from '@ebbinghaus/shared'
 import {
   initDictation,
@@ -63,7 +63,7 @@ function inputWidth(word: DictationState['words'][number]): number {
 export function LearnCourseClient() {
   const { id } = useParams<{ id: string }>()
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const { playTwice } = useSentenceAudio(audioRef)
+  const { playTwice, setRate, setPlayCount } = useSentenceAudio(audioRef)
 
   const [course, setCourse] = useState<CourseDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -72,6 +72,9 @@ export function LearnCourseClient() {
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [dictation, setDictation] = useState<DictationState | null>(null)
   const [showAnswer, setShowAnswer] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1)
+  const [playCount, setPlayCountState] = useState(2)
+  const [activePopup, setActivePopup] = useState<'rate' | 'count' | null>(null)
   const [completedIds, setCompletedIds] = useState<number[]>([])
   const [finished, setFinished] = useState(false)
   const completedRef = useRef<Set<number>>(new Set())
@@ -116,6 +119,7 @@ export function LearnCourseClient() {
       setSentenceIndex(idx)
       setDictation(initDictation(s.words))
       setShowAnswer(false)
+      setActivePopup(null)
       playTwice(s.startMs, s.endMs)
     },
     [sentences, playTwice],
@@ -346,8 +350,90 @@ export function LearnCourseClient() {
           第 {sentenceIndex + 1} / {sentences.length} 句
         </span>
       </div>
-      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-8">
+      {/* 播放控制：进度条下方右侧，变速 + 播放次数（icon 按钮 + 下拉 popup） */}
+      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+      </div>
+      <div className="flex justify-end mt-3 mb-2">
+        <div className="flex items-center gap-2 relative">
+          <div className="relative">
+            <button
+              onClick={() => setActivePopup(activePopup === 'rate' ? null : 'rate')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                activePopup === 'rate'
+                  ? 'border-blue-300 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Gauge className="w-4 h-4" /> {playbackRate}x
+            </button>
+            {activePopup === 'rate' && (
+              <div className="absolute left-0 top-full mt-1 z-10 flex items-center gap-2 p-2 rounded-xl border border-gray-200 bg-white shadow-lg">
+                <button
+                  onClick={() => {
+                    const next = Math.max(0.5, Math.round((playbackRate - 0.25) * 100) / 100)
+                    setPlaybackRate(next)
+                    setRate(next)
+                  }}
+                  disabled={playbackRate <= 0.5}
+                  className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  -
+                </button>
+                <span className="min-w-12 text-center text-sm font-medium text-gray-800">{playbackRate}x</span>
+                <button
+                  onClick={() => {
+                    const next = Math.min(2, Math.round((playbackRate + 0.25) * 100) / 100)
+                    setPlaybackRate(next)
+                    setRate(next)
+                  }}
+                  disabled={playbackRate >= 2}
+                  className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => setActivePopup(activePopup === 'count' ? null : 'count')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                activePopup === 'count'
+                  ? 'border-blue-300 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Repeat className="w-4 h-4" /> x{playCount}
+            </button>
+            {activePopup === 'count' && (
+              <div className="absolute left-0 top-full mt-1 z-10 flex items-center gap-2 p-2 rounded-xl border border-gray-200 bg-white shadow-lg">
+                <button
+                  onClick={() => {
+                    const next = Math.max(1, playCount - 1)
+                    setPlayCountState(next)
+                    setPlayCount(next)
+                  }}
+                  disabled={playCount <= 1}
+                  className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  -
+                </button>
+                <span className="min-w-12 text-center text-sm font-medium text-gray-800">{playCount}</span>
+                <button
+                  onClick={() => {
+                    const next = playCount + 1
+                    setPlayCountState(next)
+                    setPlayCount(next)
+                  }}
+                  className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50"
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 正确答案提示：进度条下方独立展示，不干扰输入框 */}
