@@ -7,6 +7,9 @@ import {
   parseProperNounResponse,
   extractJsonObject,
   calibrateTimestamps,
+  applyEnrichment,
+  mergeWordTimestamps,
+  assignWordsToSentences,
 } from '@/app/lib/course-transcribe'
 
 describe('normalizeWord', () => {
@@ -148,6 +151,39 @@ describe('parseProperNounResponse', () => {
     const { error } = parseProperNounResponse(raw, sentences)
     expect(error).toContain('mismatch')
   })
+
+  it('attaches Groq word timestamps matched by normalized text', () => {
+    const rawSentences = [
+      { text: 'Mary went to Paris.', startMs: 0, endMs: 1000,
+        words: [
+          { text: 'Mary', startMs: 0, endMs: 200 },
+          { text: 'went', startMs: 210, endMs: 400 },
+          { text: 'to', startMs: 410, endMs: 480 },
+          { text: 'Paris.', startMs: 490, endMs: 900 },
+        ] },
+      { text: 'She liked it.', startMs: 1000, endMs: 2000 },
+    ]
+    const raw = JSON.stringify({
+      marks: [
+        [
+          { text: 'Mary', isProperNoun: true },
+          { text: 'went', isProperNoun: false },
+          { text: 'to', isProperNoun: false },
+          { text: 'Paris.', isProperNoun: true },
+        ],
+        [
+          { text: 'She', isProperNoun: false },
+          { text: 'liked', isProperNoun: false },
+          { text: 'it.', isProperNoun: false },
+        ],
+      ],
+    })
+    const { result } = parseProperNounResponse(raw, rawSentences)
+    expect(result[0].words[0]).toEqual({ text: 'Mary', isProperNoun: true, startMs: 0, endMs: 200 })
+    expect(result[0].words[3]).toEqual({ text: 'Paris.', isProperNoun: true, startMs: 490, endMs: 900 })
+    // 无词级时间戳的句子不掺入 startMs/endMs
+    expect(result[1].words[0]).toEqual({ text: 'She', isProperNoun: false })
+  })
 })
 
 describe('extractJsonObject', () => {
@@ -218,5 +254,141 @@ describe('calibrateTimestamps', () => {
     // 100x → model completely misread; raw values safer than trusting either
     const out = calibrateTimestamps(sentences, 800000)
     expect(out).toEqual(sentences)
+  })
+})
+
+describe('applyEnrichment', () => {
+  const transcript = [
+    {
+      idx: 0,
+      text: 'Hello world.',
+      startMs: 0,
+      endMs: 1200,
+      words: [
+        { text: 'Hello', isProperNoun: false },
+        { text: 'world.', isProperNoun: false },
+      ],
+    },
+    {
+      idx: 1,
+      text: 'I like apples.',
+      startMs: 1300,
+      endMs: 2500,
+      words: [
+        { text: 'I', isProperNoun: false },
+        { text: 'like', isProperNoun: false },
+        { text: 'apples.', isProperNoun: false },
+      ],
+    },
+  ]
+
+  it('merges translations and per-word phonetics from LLM output', () => {
+    const translations = ['你好世界。', '我喜欢苹果。']
+    const wordMarks = [
+      [{ text: 'Hello', phonetic: '/həˈləʊ/' }, { text: 'world.', phonetic: '/wɜːld/' }],
+      [{ text: 'I', phonetic: '/aɪ/' }, { text: 'like', phonetic: '/laɪk/' }, { text: 'apples.', phonetic: '/ˈæp.əlz/' }],
+    ]
+    const result = applyEnrichment(transcript, translations, wordMarks)
+    expect(result[0].translation).toBe('你好世界。')
+    expect(result[1].translation).toBe('我喜欢苹果。')
+    expect(result[0].words[0]).toEqual({ text: 'Hello', isProperNoun: false, phonetic: '/həˈləʊ/' })
+    expect(result[1].words[2]).toEqual({ text: 'apples.', isProperNoun: false, phonetic: '/ˈæp.əlz/' })
+  })
+
+  it('keeps fields untouched when counts mismatch', () => {
+    const result = applyEnrichment(transcript, ['只有一句'], [])
+    expect(result[0].translation).toBeUndefined()
+    expect(result[0].words[0]).toEqual({ text: 'Hello', isProperNoun: false })
+    expect(result[1].translation).toBeUndefined()
+  })
+
+  it('matches phonetics by normalized text (order-tolerant)', () => {
+    const result = applyEnrichment(
+      transcript,
+      ['你好世界。', '我喜欢苹果。'],
+      [
+        [{ text: 'world.', phonetic: '/wɜːld/' }, { text: 'Hello', phonetic: '/həˈləʊ/' }],
+        [],
+      ],
+    )
+    // 顺序打乱也能按归一化文本对上
+    expect(result[0].words[0].phonetic).toBe('/həˈləʊ/')
+    expect(result[0].words[1].phonetic).toBe('/wɜːld/')
+    // 空词标记数组不污染
+    expect(result[1].words[0]).toEqual({ text: 'I', isProperNoun: false })
+  })
+
+  it('does not mutate the input', () => {
+    const copy = JSON.parse(JSON.stringify(transcript)) as typeof transcript
+    applyEnrichment(transcript, ['你好世界。', '我喜欢苹果。'], [])
+    expect(transcript).toEqual(copy)
+  })
+})
+
+describe('mergeWordTimestamps', () => {
+  const sentences = [
+    {
+      idx: 0,
+      text: 'Hello world.',
+      startMs: 0,
+      endMs: 1200,
+      words: [
+        { text: 'Hello', isProperNoun: false },
+        { text: 'world.', isProperNoun: false },
+      ],
+    },
+    {
+      idx: 1,
+      text: 'No match here.',
+      startMs: 5000,
+      endMs: 6000,
+      words: [{ text: 'No', isProperNoun: false }],
+    },
+  ]
+
+  it('merges word timestamps from re-transcribed raw sentences by start proximity', () => {
+    const raw = [
+      { text: 'Hello world.', startMs: 10, endMs: 1200,
+        words: [
+          { text: 'Hello', startMs: 10, endMs: 300 },
+          { text: 'world.', startMs: 310, endMs: 1100 },
+        ] },
+      { text: 'Something else.', startMs: 7000, endMs: 8000 },
+    ]
+    const merged = mergeWordTimestamps(sentences, raw)
+    expect(merged[0].words[0]).toEqual({ text: 'Hello', isProperNoun: false, startMs: 10, endMs: 300 })
+    expect(merged[0].words[1].startMs).toBe(310)
+    // 无匹配句保持原样
+    expect(merged[1].words[0]).toEqual({ text: 'No', isProperNoun: false })
+  })
+
+  it('leaves sentences untouched when no raw match', () => {
+    const merged = mergeWordTimestamps(sentences, [])
+    expect(merged).toEqual(sentences)
+  })
+})
+
+describe('assignWordsToSentences', () => {
+  const sentences: { text: string; startMs: number; endMs: number }[] = [
+    { text: 'Hello world.', startMs: 0, endMs: 1200 },
+    { text: 'Second sentence.', startMs: 1300, endMs: 2500 },
+  ]
+
+  it('assigns words to sentences by start-time containment', () => {
+    const words = [
+      { text: 'Hello', startMs: 100, endMs: 400 },
+      { text: 'world.', startMs: 450, endMs: 1100 },
+      { text: 'Second', startMs: 1400, endMs: 1800 },
+      { text: 'sentence.', startMs: 1850, endMs: 2400 },
+    ]
+    const out = assignWordsToSentences(sentences, words)
+    expect(out[0].words).toHaveLength(2)
+    expect(out[1].words).toHaveLength(2)
+    expect(out[0].words?.[0]).toEqual({ text: 'Hello', startMs: 100, endMs: 400 })
+  })
+
+  it('skips sentences with no matching words', () => {
+    const out = assignWordsToSentences(sentences, [])
+    expect(out[0].words).toBeUndefined()
   })
 })

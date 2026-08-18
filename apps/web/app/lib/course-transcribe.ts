@@ -5,12 +5,37 @@
  */
 
 import { generateText } from 'ai'
+import { execFile } from 'child_process'
+import { promisify } from 'util'
+import { tmpdir } from 'os'
+import path from 'path'
+import { readFile } from 'fs/promises'
 import { aiProvider, AI_MODEL } from './ai-provider'
 import {
   rawTranscriptionSentenceSchema,
   transcriptWordSchema,
   type TranscriptSentence,
 } from '@ebbinghaus/shared'
+
+const execFileAsync = promisify(execFile)
+
+/**
+ * ffmpeg 转标准 16kHz 单声道 wav（分块转写与词级时间戳重转的输入）。
+ * ffmpeg 不可用或失败返回 null（调用方回落整段上传模式）。
+ */
+export async function toStandardWav(inputPath: string): Promise<Buffer | null> {
+  const out = path.join(tmpdir(), `asr-${Date.now()}-${Math.random().toString(36).slice(2)}.wav`)
+  try {
+    await execFileAsync('ffmpeg', ['-i', inputPath, '-ar', '16000', '-ac', '1', '-y', out], {
+      timeout: 120_000,
+    })
+    return await readFile(out)
+  } catch {
+    return null
+  } finally {
+    execFileAsync('rm', ['-f', out]).catch(() => {})
+  }
+}
 
 /** 回落转写模型（opencode.ai 端点） */
 const FALLBACK_TRANSCRIBE_MODEL = process.env.AI_TRANSCRIBE_MODEL ?? 'mimo-v2.5'
@@ -30,6 +55,8 @@ export interface RawSentence {
   text: string
   startMs: number
   endMs: number
+  /** Groq word granularity 返回的词级时间戳（相对媒体起点）；mimo 回落无 */
+  words?: { text: string; startMs: number; endMs: number }[]
 }
 
 // === 纯函数（单测覆盖） ===
@@ -120,6 +147,7 @@ export function calibrateTimestamps(
 /**
  * 解析专有名词标记模型返回的 JSON，组装最终 TranscriptSentence 数组
  * 模型需返回 { marks: [{ text, isProperNoun }[]] }（与输入句一一对应）
+ * Groq 词级时间戳按归一化文本贪心匹配进 words（匹配不上为 null）
  */
 export function parseProperNounResponse(raw: string, sentences: RawSentence[]): { result: TranscriptSentence[]; error?: string } {
   let data: unknown
@@ -133,25 +161,50 @@ export function parseProperNounResponse(raw: string, sentences: RawSentence[]): 
     return { result: [], error: 'Proper noun response sentence count mismatch' }
   }
   const result: TranscriptSentence[] = sentences.map((sentence, i) => {
-    const words: TranscriptSentence['words'] = []
     const markList = Array.isArray(marks[i]) ? marks[i] : []
+    const marked: { text: string; isProperNoun: boolean }[] = []
     for (const w of markList) {
       const parsed = transcriptWordSchema.safeParse(w)
-      if (parsed.success) words.push(parsed.data)
+      if (parsed.success) marked.push(parsed.data)
     }
     // 模型漏词时按原文兜底全部标记为非专有名词
-    if (words.length === 0) {
+    if (marked.length === 0) {
       return {
         idx: i,
         text: sentence.text,
         startMs: sentence.startMs,
         endMs: sentence.endMs,
-        words: tokenizeSentence(sentence.text).map((text) => ({ text, isProperNoun: false })),
+        words: attachWordTimestamps(tokenizeSentence(sentence.text).map((text) => ({ text, isProperNoun: false })), sentence.words),
       }
     }
-    return { idx: i, text: sentence.text, startMs: sentence.startMs, endMs: sentence.endMs, words }
+    return {
+      idx: i,
+      text: sentence.text,
+      startMs: sentence.startMs,
+      endMs: sentence.endMs,
+      words: attachWordTimestamps(marked, sentence.words),
+    }
   })
   return { result }
+}
+
+/** 把 Groq 词级时间戳按归一化文本贪心匹配到标记词（匹配不上省略字段，保持存量 transcript 干净） */
+function attachWordTimestamps(
+  marked: { text: string; isProperNoun: boolean }[],
+  rawWords: NonNullable<RawSentence['words']> | undefined,
+): TranscriptSentence['words'] {
+  const used = new Set<number>()
+  return marked.map((mw) => {
+    const norm = normalizeWord(mw.text)
+    if (rawWords && norm) {
+      const idx = rawWords.findIndex((rw, i) => !used.has(i) && normalizeWord(rw.text) === norm)
+      if (idx !== -1) {
+        used.add(idx)
+        return { ...mw, startMs: rawWords[idx].startMs, endMs: rawWords[idx].endMs }
+      }
+    }
+    return mw
+  })
 }
 
 // === 模型调用 ===
@@ -192,28 +245,11 @@ export function extractJsonObject(raw: string): { json: string; error?: string }
 }
 
 /**
- * Groq 单次转写调用：音频片段 Buffer → 句级时间戳（相对片段起点）
+ * 解析 Groq verbose_json（segments + 顶层 words 数组），组装 RawSentence[]
+ * word granularity 的词级时间戳在顶层 `words`（[{word,start,end}]），不在 segment 内；
+ * 按时间包含关系把词归属到句子。
  */
-async function groqTranscribeChunk(
-  chunk: Buffer,
-  key: string,
-): Promise<{ sentences: RawSentence[]; error?: string }> {
-  const form = new FormData()
-  form.append('file', new Blob([new Uint8Array(chunk)], { type: 'audio/wav' }), 'chunk.wav')
-  form.append('model', GROQ_MODEL)
-  form.append('response_format', 'verbose_json')
-  form.append('timestamp_granularities[]', 'segment')
-
-  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}` },
-    body: form,
-  })
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    return { sentences: [], error: `Groq API ${res.status}: ${body.slice(0, 200)}` }
-  }
-  const data: unknown = await res.json()
+function parseGroqResponse(data: unknown): { sentences: RawSentence[]; error?: string } {
   const segments = field(data, 'segments')
   if (!Array.isArray(segments)) {
     return { sentences: [], error: 'Groq returned no segments' }
@@ -227,7 +263,31 @@ async function groqTranscribeChunk(
     if (!text || typeof start !== 'number' || typeof end !== 'number') continue
     sentences.push({ text, startMs: Math.round(start * 1000), endMs: Math.round(end * 1000) })
   }
+  const topWords = field(data, 'words')
+  if (Array.isArray(topWords) && topWords.length > 0 && sentences.length > 0) {
+    const words: NonNullable<RawSentence['words']> = []
+    for (const w of topWords) {
+      const raw = field(w, 'word')
+      const start = field(w, 'start')
+      const end = field(w, 'end')
+      if (typeof raw === 'string' && raw && typeof start === 'number' && typeof end === 'number') {
+        words.push({ text: raw, startMs: Math.round(start * 1000), endMs: Math.round(end * 1000) })
+      }
+    }
+    return { sentences: assignWordsToSentences(sentences, words) }
+  }
   return { sentences }
+}
+
+/** 按时间包含关系把词级时间戳归属到句子（词起点落在句区间内） */
+export function assignWordsToSentences(
+  sentences: RawSentence[],
+  words: NonNullable<RawSentence['words']>,
+): RawSentence[] {
+  return sentences.map((s) => {
+    const matched = words.filter((w) => w.startMs >= s.startMs && w.startMs < s.endMs)
+    return matched.length > 0 ? { ...s, words: matched } : s
+  })
 }
 
 /**
@@ -256,6 +316,7 @@ export async function callGroqTranscription(
       form.append('model', GROQ_MODEL)
       form.append('response_format', 'verbose_json')
       form.append('timestamp_granularities[]', 'segment')
+      form.append('timestamp_granularities[]', 'word')
       const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
         method: 'POST',
         headers: { Authorization: `Bearer ${key}` },
@@ -266,12 +327,11 @@ export async function callGroqTranscription(
         return { sentences: [], error: `Groq API ${res.status}: ${body.slice(0, 200)}` }
       }
       const data: unknown = await res.json()
-      const segments = field(data, 'segments')
-      const sentences = parseGroqSegments(segments)
-      if (sentences.error || sentences.sentences.length === 0) {
-        return { sentences: [], error: sentences.error ?? 'Groq returned no usable segments' }
+      const parsed = parseGroqResponse(data)
+      if (parsed.error || parsed.sentences.length === 0) {
+        return { sentences: [], error: parsed.error ?? 'Groq returned no usable segments' }
       }
-      return { sentences: sentences.sentences }
+      return { sentences: parsed.sentences }
     }
 
     // 分块路径：16kHz 单声道 wav，按采样字节切 ~25s 块，块间 2s 重叠去重
@@ -310,7 +370,8 @@ export async function callGroqTranscription(
         const absStart = offsetMs + s.startMs
         // 跳过与上一块重叠区的句子（上一块已覆盖）
         if (absStart < offsetMs + overlapMs - 300 && chunkIndex > 0) continue
-        all.push({ text: s.text, startMs: absStart, endMs: offsetMs + s.endMs })
+        const words = s.words?.map((w) => ({ ...w, startMs: offsetMs + w.startMs, endMs: offsetMs + w.endMs }))
+        all.push({ text: s.text, startMs: absStart, endMs: offsetMs + s.endMs, words })
       }
       cursorSec = chunkEnd - OVERLAP_SEC
       if (chunkEnd >= totalSec) break
@@ -327,19 +388,33 @@ export async function callGroqTranscription(
   }
 }
 
-/** 解析 Groq verbose_json 的 segments 数组 */
-function parseGroqSegments(segments: unknown): { sentences: RawSentence[]; error?: string } {
-  if (!Array.isArray(segments)) return { sentences: [], error: 'Groq returned no segments' }
-  const sentences: RawSentence[] = []
-  for (const seg of segments) {
-    const rawText = field(seg, 'text')
-    const text = typeof rawText === 'string' ? rawText.trim() : ''
-    const start = field(seg, 'start')
-    const end = field(seg, 'end')
-    if (!text || typeof start !== 'number' || typeof end !== 'number') continue
-    sentences.push({ text, startMs: Math.round(start * 1000), endMs: Math.round(end * 1000) })
+/** Groq 单次转写调用：音频片段 Buffer → 句级时间戳（相对片段起点）+ 词级时间戳 */
+async function groqTranscribeChunk(
+  chunk: Buffer,
+  key: string,
+): Promise<{ sentences: RawSentence[]; error?: string }> {
+  const form = new FormData()
+  form.append('file', new Blob([new Uint8Array(chunk)], { type: 'audio/wav' }), 'chunk.wav')
+  form.append('model', GROQ_MODEL)
+  form.append('response_format', 'verbose_json')
+  form.append('timestamp_granularities[]', 'segment')
+  form.append('timestamp_granularities[]', 'word')
+
+  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}` },
+    body: form,
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    return { sentences: [], error: `Groq API ${res.status}: ${body.slice(0, 200)}` }
   }
-  return { sentences }
+  const data: unknown = await res.json()
+  const parsed = parseGroqResponse(data)
+  if (parsed.error || parsed.sentences.length === 0) {
+    return { sentences: [], error: parsed.error ?? 'Groq returned no usable segments' }
+  }
+  return { sentences: parsed.sentences }
 }
 
 /** 构造 16kHz 单声道 16bit wav 头 */
@@ -465,6 +540,91 @@ function readMessage(data: unknown): { content: string; reasoning: string } {
 }
 
 /**
+ * 多级 LLM 链调用：Groq gpt-oss-120b（免费）主 → zen 免费 deepseek 回落 → glm-5.1 兜底
+ * 返回模型文本内容；全链路失败返回空串
+ */
+async function runLLMChain(prompt: string, maxTokens: number): Promise<string> {
+  const model = process.env.GROQ_MARK_MODEL ?? 'openai/gpt-oss-120b'
+  let resultText = ''
+  const groqKey = process.env.GROQ_API_KEY
+  if (groqKey) {
+    const body = JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0,
+      // gpt-oss-120b 免费档 TPM=8000，max_tokens 计入 TPM，必须留 prompt 余量
+      max_tokens: maxTokens,
+    })
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
+      body,
+    })
+    if (res.ok) {
+      const data: unknown = await res.json()
+      resultText = readMessage(data).content
+    } else if (res.status === 429 || res.status === 413) {
+      // TPM 等限流：等窗口重置后重试一次（max_tokens 计入 TPM，需给足余量）
+      await new Promise<void>((r) => setTimeout(r, 60_000))
+      const retry = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
+        body,
+      })
+      if (retry.ok) {
+        const data: unknown = await retry.json()
+        resultText = readMessage(data).content
+      } else {
+        console.warn(`Groq LLM retry failed (${retry.status}); falling back`)
+      }
+    } else {
+      console.warn(`Groq LLM unavailable (${res.status}); falling back`)
+    }
+  }
+  if (!resultText) {
+    // 回落 1：opencode zen 免费 deepseek（共享池，偶发限流 → 重试一次）
+    const zenKey = process.env.AI_API_KEY
+    for (let attempt = 0; attempt < 2 && !resultText; attempt++) {
+      if (attempt > 0) await new Promise<void>((r) => setTimeout(r, 15_000))
+      try {
+        const zen = await fetch('https://opencode.ai/zen/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${zenKey ?? ''}` },
+          body: JSON.stringify({
+            model: process.env.ZEN_MARK_MODEL ?? 'deepseek-v4-flash-free',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0,
+            max_tokens: maxTokens,
+          }),
+        })
+        if (zen.ok) {
+          const data: unknown = await zen.json()
+          resultText = readMessage(data).content
+        } else {
+          console.warn(`zen LLM attempt ${attempt + 1} failed (${zen.status})`)
+        }
+      } catch (e) {
+        console.warn(`zen LLM attempt ${attempt + 1} error: ${e instanceof Error ? e.message : 'unknown'}`)
+      }
+    }
+  }
+  if (!resultText) {
+    // 回落 2：opencode glm-5.1
+    try {
+      const result = await generateText({
+        model: aiProvider(AI_MODEL),
+        prompt,
+        temperature: 0,
+      })
+      resultText = result.text
+    } catch (e) {
+      console.warn(`glm LLM fallback error: ${e instanceof Error ? e.message : 'unknown'}`)
+    }
+  }
+  return resultText
+}
+
+/**
  * 调用 LLM 分批标记专有名词，返回完整 transcript
  * 主通道：Groq gpt-oss-120b（免费，与转写共用 key）；失败回落 opencode glm-5.1
  */
@@ -485,84 +645,7 @@ Sentences:
 ${numbered}
 
 Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — one inner array per sentence, same order, words in original order. No markdown.`
-      let resultText = ''
-      const groqKey = process.env.GROQ_API_KEY
-      if (groqKey) {
-        // 主通道：Groq 免费 LLM（与转写共用额度体系）
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
-          body: JSON.stringify({
-            model: process.env.GROQ_MARK_MODEL ?? 'openai/gpt-oss-120b',
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0,
-            // gpt-oss-120b 免费档 TPM=8000，max_tokens 计入 TPM，必须留 prompt 余量
-            max_tokens: 6000,
-          }),
-        })
-        if (res.ok) {
-          const data: unknown = await res.json()
-          const content = readMessage(data).content
-          resultText = content
-        } else if (res.status === 429 || res.status === 413) {
-          // TPM 等限流：等窗口重置后重试一次（max_tokens 计入 TPM，需给足余量）
-          await new Promise<void>((r) => setTimeout(r, 60_000))
-          const retry = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
-            body: JSON.stringify({
-              model: process.env.GROQ_MARK_MODEL ?? 'openai/gpt-oss-120b',
-              messages: [{ role: 'user', content: prompt }],
-              temperature: 0,
-              max_tokens: 6000,
-            }),
-          })
-          if (retry.ok) {
-            const data: unknown = await retry.json()
-            resultText = readMessage(data).content
-          } else {
-            console.warn(`Groq mark model retry failed (${retry.status}); falling back to glm`)
-          }
-        } else {
-          console.warn(`Groq mark model unavailable (${res.status}); falling back to glm`)
-        }
-      }
-      if (!resultText) {
-        // 回落 1：opencode zen 免费 deepseek（共享池，偶发限流 → 重试一次）
-        const zenKey = process.env.AI_API_KEY
-        for (let attempt = 0; attempt < 2 && !resultText; attempt++) {
-          if (attempt > 0) await new Promise<void>((r) => setTimeout(r, 15_000))
-          try {
-            const zen = await fetch('https://opencode.ai/zen/v1/chat/completions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${zenKey ?? ''}` },
-              body: JSON.stringify({
-                model: process.env.ZEN_MARK_MODEL ?? 'deepseek-v4-flash-free',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0,
-                max_tokens: 6000,
-              }),
-            })
-            if (zen.ok) {
-              const data: unknown = await zen.json()
-              resultText = readMessage(data).content
-            } else {
-              console.warn(`zen mark attempt ${attempt + 1} failed (${zen.status})`)
-            }
-          } catch (e) {
-            console.warn(`zen mark attempt ${attempt + 1} error: ${e instanceof Error ? e.message : 'unknown'}`)
-          }
-        }
-      }
-      if (!resultText) {
-        // 回落 2：opencode glm-5.1
-        const result = await generateText({
-          model: aiProvider(AI_MODEL),
-          prompt,
-          temperature: 0,
-        })
-        resultText = result.text
-      }
+      const resultText = await runLLMChain(prompt, 6000)
       const extracted = extractJsonObject(resultText)
       const data: unknown = extracted.error ? undefined : JSON.parse(extracted.json)
       const marks = jsonField(data, 'marks')
@@ -583,4 +666,128 @@ Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — o
   } catch (e) {
     return { result: [], error: e instanceof Error ? e.message : 'Proper noun marking failed' }
   }
+}
+
+/** 口语富化批量大小（中译 + 逐词音标，输出 token 量大于专有名词标记） */
+const ENRICH_BATCH_SIZE = 8
+
+/**
+ * 富化 transcript：逐句中译 + 逐词 IPA 音标
+ * 输出合并进 TranscriptSentence（translation / word.phonetic），失败降级字段留空
+ */
+export async function enrichTranscript(
+  sentences: TranscriptSentence[],
+): Promise<{ result: TranscriptSentence[]; error?: string }> {
+  if (sentences.length === 0) return { result: sentences }
+  try {
+    const result = sentences.map((s) => ({ ...s, words: s.words.map((w) => ({ ...w })) }))
+    const batches: TranscriptSentence[][] = []
+    for (let i = 0; i < sentences.length; i += ENRICH_BATCH_SIZE) {
+      batches.push(sentences.slice(i, i + ENRICH_BATCH_SIZE))
+    }
+    for (const batch of batches) {
+      const numbered = batch
+        .map((s, i) => {
+          const words = s.words.map((w) => w.text).join(' ')
+          return `${i + 1}. ${s.text}\n   words: ${words}`
+        })
+        .join('\n\n')
+      const prompt = `For each numbered English sentence: (1) give a natural Simplified-Chinese translation; (2) give IPA phonetics for EVERY word, in the exact order of the sentence's words.
+
+Sentences:
+${numbered}
+
+Return ONLY JSON: {"translations": ["中文翻译1", ...], "words": [[{"text":"word","phonetic":"/həˈləʊ/"}], ...]} — translations one per sentence; words one inner array per sentence, same order as the sentence's words, every word has a phonetic. No markdown.`
+      const resultText = await runLLMChain(prompt, 6000)
+      const extracted = extractJsonObject(resultText)
+      const data: unknown = extracted.error ? undefined : JSON.parse(extracted.json)
+      const translations = jsonField(data, 'translations')
+      const wordMarks = jsonField(data, 'words')
+      const translationsOk = Array.isArray(translations) && translations.length === batch.length
+      const wordsOk = Array.isArray(wordMarks) && wordMarks.length === batch.length
+      if (!translationsOk && !wordsOk) {
+        console.warn(
+          `Enrich batch degraded (${extracted.error ?? `translations ${Array.isArray(translations) ? translations.length : 'n/a'}/${batch.length}, words ${Array.isArray(wordMarks) ? wordMarks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(resultText).slice(0, 120)}`,
+        )
+        continue
+      }
+      const batchIdxStart = batch[0].idx
+      const batchSlice = result.slice(batchIdxStart, batchIdxStart + batch.length)
+      const merged = applyEnrichment(batchSlice, translations, wordMarks)
+      result.splice(batchIdxStart, batch.length, ...merged)
+    }
+    return { result }
+  } catch (e) {
+    return { result: sentences, error: e instanceof Error ? e.message : 'Transcript enrichment failed' }
+  }
+}
+
+/**
+ * 把 LLM 富化输出（translations + words[][{text,phonetic}]）合并进 transcript（纯函数）
+ * 数量不符的字段跳过，不影响其他句
+ */
+export function applyEnrichment(
+  sentences: TranscriptSentence[],
+  translations: unknown,
+  wordMarks: unknown,
+): TranscriptSentence[] {
+  const result = sentences.map((s) => ({ ...s, words: s.words.map((w) => ({ ...w })) }))
+  const translationsOk = Array.isArray(translations) && translations.length === sentences.length
+  const wordsOk = Array.isArray(wordMarks) && wordMarks.length === sentences.length
+  for (let i = 0; i < sentences.length; i++) {
+    if (translationsOk) {
+      const tr = translations[i]
+      if (typeof tr === 'string') {
+        result[i].translation = tr
+      }
+    }
+    if (wordsOk) {
+      result[i].words = attachPhonetics(result[i].words, Array.isArray(wordMarks[i]) ? wordMarks[i] : [])
+    }
+  }
+  return result
+}
+
+/** 把 LLM 音标按归一化文本贪心匹配到 transcript 词（匹配不上保留 phonetic 为 null） */
+function attachPhonetics(
+  words: TranscriptSentence['words'],
+  marks: unknown[],
+): TranscriptSentence['words'] {
+  const used = new Set<number>()
+  return words.map((w) => {
+    const norm = normalizeWord(w.text)
+    let phonetic: string | null = null
+    for (let i = 0; i < marks.length; i++) {
+      if (used.has(i)) continue
+      const m = marks[i]
+      if (typeof m !== 'object' || m === null) continue
+      const entries = Object.entries(m)
+      const text = entries.find(([k]) => k === 'text')?.[1]
+      const ph = entries.find(([k]) => k === 'phonetic')?.[1]
+      const textOk = typeof text === 'string' ? text : ''
+      const phOk = typeof ph === 'string' ? ph : ''
+      if (norm && textOk && normalizeWord(textOk) === norm) {
+        used.add(i)
+        if (phOk) phonetic = phOk
+        break
+      }
+    }
+    return phonetic ? { ...w, phonetic } : w
+  })
+}
+
+/**
+ * 把重新转写的词级时间戳合并进已存 transcript（按句起点对齐匹配）
+ * 用于存量课程 enrich：老 transcript 无词级时间戳，重跑 Groq word granularity 补齐
+ */
+export function mergeWordTimestamps(
+  sentences: TranscriptSentence[],
+  raw: RawSentence[],
+): TranscriptSentence[] {
+  return sentences.map((s) => {
+    const matches = raw.filter((r) => Math.abs(r.startMs - s.startMs) < 1500)
+    const match = matches.find((r) => r.words && r.words.length > 0)
+    if (!match) return s
+    return { ...s, words: attachWordTimestamps(s.words, match.words) }
+  })
 }

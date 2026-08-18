@@ -26,6 +26,7 @@ model User {
   translationTasks TranslationTask[] // 翻译练习任务
   courses    Course[] // 听力课程
   courseProgresses CourseProgress[] // 课程学习进度
+  speakingProgresses SpeakingProgress[] // 口语学习进度
 
   @@unique([email])
   @@map("users")
@@ -308,6 +309,7 @@ model Course {
   updatedAt DateTime  @updatedAt
 
   progress  CourseProgress?
+  speakingProgresses SpeakingProgress[]
 
   @@index([userId, status])
 }
@@ -327,6 +329,27 @@ model CourseProgress {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, courseId])
+}
+
+// 11. 口语学习进度表 — 每用户每课程每难度一行，不进 SM-2
+// 听力/口语双轨各自独立进度（同构卡片 input/output 轨道）
+model SpeakingProgress {
+  id         String @id @default(cuid())
+  courseId   String
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User   @relation(fields: [userId], references: [id])
+
+  difficulty SpeakingDifficulty
+  sentenceIndex Int @default(0) // 当前句（0-based）
+  // 各句最好综合分（0-100），JSON 数组按句 idx 对齐；缺省 = 该句未录
+  bestScores Json?
+  completedSentenceIds Int[] @default([]) // 至少录过一遍的句 idx
+  status CourseProgressStatus @default(IN_PROGRESS)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId, difficulty])
 }
 
 model ApiToken {
@@ -382,6 +405,13 @@ enum CourseStatus {
 enum CourseProgressStatus {
   IN_PROGRESS
   COMPLETED
+}
+
+// 枚举：口语学习难度（决定录音前用户能看到/听到什么）
+enum SpeakingDifficulty {
+  EASY
+  MEDIUM
+  HARD
 }
 
 // 8. 翻译练习任务表 (TranslationTask)

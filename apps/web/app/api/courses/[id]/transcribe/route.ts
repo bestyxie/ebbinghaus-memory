@@ -1,36 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
-import { tmpdir } from 'os'
-import path from 'path'
 import { prisma } from '@/app/lib/prisma'
 import { requireAuth } from '@/app/lib/api-helpers'
 import { absoluteMediaPath } from '@/app/lib/course-media'
-import { callGroqTranscription, callTranscriptionModel, markProperNouns, calibrateTimestamps, tokenizeSentence } from '@/app/lib/course-transcribe'
+import { callGroqTranscription, callTranscriptionModel, markProperNouns, calibrateTimestamps, tokenizeSentence, enrichTranscript, toStandardWav } from '@/app/lib/course-transcribe'
 import { transcriptSchema } from '@ebbinghaus/shared'
 
-const execFileAsync = promisify(execFile)
-
 export const maxDuration = 300 // 转写可能耗时 1-2 分钟
-
-/**
- * ffmpeg 转标准 16kHz 单声道 wav（分块转写的输入）。
- * ffmpeg 不可用或失败返回 null（调用方回落整段上传模式）。
- */
-async function toStandardWav(inputPath: string): Promise<Buffer | null> {
-  const out = path.join(tmpdir(), `asr-${Date.now()}-${Math.random().toString(36).slice(2)}.wav`)
-  try {
-    await execFileAsync('ffmpeg', ['-i', inputPath, '-ar', '16000', '-ac', '1', '-y', out], {
-      timeout: 120_000,
-    })
-    return await readFile(out)
-  } catch {
-    return null
-  } finally {
-    execFileAsync('rm', ['-f', out]).catch(() => {})
-  }
-}
 
 /** 从 unknown 读取对象字段 */
 function fieldOf(data: unknown, key: string): unknown {
@@ -120,6 +96,13 @@ export async function POST(
         words: tokenizeSentence(s.text).map((text) => ({ text, isProperNoun: false })),
       }))
     }
+
+    // 富化：逐句中译 + 逐词音标（口语学习困难难度与逐词弹窗需要）；失败降级留空，不让整门课失败
+    const enriched = await enrichTranscript(finalResult)
+    if (enriched.error) {
+      console.warn(`Transcript enrichment degraded (${enriched.error}); speaking fields left empty`)
+    }
+    finalResult = enriched.result
 
     // 课程时长优先真实上报值；时间轴已按它校准，末句 endMs 与之接近
     const durationMs = reportedDurationMs ?? finalResult[finalResult.length - 1].endMs
