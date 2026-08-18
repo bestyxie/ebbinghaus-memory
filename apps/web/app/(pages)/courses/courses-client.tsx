@@ -6,14 +6,16 @@ import {
   AudioLines,
   GraduationCap,
   Loader2,
+  Mic,
   Plus,
   RefreshCw,
   Trash2,
   Video,
   AlertCircle,
   CheckCircle2,
+  X,
 } from 'lucide-react'
-import type { CourseSummary } from '@ebbinghaus/shared'
+import type { CourseSummary, SpeakingProgress, SpeakingDifficultyValue } from '@ebbinghaus/shared'
 
 function formatDuration(ms: number): string {
   if (!ms) return '--:--'
@@ -21,6 +23,99 @@ function formatDuration(ms: number): string {
   const min = Math.floor(totalSec / 60)
   const sec = totalSec % 60
   return `${min}:${String(sec).padStart(2, '0')}`
+}
+
+const DIFFICULTY_LABEL: Record<SpeakingDifficultyValue, string> = {
+  EASY: '简单',
+  MEDIUM: '中等',
+  HARD: '困难',
+}
+
+const DIFFICULTIES: SpeakingDifficultyValue[] = ['EASY', 'MEDIUM', 'HARD']
+
+/** 学习方式选择弹窗：听力入口 + 三难度口语入口（各带进度） */
+function LearnModeModal({ course, onClose }: { course: CourseSummary; onClose: () => void }) {
+  const [speaking, setSpeaking] = useState<SpeakingProgress[] | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    fetch(`/api/courses/${course.id}/speak`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error('failed')
+        const data: { progress: SpeakingProgress[] } = await res.json()
+        if (alive) setSpeaking(data.progress)
+      })
+      .catch(() => {
+        // 口语进度拉取失败不阻断听力入口；难度按钮显示占位
+      })
+    return () => {
+      alive = false
+    }
+  }, [course.id])
+
+  const listeningDone = course.progress?.completedSentenceIds.length ?? 0
+  const listeningPct = course.sentenceCount > 0 ? Math.round((listeningDone / course.sentenceCount) * 100) : 0
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">{course.title}</h2>
+            <p className="mt-0.5 text-xs text-gray-400">选择学习方式</p>
+          </div>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg" title="关闭">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          <Link
+            href={`/courses/${course.id}`}
+            className="flex items-center justify-between px-4 py-3 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium text-blue-700">
+              <AudioLines className="w-4 h-4" />
+              听力学习
+            </span>
+            <span className="text-xs text-blue-500">
+              {course.progress?.status === 'COMPLETED' ? '已完成 ✓' : listeningPct > 0 ? `${listeningDone}/${course.sentenceCount} 句` : '开始学习'}
+            </span>
+          </Link>
+
+          <p className="pt-1 text-xs text-gray-400">口语学习</p>
+          {DIFFICULTIES.map((d) => {
+            const row = speaking?.find((p) => p.difficulty === d)
+            const done = row?.completedSentenceIds.length ?? 0
+            return (
+              <Link
+                key={d}
+                href={`/courses/${course.id}/speak?level=${d}`}
+                className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Mic className="w-4 h-4 text-blue-600" />
+                  {DIFFICULTY_LABEL[d]}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {row?.status === 'COMPLETED' ? (
+                    <span className="inline-flex items-center gap-1 text-green-600">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> 已完成
+                    </span>
+                  ) : (
+                    <>
+                      {done}/{course.sentenceCount} 句
+                      <span className="ml-2 text-blue-600 font-medium">{done > 0 ? '继续' : '开始'}</span>
+                    </>
+                  )}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function StatusBadge({ course }: { course: CourseSummary }) {
@@ -51,6 +146,7 @@ export function CoursesClient() {
   const [error, setError] = useState<string | null>(null)
   const [transcribingId, setTranscribingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [modalCourse, setModalCourse] = useState<CourseSummary | null>(null)
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const load = useCallback(async () => {
@@ -202,12 +298,12 @@ export function CoursesClient() {
 
                   <div className="mt-4 flex items-center gap-2">
                     {course.status === 'READY' ? (
-                      <Link
-                        href={`/courses/${course.id}`}
-                        className="flex-1 text-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                      <button
+                        onClick={() => setModalCourse(course)}
+                        className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         {pct > 0 ? '继续学习' : '开始学习'}
-                      </Link>
+                      </button>
                     ) : (
                       <button
                         onClick={() => triggerTranscribe(course.id)}
@@ -242,6 +338,8 @@ export function CoursesClient() {
           })}
         </div>
       )}
+
+      {modalCourse && <LearnModeModal course={modalCourse} onClose={() => setModalCourse(null)} />}
     </div>
   )
 }
