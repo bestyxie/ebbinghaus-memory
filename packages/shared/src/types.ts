@@ -16,6 +16,10 @@ import {
   transcriptSentenceSchema,
   transcriptSchema,
   updateCourseProgressSchema,
+  speakingDifficultySchema,
+  scoreWordResultSchema,
+  scoreResultSchema,
+  speakingProgressSchema,
 } from './zod'
 
 // === 基础类型 (从 Zod 派生) ===
@@ -168,6 +172,12 @@ export type UpdateCourseProgressInput = z.infer<typeof updateCourseProgressSchem
 export type MediaTypeValue = 'AUDIO' | 'VIDEO'
 export type CourseStatusValue = 'PROCESSING' | 'READY' | 'FAILED'
 export type CourseProgressStatusValue = 'IN_PROGRESS' | 'COMPLETED'
+
+// === 课程口语学习 ===
+export type SpeakingDifficultyValue = z.infer<typeof speakingDifficultySchema>
+export type ScoreWordResult = z.infer<typeof scoreWordResultSchema>
+export type ScoreResult = z.infer<typeof scoreResultSchema>
+export type SpeakingProgress = z.infer<typeof speakingProgressSchema>
 
 // 课程列表项（不含 transcript 全文）
 export interface CourseSummary {

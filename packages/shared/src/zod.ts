@@ -181,21 +181,28 @@ export const updateRecallBlocksSchema = z.object({
   recallBlocks: z.array(recallBlockSchema),
 })
 
-// === 课程听力学习 ===
+// === 课程学习（听力 + 口语） ===
 
-// 转写句内单词（isProperNoun = 地名/人名，学习页免输）
+// 转写句内单词
+// isProperNoun = 地名/人名，听力页免输、口语页照常评分
+// phonetic = 口语逐词弹窗的音标（IPA，转写富化生成；专有名词可缺省）
+// startMs/endMs = 词级原音频时间戳（mimo 回落无词级时间戳为 null）
 export const transcriptWordSchema = z.object({
   text: z.string().min(1),
   isProperNoun: z.boolean(),
+  phonetic: z.string().nullable().optional(),
+  startMs: z.number().int().min(0).nullable().optional(),
+  endMs: z.number().int().min(0).nullable().optional(),
 })
 
-// 转写句（带毫秒时间戳，用于按句 seek 播放）
+// 转写句（带毫秒时间戳，用于按句 seek 播放；translation = 中译文，口语困难难度提示）
 export const transcriptSentenceSchema = z.object({
   idx: z.number().int().min(0),
   text: z.string().min(1),
   startMs: z.number().int().min(0),
   endMs: z.number().int().min(0),
   words: z.array(transcriptWordSchema),
+  translation: z.string().nullable().optional(),
 })
 
 export const transcriptSchema = z.array(transcriptSentenceSchema)
@@ -212,4 +219,32 @@ export const updateCourseProgressSchema = z.object({
   sentenceIndex: z.number().int().min(0),
   completedSentenceIds: z.array(z.number().int().min(0)),
   status: z.enum(['IN_PROGRESS', 'COMPLETED']),
+})
+
+// === 课程口语学习 ===
+
+// 口语难度
+export const speakingDifficultySchema = z.enum(['EASY', 'MEDIUM', 'HARD'])
+
+// 口语评分：单个词的得分与在录音内的起止偏移（startMs/endMs = 录音内毫秒位置）
+export const scoreWordResultSchema = z.object({
+  text: z.string().min(1),
+  score: z.number().min(0).max(100),
+  startMs: z.number().int().min(0).nullable().optional(),
+  endMs: z.number().int().min(0).nullable().optional(),
+})
+
+// 一句录音的整体评分结果（overall = 综合评分 0-100）
+export const scoreResultSchema = z.object({
+  overall: z.number().min(0).max(100),
+  words: z.array(scoreWordResultSchema),
+})
+
+// 口语进度（每用户每课程每难度；bestScores 按句 idx 对齐，null = 该句未录）
+export const speakingProgressSchema = z.object({
+  difficulty: speakingDifficultySchema,
+  sentenceIndex: z.number().int().min(0),
+  completedSentenceIds: z.array(z.number().int().min(0)),
+  status: z.enum(['IN_PROGRESS', 'COMPLETED']),
+  bestScores: z.array(z.number().min(0).max(100).nullable()).nullable().optional(),
 })
