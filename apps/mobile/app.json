@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Ebbinghaus Memory",
+    "slug": "ebbinghaus-memory",
+    "scheme": "ebbinghaus",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": true },
+    "android": {},
+    "plugins": ["expo-router"]
+  }
+}
