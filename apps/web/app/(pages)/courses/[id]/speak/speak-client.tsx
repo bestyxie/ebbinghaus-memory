@@ -261,7 +261,7 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-16 flex flex-col items-center gap-3 text-gray-400">
+      <div className="max-w-4xl mx-auto px-6 py-16 flex flex-col items-center gap-3 text-gray-400">
         <Loader2 className="w-8 h-8 animate-spin" />
         <p className="text-sm">加载课程…</p>
       </div>
@@ -270,7 +270,7 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
 
   if (loadError || !course) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-16 text-center text-red-600">{loadError ?? '课程不存在'}</div>
+      <div className="max-w-4xl mx-auto px-6 py-16 text-center text-red-600">{loadError ?? '课程不存在'}</div>
     )
   }
 
@@ -284,7 +284,7 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
   // 完成页
   if (finished) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="text-center mb-8">
           <Trophy className="w-12 h-12 mx-auto text-amber-500 mb-3" />
           <h1 className="text-2xl font-semibold text-gray-900">口语练习完成！</h1>
@@ -333,202 +333,225 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
   const promptText = level === 'MEDIUM' ? '请根据记忆说出英文' : ''
   const displayText = level === 'EASY' ? sentence?.text : level === 'HARD' ? (sentence?.translation ?? '（本句暂无译文）') : ''
 
+  const progressPct = sentences.length > 0 ? Math.round((Math.min(recordedCount, sentences.length) / sentences.length) * 100) : 0
+
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
-      {/* 顶栏 */}
-      <div className="flex items-center justify-between mb-6">
-        <Link href="/courses" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
-          <ArrowLeft className="w-4 h-4" /> 课程列表
+    <div className="max-w-4xl mx-auto px-6 py-8 flex flex-col min-h-[80vh]">
+      {/* 顶部：返回链接 + 标题/难度/进度 */}
+      <div className="flex items-center justify-between mb-2">
+        <Link
+          href="/courses"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
+        >
+          <ArrowLeft className="w-4 h-4" /> {course.title}
         </Link>
-        <div className="text-sm text-gray-600">
-          {course.title} · <span className="font-medium">{DIFFICULTY_LABEL[level]}</span>
-          <span className="ml-2 text-gray-400">第 {sentenceIndex + 1}/{sentences.length} 句 · 已完成 {recordedCount}/{sentences.length}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {DIFFICULTIES.map((d) => (
-            <Link
-              key={d}
-              href={`/courses/${id}/speak?level=${d}`}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                d === level ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300'
-              }`}
-            >
-              {DIFFICULTY_LABEL[d]}
-            </Link>
-          ))}
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">
+            第 {sentenceIndex + 1} / {sentences.length} 句 · 已完成 {recordedCount}/{sentences.length}
+          </span>
+          <div className="flex items-center gap-1">
+            {DIFFICULTIES.map((d) => (
+              <Link
+                key={d}
+                href={`/courses/${id}/speak?level=${d}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                  d === level ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                {DIFFICULTY_LABEL[d]}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* 隐藏的媒体音频 + 录音音频 */}
+      {/* 进度条 */}
+      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+      </div>
+
+      {/* 播放控制：右对齐（播放原音/录音 + 变速 popup），与听力页一致 */}
+      <div className="flex justify-end mt-3 mb-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (!sentence) return
+              setPlayCount(1)
+              const range = sentencePlayRange(sentence)
+              playTwice(range.startMs, range.endMs)
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
+          >
+            <Play className="w-4 h-4" /> 播放原音
+          </button>
+          {recUrl && (
+            <button
+              onClick={() => void recAudioRef.current?.play()}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
+            >
+              <Play className="w-4 h-4" /> 播放我的录音
+            </button>
+          )}
+          <div className="relative">
+            <button
+              onClick={() => setShowRatePopup((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                showRatePopup
+                  ? 'border-blue-300 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Gauge className="w-4 h-4" /> {playbackRate}x
+            </button>
+            {showRatePopup && (
+              <div className="absolute right-0 top-full mt-1 z-10 flex items-center gap-2 p-2 rounded-xl border border-gray-200 bg-white shadow-lg">
+                <button
+                  onClick={() => {
+                    const next = Math.max(0.5, Math.round((playbackRate - 0.25) * 100) / 100)
+                    setPlaybackRate(next)
+                    setRate(next)
+                  }}
+                  disabled={playbackRate <= 0.5}
+                  className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  -
+                </button>
+                <span className="min-w-12 text-center text-sm font-medium text-gray-800">{playbackRate}x</span>
+                <button
+                  onClick={() => {
+                    const next = Math.min(2, Math.round((playbackRate + 0.25) * 100) / 100)
+                    setPlaybackRate(next)
+                    setRate(next)
+                  }}
+                  disabled={playbackRate >= 2}
+                  className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 音频元素 */}
       <audio ref={mediaRef} src={`/api/courses/${id}/media`} className="hidden" />
       <audio ref={recAudioRef} src={recUrl ?? undefined} className="hidden" />
 
+      {/* 内容区：垂直居中（与听力页句子区一致） */}
       {!sentence ? (
-        <div className="text-center py-20 text-gray-400">暂无句子</div>
+        <div className="flex-1 flex items-center justify-center text-center text-gray-400">暂无句子</div>
       ) : (
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-          {/* 难度提示区 */}
-          <div className="min-h-20 flex items-center justify-center text-center">
-            {level === 'EASY' && (
-              <p className="text-2xl leading-relaxed text-gray-800">{displayText}</p>
-            )}
-            {level === 'MEDIUM' && (
-              <p className="text-lg text-gray-500">{promptText}</p>
-            )}
-            {level === 'HARD' && (
-              <div>
-                <p className="text-xl text-gray-800">{displayText}</p>
-                <p className="mt-1 text-xs text-gray-400">看中文，说出英文</p>
+        <div className="flex-1 flex items-center justify-center py-4">
+          <div className="w-full max-w-3xl">
+            <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+              {/* 难度提示区 */}
+              <div className="min-h-20 flex items-center justify-center text-center">
+                {level === 'EASY' && (
+                  <p className="text-2xl leading-relaxed text-gray-800">{displayText}</p>
+                )}
+                {level === 'MEDIUM' && (
+                  <p className="text-lg text-gray-500">{promptText}</p>
+                )}
+                {level === 'HARD' && (
+                  <div>
+                    <p className="text-xl text-gray-800">{displayText}</p>
+                    <p className="mt-1 text-xs text-gray-400">看中文，说出英文</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* 播放控制 */}
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <button
-              onClick={() => {
-                if (!sentence) return
-                setPlayCount(1)
-                const range = sentencePlayRange(sentence)
-                playTwice(range.startMs, range.endMs)
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
-            >
-              <Play className="w-4 h-4" /> 播放原音
-            </button>
-            <div className="relative">
-              <button
-                onClick={() => setShowRatePopup((v) => !v)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
-                  showRatePopup
-                    ? 'border-blue-300 bg-blue-50 text-blue-700'
-                    : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Gauge className="w-4 h-4" /> {playbackRate}x
-              </button>
-              {showRatePopup && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-10 flex items-center gap-2 p-2 rounded-xl border border-gray-200 bg-white shadow-lg">
-                  <button
-                    onClick={() => {
-                      const next = Math.max(0.5, Math.round((playbackRate - 0.25) * 100) / 100)
-                      setPlaybackRate(next)
-                      setRate(next)
-                    }}
-                    disabled={playbackRate <= 0.5}
-                    className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
-                  >
-                    -
-                  </button>
-                  <span className="min-w-12 text-center text-sm font-medium text-gray-800">{playbackRate}x</span>
-                  <button
-                    onClick={() => {
-                      const next = Math.min(2, Math.round((playbackRate + 0.25) * 100) / 100)
-                      setPlaybackRate(next)
-                      setRate(next)
-                    }}
-                    disabled={playbackRate >= 2}
-                    className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
-                  >
-                    +
-                  </button>
+              {/* 录音按钮 */}
+              <div className="mt-8 flex flex-col items-center">
+                <button
+                  onPointerDown={(e) => {
+                    e.preventDefault()
+                    void startRecording()
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault()
+                    stopRecording()
+                  }}
+                  onPointerLeave={() => {
+                    if (isRecording) stopRecording()
+                  }}
+                  disabled={scoring}
+                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all ${
+                    isRecording
+                      ? 'bg-red-500 text-white scale-110 shadow-lg shadow-red-200'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
+                  } disabled:opacity-50`}
+                  title="按住录音，松开结束（或按住空格键）"
+                >
+                  {isRecording ? <Square className="w-8 h-8 fill-current" /> : <Mic className="w-8 h-8" />}
+                </button>
+                <p className="mt-3 text-xs text-gray-400">
+                  {isRecording ? '正在录音… 松开结束' : '按住录音，松开结束（或按住空格键）'}
+                  {scoring && ' · 评分中…'}
+                </p>
+                {recError && <p className="mt-2 text-xs text-red-500">{recError}</p>}
+              </div>
+
+              {/* 评分结果 */}
+              {result && (
+                <div className="mt-8 border-t border-gray-100 pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-medium text-gray-700">评分结果</h2>
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <span className="text-2xl font-bold text-blue-600">{result.overall}</span>
+                      <span className="text-xs text-gray-400">/100</span>
+                    </div>
+                  </div>
+
+                  {/* 原文 + 逐词评分 */}
+                  <div className="flex flex-wrap gap-x-2 gap-y-2 leading-relaxed text-xl text-gray-800">
+                    {sentence.words.map((word, i) => {
+                      const wordScore = result.words.find((w) => w.text === word.text)?.score
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setPopupWordIdx(i)}
+                          className="relative inline-flex items-start px-1 py-0.5 rounded hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                          title="查看音标与发音"
+                        >
+                          <span>{word.text}</span>
+                          {wordScore != null && (
+                            <span className={`absolute -top-2 -right-2 text-[10px] leading-none px-1 py-0.5 rounded-full border font-medium ${scoreColor(wordScore)}`}>
+                              {Math.round(wordScore)}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
             </div>
-            {recUrl && (
-              <button
-                onClick={() => void recAudioRef.current?.play()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                <Play className="w-4 h-4" /> 播放我的录音
-              </button>
-            )}
           </div>
-
-          {/* 录音按钮 */}
-          <div className="mt-8 flex flex-col items-center">
-            <button
-              onPointerDown={(e) => {
-                e.preventDefault()
-                void startRecording()
-              }}
-              onPointerUp={(e) => {
-                e.preventDefault()
-                stopRecording()
-              }}
-              onPointerLeave={() => {
-                if (isRecording) stopRecording()
-              }}
-              disabled={scoring}
-              className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all ${
-                isRecording
-                  ? 'bg-red-500 text-white scale-110 shadow-lg shadow-red-200'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
-              } disabled:opacity-50`}
-              title="按住录音，松开结束（或按住空格键）"
-            >
-              {isRecording ? <Square className="w-8 h-8 fill-current" /> : <Mic className="w-8 h-8" />}
-            </button>
-            <p className="mt-3 text-xs text-gray-400">
-              {isRecording ? '正在录音… 松开结束' : '按住录音，松开结束（或按住空格键）'}
-              {scoring && ' · 评分中…'}
-            </p>
-            {recError && <p className="mt-2 text-xs text-red-500">{recError}</p>}
-          </div>
-
-          {/* 评分结果 */}
-          {result && (
-            <div className="mt-8 border-t border-gray-100 pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-medium text-gray-700">评分结果</h2>
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  <span className="text-2xl font-bold text-blue-600">{result.overall}</span>
-                  <span className="text-xs text-gray-400">/100</span>
-                </div>
-              </div>
-
-              {/* 原文 + 逐词评分 */}
-              <div className="flex flex-wrap gap-x-2 gap-y-2 leading-relaxed text-xl text-gray-800">
-                {sentence.words.map((word, i) => {
-                  const wordScore = result.words.find((w) => w.text === word.text)?.score
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => setPopupWordIdx(i)}
-                      className="relative inline-flex items-start px-1 py-0.5 rounded hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
-                      title="查看音标与发音"
-                    >
-                      <span>{word.text}</span>
-                      {wordScore != null && (
-                        <span className={`absolute -top-2 -right-2 text-[10px] leading-none px-1 py-0.5 rounded-full border font-medium ${scoreColor(wordScore)}`}>
-                          {Math.round(wordScore)}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <button
-                  onClick={() => setResult(null)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
-                >
-                  <RotateCcw className="w-4 h-4" /> 重录本句
-                </button>
-                <button
-                  onClick={goNext}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-                >
-                  {sentenceIndex >= sentences.length - 1 ? '完成' : '下一句'}
-                  <CheckCircle2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
+
+      {/* 底部按钮：与听力页一致（重录 + 下一句/完成） */}
+      <div className="flex items-center justify-between gap-3 pt-6 border-t border-gray-100">
+        {result && (
+          <button
+            onClick={() => setResult(null)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+          >
+            <RotateCcw className="w-4 h-4" /> 重录本句
+          </button>
+        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={goNext}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+          >
+            {sentenceIndex >= sentences.length - 1 ? '完成' : '下一句'}
+            <CheckCircle2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
       {/* 逐词详情弹窗 */}
       {popupWordIdx != null && sentence && result && (
