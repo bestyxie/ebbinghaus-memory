@@ -23,6 +23,7 @@ import type {
 } from '@ebbinghaus/shared'
 import { useSentenceAudio } from '../use-sentence-audio'
 import { useHoldRecording } from './use-hold-recording'
+import { sentencePlayRange } from '@/app/lib/course-words'
 
 interface CourseDetail {
   id: string
@@ -139,7 +140,8 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
     }
     if (level !== 'HARD') {
       setPlayCount(1)
-      playTwice(sentence.startMs, sentence.endMs)
+      const range = sentencePlayRange(sentence)
+      playTwice(range.startMs, range.endMs)
     }
   }, [sentenceIndex, sentence, level, playTwice, setPlayCount])
 
@@ -384,7 +386,8 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
               onClick={() => {
                 if (!sentence) return
                 setPlayCount(1)
-                playTwice(sentence.startMs, sentence.endMs)
+                const range = sentencePlayRange(sentence)
+                playTwice(range.startMs, range.endMs)
               }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
             >

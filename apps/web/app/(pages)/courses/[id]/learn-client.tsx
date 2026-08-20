@@ -13,6 +13,7 @@ import {
   compareAll,
   type DictationState,
 } from '@/app/lib/dictation-flow'
+import { sentencePlayRange } from '@/app/lib/course-words'
 import { useSentenceAudio } from './use-sentence-audio'
 
 interface CourseDetail {
@@ -120,7 +121,8 @@ export function LearnCourseClient() {
       setDictation(initDictation(s.words))
       setShowAnswer(false)
       setActivePopup(null)
-      playTwice(s.startMs, s.endMs)
+      const range = sentencePlayRange(s)
+      playTwice(range.startMs, range.endMs)
     },
     [sentences, playTwice],
   )
@@ -255,7 +257,8 @@ export function LearnCourseClient() {
 
   function onReplay() {
     if (!sentence) return
-    playTwice(sentence.startMs, sentence.endMs)
+    const range = sentencePlayRange(sentence)
+    playTwice(range.startMs, range.endMs)
   }
 
   function restartCourse() {

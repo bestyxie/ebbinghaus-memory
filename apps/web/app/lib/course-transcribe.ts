@@ -11,6 +11,8 @@ import { tmpdir } from 'os'
 import path from 'path'
 import { readFile } from 'fs/promises'
 import { aiProvider, AI_MODEL } from './ai-provider'
+import { normalizeWord, tokenizeSentence } from './course-words'
+export { normalizeWord, tokenizeSentence, compareWord } from './course-words'
 import {
   rawTranscriptionSentenceSchema,
   transcriptWordSchema,
@@ -61,21 +63,6 @@ export interface RawSentence {
 
 // === 纯函数（单测覆盖） ===
 
-/** 去除首尾标点并 lowercase，用于答案比对 */
-export function normalizeWord(word: string): string {
-  return word.replace(/^[^\w']+|[^\w']+$/g, '').toLowerCase()
-}
-
-/** 按空白切词 */
-export function tokenizeSentence(text: string): string[] {
-  return text.split(/\s+/).filter(Boolean)
-}
-
-/** 比对用户输入与预期单词（忽略大小写与首尾标点） */
-export function compareWord(input: string, expected: string): boolean {
-  return normalizeWord(input) === normalizeWord(expected) && normalizeWord(expected) !== ''
-}
-
 /** 剥掉模型输出外层 markdown 代码围栏 */
 function stripCodeFence(raw: string): string {
   return raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
@@ -121,10 +108,13 @@ export function parseTranscriptionResponse(raw: string): { sentences: RawSentenc
 }
 
 /**
- * 时间戳校准：转写模型（mimo-v2.5）的时间戳存在系统性漂移（实测整体压缩 ~8%），
- * 导致句子音频被提前切断、要求听写的词没播出来。
+ * 时间戳校准：mimo 回落模型的时间轴存在系统性漂移，方向不固定——实测可整体压缩
+ * （模型 < 真实，句子音频被提前切断、要听写的词没播出来），也可整体扩展
+ * （模型 > 真实，末句会超出媒体时长，超出部分播放为静音/空）。
  * 用媒体真实时长把模型时间轴线性缩放到真实时间轴：
- * scale = realDuration / modelLastEnd。偏差 <5% 视为噪声不校准。
+ * scale = realDuration / modelLastEnd。
+ * 双向都校准（0.5~1.5 之外视为模型不可信，保持原值）；偏差 <5% 视为噪声不校准。
+ * 校准后 clamp 到 [0, 真实时长]，保证任何句子不会播到文件结束之后。
  */
 export function calibrateTimestamps(
   sentences: RawSentence[],
@@ -134,13 +124,12 @@ export function calibrateTimestamps(
   const lastEnd = sentences[sentences.length - 1].endMs
   if (lastEnd <= 0) return sentences
   const scale = realDurationMs / lastEnd
-  // 实测漂移为时间轴整体压缩（模型 < 真实），只校准压缩侧；偏差 <5% 视为噪声
-  if (scale <= 1 || scale > 1.5) return sentences
-  if (scale - 1 < 0.05) return sentences
+  if (scale < 0.5 || scale > 1.5) return sentences
+  if (Math.abs(scale - 1) < 0.05) return sentences
   return sentences.map((s) => ({
     ...s,
-    startMs: Math.round(s.startMs * scale),
-    endMs: Math.round(s.endMs * scale),
+    startMs: Math.min(Math.max(0, Math.round(s.startMs * scale)), realDurationMs),
+    endMs: Math.min(Math.max(0, Math.round(s.endMs * scale)), realDurationMs),
   }))
 }
 
@@ -317,21 +306,7 @@ export async function callGroqTranscription(
       form.append('response_format', 'verbose_json')
       form.append('timestamp_granularities[]', 'segment')
       form.append('timestamp_granularities[]', 'word')
-      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${key}` },
-        body: form,
-      })
-      if (!res.ok) {
-        const body = await res.text().catch(() => '')
-        return { sentences: [], error: `Groq API ${res.status}: ${body.slice(0, 200)}` }
-      }
-      const data: unknown = await res.json()
-      const parsed = parseGroqResponse(data)
-      if (parsed.error || parsed.sentences.length === 0) {
-        return { sentences: [], error: parsed.error ?? 'Groq returned no usable segments' }
-      }
-      return { sentences: parsed.sentences }
+      return await groqTranscribe(form, key)
     }
 
     // 分块路径：16kHz 单声道 wav，按采样字节切 ~25s 块，块间 2s 重叠去重
@@ -347,7 +322,7 @@ export async function callGroqTranscription(
     let cursorSec = 0
     let chunkIndex = 0
     // Groq 免费档 20 RPM：连续分块会触顶（429）。块间间隔 3.2s 匀速发送；
-    // 429 时按 Retry-After 退避一次
+    // groqTranscribe 内对 429 等 60s 自动重试
     const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
     while (cursorSec < totalSec - 0.5) {
       const chunkEnd = Math.min(cursorSec + CHUNK_SEC, totalSec)
@@ -357,11 +332,13 @@ export async function callGroqTranscription(
       const chunk = Buffer.concat([wav, chunkedWav.subarray(startByte, endByte)])
 
       if (chunkIndex > 0) await sleep(3200)
-      let result = await groqTranscribeChunk(chunk, key)
-      if (result.error && result.error.includes('429')) {
-        await sleep(60_000) // RPM 窗口重置
-        result = await groqTranscribeChunk(chunk, key)
-      }
+      const form = new FormData()
+      form.append('file', new Blob([new Uint8Array(chunk)], { type: 'audio/wav' }), 'chunk.wav')
+      form.append('model', GROQ_MODEL)
+      form.append('response_format', 'verbose_json')
+      form.append('timestamp_granularities[]', 'segment')
+      form.append('timestamp_granularities[]', 'word')
+      const result = await groqTranscribe(form, key)
       if (result.error) return { sentences: [], error: result.error }
 
       const overlapMs = chunkIndex === 0 ? 0 : OVERLAP_SEC * 1000
@@ -388,33 +365,49 @@ export async function callGroqTranscription(
   }
 }
 
-/** Groq 单次转写调用：音频片段 Buffer → 句级时间戳（相对片段起点）+ 词级时间戳 */
-async function groqTranscribeChunk(
-  chunk: Buffer,
+/**
+ * Groq 转写调用（带自动重试）：429（免费档 20 RPM 触顶）等 60s 重试，
+ * 5xx/网络错误等 5s 重试，各最多 2 次。整段与分块路径共用。
+ */
+async function groqTranscribe(
+  form: FormData,
   key: string,
 ): Promise<{ sentences: RawSentence[]; error?: string }> {
-  const form = new FormData()
-  form.append('file', new Blob([new Uint8Array(chunk)], { type: 'audio/wav' }), 'chunk.wav')
-  form.append('model', GROQ_MODEL)
-  form.append('response_format', 'verbose_json')
-  form.append('timestamp_granularities[]', 'segment')
-  form.append('timestamp_granularities[]', 'word')
-
-  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}` },
-    body: form,
-  })
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    return { sentences: [], error: `Groq API ${res.status}: ${body.slice(0, 200)}` }
+  for (let attempt = 0; ; attempt++) {
+    let res: Response
+    try {
+      res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}` },
+        body: form,
+      })
+    } catch (e) {
+      if (attempt < 2) {
+        await new Promise<void>((r) => setTimeout(r, 5_000))
+        continue
+      }
+      return { sentences: [], error: e instanceof Error ? e.message : 'Groq transcription network error' }
+    }
+    if (res.ok) {
+      const data: unknown = await res.json()
+      const parsed = parseGroqResponse(data)
+      if (parsed.error || parsed.sentences.length === 0) {
+        return { sentences: [], error: parsed.error ?? 'Groq returned no usable segments' }
+      }
+      return { sentences: parsed.sentences }
+    }
+    const bodyText = await res.text().catch(() => '')
+    const err = `Groq API ${res.status}: ${bodyText.slice(0, 200)}`
+    if (res.status === 429 && attempt < 2) {
+      await new Promise<void>((r) => setTimeout(r, 60_000)) // RPM 窗口重置
+      continue
+    }
+    if (res.status >= 500 && res.status < 600 && attempt < 2) {
+      await new Promise<void>((r) => setTimeout(r, 5_000))
+      continue
+    }
+    return { sentences: [], error: err }
   }
-  const data: unknown = await res.json()
-  const parsed = parseGroqResponse(data)
-  if (parsed.error || parsed.sentences.length === 0) {
-    return { sentences: [], error: parsed.error ?? 'Groq returned no usable segments' }
-  }
-  return { sentences: parsed.sentences }
 }
 
 /** 构造 16kHz 单声道 16bit wav 头 */

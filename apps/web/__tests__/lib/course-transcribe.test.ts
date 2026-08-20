@@ -238,6 +238,31 @@ describe('calibrateTimestamps', () => {
     expect(out[1].endMs).toBe(10000)
   })
 
+  it('scales timestamps down when model timeline overruns real duration (expansion)', () => {
+    // model says 10s end, real audio 8s → scale 0.8（此前只校准压缩侧，扩展侧会跳过）
+    const expanded = [
+      { text: 'First.', startMs: 1250, endMs: 2500 },
+      { text: 'Second.', startMs: 3125, endMs: 10000 },
+    ]
+    const out = calibrateTimestamps(expanded, 8000)
+    expect(out[0].startMs).toBe(1000)
+    expect(out[1].endMs).toBe(8000)
+  })
+
+  it('clamps sentence timestamps to the real duration', () => {
+    // 校准后仍可能因取整超出时长，clamp 到文件末尾（保证不播到文件结束之后）
+    const over = [{ text: 'Last.', startMs: 9000, endMs: 11000 }]
+    const out = calibrateTimestamps(over, 10000)
+    expect(out[0].startMs).toBe(8182)
+    expect(out[0].endMs).toBe(10000)
+  })
+
+  it('no-op on absurd small scale (guard against bad input)', () => {
+    // 模型时间轴远超媒体时长（scale < 0.5）视为不可信，保持原值
+    const out = calibrateTimestamps(sentences, 2000)
+    expect(out).toEqual(sentences)
+  })
+
   it('no-op when drift under 5%', () => {
     const out = calibrateTimestamps(sentences, 8200)
     expect(out[0].startMs).toBe(1000)

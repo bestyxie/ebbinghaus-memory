@@ -83,12 +83,21 @@ export async function POST(
         ? transcription.sentences
         : calibrateTimestamps(transcription.sentences, reportedDurationMs ?? (course.durationMs || null))
 
+    // 双保险：校准后仍把时间戳 clamp 到媒体时长内（mimo 扩展漂移会超出文件末尾，
+    // 超出部分的句子播放为静音/空）。Groq 路径时间戳真实对齐，通常无需改动。
+    const durationMs = reportedDurationMs ?? (course.durationMs || null)
+    const clamped = calibrated.map((s) => ({
+      ...s,
+      startMs: durationMs ? Math.min(Math.max(0, s.startMs), durationMs) : s.startMs,
+      endMs: durationMs ? Math.min(Math.max(0, s.endMs), durationMs) : s.endMs,
+    }))
+
     // 标记专有名词；失败时降级为全 false（界面变为所有词都要输入），不让整门课失败
-    const marked = await markProperNouns(calibrated)
+    const marked = await markProperNouns(clamped)
     let finalResult = marked.result
     if (marked.error || marked.result.length === 0) {
       console.warn(`Proper noun marking failed (${marked.error}); degrading to all-false marks`)
-      finalResult = calibrated.map((s, i) => ({
+      finalResult = clamped.map((s, i) => ({
         idx: i,
         text: s.text,
         startMs: s.startMs,
@@ -105,12 +114,12 @@ export async function POST(
     finalResult = enriched.result
 
     // 课程时长优先真实上报值；时间轴已按它校准，末句 endMs 与之接近
-    const durationMs = reportedDurationMs ?? finalResult[finalResult.length - 1].endMs
+    const finalDurationMs = reportedDurationMs ?? finalResult[finalResult.length - 1].endMs
     await prisma.course.update({
       where: { id },
       data: {
         transcript: finalResult,
-        durationMs,
+        durationMs: finalDurationMs,
         status: 'READY',
         error: null,
       },

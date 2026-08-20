@@ -3,7 +3,7 @@
  * 单词框状态流转：input → locked-correct | locked-wrong；空格键推进与比对
  */
 
-import { compareWord } from './course-transcribe'
+import { compareWord } from './course-words'
 
 export interface DictationWordState {
   /** 预期单词（原文形式） */
