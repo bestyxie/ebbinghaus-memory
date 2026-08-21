@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   normalizeWord,
   tokenizeSentence,
@@ -10,6 +10,8 @@ import {
   applyEnrichment,
   mergeWordTimestamps,
   assignWordsToSentences,
+  enrichTranscript,
+  markProperNouns,
 } from '@/app/lib/course-transcribe'
 
 describe('normalizeWord', () => {
@@ -415,5 +417,84 @@ describe('assignWordsToSentences', () => {
   it('skips sentences with no matching words', () => {
     const out = assignWordsToSentences(sentences, [])
     expect(out[0].words).toBeUndefined()
+  })
+})
+
+describe('enrichTranscript / markProperNouns batch resilience', () => {
+  const originalFetch = globalThis.fetch
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    delete process.env.GROQ_API_KEY
+  })
+
+  /** 构造 2 批（每批 8 句）的测试句子 */
+  function buildSentences(count: number) {
+    return Array.from({ length: count }, (_, i) => ({
+      idx: i,
+      text: `Sentence ${i} is here.`,
+      startMs: i * 1000,
+      endMs: i * 1000 + 600,
+      words: [{ text: `Word${i}`, isProperNoun: false }],
+    }))
+  }
+
+  /** mock 一次 Groq chat 调用（runLLMChain 主通道），按调用次序返回 content */
+  function mockGroqResponses(contents: string[]) {
+    let calls = 0
+    globalThis.fetch = vi.fn(async () => {
+      const content = contents[Math.min(calls, contents.length - 1)]
+      calls++
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ choices: [{ message: { content } }] }),
+        text: async () => content,
+      } as unknown as Response
+    })
+  }
+
+  it('skips a malformed enrichment batch and still enriches the rest', async () => {
+    process.env.GROQ_API_KEY = 'test-key'
+    const sentences = buildSentences(16)
+    // 第一批返回「花括号平衡但 JSON 非法」（触发 JSON.parse 抛错走 catch），
+    // 第二批返回合法富化结果
+    mockGroqResponses([
+      '{"translations": ["一", "二",], "words": []}',
+      JSON.stringify({
+        translations: sentences.slice(8).map(() => '中文翻译'),
+        words: sentences.slice(8).map(() => [{ text: `Word8`, phonetic: '/wɜːd/' }]),
+      }),
+    ])
+    const res = await enrichTranscript(sentences)
+    expect(res.error).toBeUndefined()
+    expect(res.result.length).toBe(16)
+    // 第一批被跳过：无翻译
+    expect(res.result.slice(0, 8).every((s) => s.translation == null)).toBe(true)
+    // 第二批正常富化
+    expect(res.result.slice(8).every((s) => s.translation === '中文翻译')).toBe(true)
+  })
+
+  it('degrades a malformed proper-noun batch to all-false without failing the course', async () => {
+    process.env.GROQ_API_KEY = 'test-key'
+    // PROPER_NOUN_BATCH_SIZE=20 → 24 句分为 2 批
+    const sentences = buildSentences(24).map(({ idx, text, startMs, endMs }) => ({ text, startMs, endMs }))
+    // 第一批非法 JSON；第二批含专有名词标记
+    mockGroqResponses([
+      '{"marks": [["a",],]}',
+      JSON.stringify({
+        marks: sentences.slice(20).map(() => [
+          { text: 'Word20', isProperNoun: true },
+          { text: 'is', isProperNoun: false },
+          { text: 'here.', isProperNoun: false },
+        ]),
+      }),
+    ])
+    const res = await markProperNouns(sentences)
+    expect(res.error).toBeUndefined()
+    expect(res.result.length).toBe(24)
+    // 第一批降级为全 false
+    expect(res.result.slice(0, 20).every((s) => s.words.every((w) => !w.isProperNoun))).toBe(true)
+    // 第二批保留专有名词标记
+    expect(res.result.slice(20).some((s) => s.words.some((w) => w.isProperNoun))).toBe(true)
   })
 })

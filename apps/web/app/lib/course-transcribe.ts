@@ -638,22 +638,30 @@ Sentences:
 ${numbered}
 
 Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — one inner array per sentence, same order, words in original order. No markdown.`
-      const resultText = await runLLMChain(prompt, 6000)
-      const extracted = extractJsonObject(resultText)
-      const data: unknown = extracted.error ? undefined : JSON.parse(extracted.json)
-      const marks = jsonField(data, 'marks')
-      if (!Array.isArray(marks) || marks.length !== batch.length) {
-        // 该批解析失败/截断/数量不符：降级为全 false 标记（parseProperNounResponse 对
-        // 空数组有逐句兜底），不让整门课程失败
-        console.warn(
-          `Proper noun batch degraded (${extracted.error ?? `marks ${Array.isArray(marks) ? marks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(resultText).slice(0, 120)}`,
-        )
+      try {
+        const resultText = await runLLMChain(prompt, 6000)
+        const extracted = extractJsonObject(resultText)
+        const data: unknown = extracted.error ? undefined : JSON.parse(extracted.json)
+        const marks = jsonField(data, 'marks')
+        if (!Array.isArray(marks) || marks.length !== batch.length) {
+          // 该批解析失败/截断/数量不符：降级为全 false 标记（parseProperNounResponse 对
+          // 空数组有逐句兜底），不让整门课程失败
+          console.warn(
+            `Proper noun batch degraded (${extracted.error ?? `marks ${Array.isArray(marks) ? marks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(resultText).slice(0, 120)}`,
+          )
+          for (let i = 0; i < batch.length; i++) {
+            allMarks.push([])
+          }
+          continue
+        }
+        allMarks.push(...marks)
+      } catch (e) {
+        // 单批解析失败只降级该批为全 false，不让整门课失败
+        console.warn(`Proper noun batch error: ${e instanceof Error ? e.message : 'unknown'}; degrading batch`)
         for (let i = 0; i < batch.length; i++) {
           allMarks.push([])
         }
-        continue
       }
-      allMarks.push(...marks)
     }
     return parseProperNounResponse(JSON.stringify({ marks: allMarks }), sentences)
   } catch (e) {
@@ -691,23 +699,28 @@ Sentences:
 ${numbered}
 
 Return ONLY JSON: {"translations": ["中文翻译1", ...], "words": [[{"text":"word","phonetic":"/həˈləʊ/"}], ...]} — translations one per sentence; words one inner array per sentence, same order as the sentence's words, every word has a phonetic. No markdown.`
-      const resultText = await runLLMChain(prompt, 6000)
-      const extracted = extractJsonObject(resultText)
-      const data: unknown = extracted.error ? undefined : JSON.parse(extracted.json)
-      const translations = jsonField(data, 'translations')
-      const wordMarks = jsonField(data, 'words')
-      const translationsOk = Array.isArray(translations) && translations.length === batch.length
-      const wordsOk = Array.isArray(wordMarks) && wordMarks.length === batch.length
-      if (!translationsOk && !wordsOk) {
-        console.warn(
-          `Enrich batch degraded (${extracted.error ?? `translations ${Array.isArray(translations) ? translations.length : 'n/a'}/${batch.length}, words ${Array.isArray(wordMarks) ? wordMarks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(resultText).slice(0, 120)}`,
-        )
-        continue
+      try {
+        const resultText = await runLLMChain(prompt, 6000)
+        const extracted = extractJsonObject(resultText)
+        const data: unknown = extracted.error ? undefined : JSON.parse(extracted.json)
+        const translations = jsonField(data, 'translations')
+        const wordMarks = jsonField(data, 'words')
+        const translationsOk = Array.isArray(translations) && translations.length === batch.length
+        const wordsOk = Array.isArray(wordMarks) && wordMarks.length === batch.length
+        if (!translationsOk && !wordsOk) {
+          console.warn(
+            `Enrich batch degraded (${extracted.error ?? `translations ${Array.isArray(translations) ? translations.length : 'n/a'}/${batch.length}, words ${Array.isArray(wordMarks) ? wordMarks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(resultText).slice(0, 120)}`,
+          )
+          continue
+        }
+        const batchIdxStart = batch[0].idx
+        const batchSlice = result.slice(batchIdxStart, batchIdxStart + batch.length)
+        const merged = applyEnrichment(batchSlice, translations, wordMarks)
+        result.splice(batchIdxStart, batch.length, ...merged)
+      } catch (e) {
+        // 单批解析失败只跳过该批，不让整个富化失败
+        console.warn(`Enrich batch error: ${e instanceof Error ? e.message : 'unknown'}; skipping batch`)
       }
-      const batchIdxStart = batch[0].idx
-      const batchSlice = result.slice(batchIdxStart, batchIdxStart + batch.length)
-      const merged = applyEnrichment(batchSlice, translations, wordMarks)
-      result.splice(batchIdxStart, batch.length, ...merged)
     }
     return { result }
   } catch (e) {
