@@ -528,9 +528,8 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
         </div>
         <button
           onClick={goNext}
-          disabled={sentenceIndex >= sentences.length - 1}
           title="下一句"
-          className="p-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="p-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
