@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Gauge,
   Loader2,
   Mic,
   Play,
@@ -26,6 +25,7 @@ import type {
 import { useSentenceAudio } from '../use-sentence-audio'
 import { useHoldRecording } from './use-hold-recording'
 import { sentencePlayRange } from '@/app/lib/course-words'
+import { PlaybackRate } from '@/app/components/playback-rate'
 
 interface CourseDetail {
   id: string
@@ -102,6 +102,7 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
 
   // 加载课程详情 + 三难度进度
   useEffect(() => {
+    if (!id) return
     let alive = true
     Promise.all([fetch(`/api/courses/${id}`), fetch(`/api/courses/${id}/speak`)])
       .then(async ([courseRes, progressRes]) => {
@@ -386,45 +387,15 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
               <Play className="w-4 h-4" /> 播放我的录音
             </button>
           )}
-          <div className="relative">
-            <button
-              onClick={() => setShowRatePopup((v) => !v)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
-                showRatePopup
-                  ? 'border-blue-300 bg-blue-50 text-blue-700'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Gauge className="w-4 h-4" /> {playbackRate}x
-            </button>
-            {showRatePopup && (
-              <div className="absolute right-0 top-full mt-1 z-10 flex items-center gap-2 p-2 rounded-xl border border-gray-200 bg-white shadow-lg">
-                <button
-                  onClick={() => {
-                    const next = Math.max(0.5, Math.round((playbackRate - 0.25) * 100) / 100)
-                    setPlaybackRate(next)
-                    setRate(next)
-                  }}
-                  disabled={playbackRate <= 0.5}
-                  className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
-                >
-                  -
-                </button>
-                <span className="min-w-12 text-center text-sm font-medium text-gray-800">{playbackRate}x</span>
-                <button
-                  onClick={() => {
-                    const next = Math.min(2, Math.round((playbackRate + 0.25) * 100) / 100)
-                    setPlaybackRate(next)
-                    setRate(next)
-                  }}
-                  disabled={playbackRate >= 2}
-                  className="w-8 h-8 rounded-lg border border-gray-300 text-gray-600 text-lg leading-none hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
-                >
-                  +
-                </button>
-              </div>
-            )}
-          </div>
+          <PlaybackRate
+            rate={playbackRate}
+            open={showRatePopup}
+            onToggle={() => setShowRatePopup((v) => !v)}
+            onRateChange={(next) => {
+              setPlaybackRate(next)
+              setRate(next)
+            }}
+          />
         </div>
       </div>
 
