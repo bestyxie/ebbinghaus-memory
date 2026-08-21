@@ -6,6 +6,8 @@ import Link from 'next/link'
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Gauge,
   Loader2,
   Mic,
@@ -259,6 +261,10 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
     setSentenceIndex(target)
   }, [progressRow, sentenceIndex, sentences.length])
 
+  const goPrev = useCallback(() => {
+    if (sentenceIndex > 0) setSentenceIndex(sentenceIndex - 1)
+  }, [sentenceIndex])
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-6 py-16 flex flex-col items-center gap-3 text-gray-400">
@@ -438,111 +444,132 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
       <audio ref={mediaRef} src={`/api/courses/${id}/media`} className="hidden" />
       <audio ref={recAudioRef} src={recUrl ?? undefined} className="hidden" />
 
-      {/* 内容区：垂直居中（与听力页句子区一致） */}
+      {/* 内容区：垂直居中（与听力页句子区一致），无白底卡片 */}
       {!sentence ? (
         <div className="flex-1 flex items-center justify-center text-center text-gray-400">暂无句子</div>
       ) : (
         <div className="flex-1 flex items-center justify-center py-4">
           <div className="w-full max-w-3xl">
-            <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-              {/* 难度提示区 */}
-              <div className="min-h-20 flex items-center justify-center text-center">
-                {level === 'EASY' && (
-                  <p className="text-2xl leading-relaxed text-gray-800">{displayText}</p>
-                )}
-                {level === 'MEDIUM' && (
-                  <p className="text-lg text-gray-500">{promptText}</p>
-                )}
-                {level === 'HARD' && (
-                  <div>
-                    <p className="text-xl text-gray-800">{displayText}</p>
-                    <p className="mt-1 text-xs text-gray-400">看中文，说出英文</p>
-                  </div>
-                )}
-              </div>
-
-              {/* 录音按钮 */}
-              <div className="mt-8 flex flex-col items-center">
-                <button
-                  onPointerDown={(e) => {
-                    e.preventDefault()
-                    void startRecording()
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault()
-                    stopRecording()
-                  }}
-                  onPointerLeave={() => {
-                    if (isRecording) stopRecording()
-                  }}
-                  disabled={scoring}
-                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all ${
-                    isRecording
-                      ? 'bg-red-500 text-white scale-110 shadow-lg shadow-red-200'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
-                  } disabled:opacity-50`}
-                  title="按住录音，松开结束（或按住空格键）"
-                >
-                  {isRecording ? <Square className="w-8 h-8 fill-current" /> : <Mic className="w-8 h-8" />}
-                </button>
-                <p className="mt-3 text-xs text-gray-400">
-                  {isRecording ? '正在录音… 松开结束' : '按住录音，松开结束（或按住空格键）'}
-                  {scoring && ' · 评分中…'}
-                </p>
-                {recError && <p className="mt-2 text-xs text-red-500">{recError}</p>}
-              </div>
-
-              {/* 评分结果 */}
-              {result && (
-                <div className="mt-8 border-t border-gray-100 pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-medium text-gray-700">评分结果</h2>
-                    <div className="flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-amber-500" />
-                      <span className="text-2xl font-bold text-blue-600">{result.overall}</span>
-                      <span className="text-xs text-gray-400">/100</span>
-                    </div>
-                  </div>
-
-                  {/* 原文 + 逐词评分 */}
-                  <div className="flex flex-wrap gap-x-2 gap-y-2 leading-relaxed text-xl text-gray-800">
-                    {sentence.words.map((word, i) => {
-                      const wordScore = result.words.find((w) => w.text === word.text)?.score
-                      return (
-                        <button
-                          key={i}
-                          onClick={() => setPopupWordIdx(i)}
-                          className="relative inline-flex items-start px-1 py-0.5 rounded hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
-                          title="查看音标与发音"
-                        >
-                          <span>{word.text}</span>
-                          {wordScore != null && (
-                            <span className={`absolute -top-2 -right-2 text-[10px] leading-none px-1 py-0.5 rounded-full border font-medium ${scoreColor(wordScore)}`}>
-                              {Math.round(wordScore)}
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
+            {/* 难度提示区 */}
+            <div className="min-h-20 flex items-center justify-center text-center">
+              {level === 'EASY' && (
+                <p className="text-2xl leading-relaxed text-gray-800">{displayText}</p>
+              )}
+              {level === 'MEDIUM' && (
+                <p className="text-lg text-gray-500">{promptText}</p>
+              )}
+              {level === 'HARD' && (
+                <div>
+                  <p className="text-xl text-gray-800">{displayText}</p>
+                  <p className="mt-1 text-xs text-gray-400">看中文，说出英文</p>
                 </div>
               )}
             </div>
+
+            {/* 录音按钮 */}
+            <div className="mt-8 flex flex-col items-center">
+              <button
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  void startRecording()
+                }}
+                onPointerUp={(e) => {
+                  e.preventDefault()
+                  stopRecording()
+                }}
+                onPointerLeave={() => {
+                  if (isRecording) stopRecording()
+                }}
+                disabled={scoring}
+                className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all ${
+                  isRecording
+                    ? 'bg-red-500 text-white scale-110 shadow-lg shadow-red-200'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
+                } disabled:opacity-50`}
+                title="按住录音，松开结束（或按住空格键）"
+              >
+                {isRecording ? <Square className="w-8 h-8 fill-current" /> : <Mic className="w-8 h-8" />}
+              </button>
+              <p className="mt-3 text-xs text-gray-400">
+                {isRecording ? '正在录音… 松开结束' : '按住录音，松开结束（或按住空格键）'}
+                {scoring && ' · 评分中…'}
+              </p>
+              {recError && <p className="mt-2 text-xs text-red-500">{recError}</p>}
+            </div>
+
+            {/* 播放原音：居中放在录音按钮下方 */}
+            <div className="mt-6 flex items-center justify-center">
+              <button
+                onClick={() => {
+                  if (!sentence) return
+                  setPlayCount(1)
+                  const range = sentencePlayRange(sentence)
+                  playTwice(range.startMs, range.endMs)
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
+              >
+                <Play className="w-4 h-4" /> 播放原音
+              </button>
+            </div>
+
+            {/* 评分结果 */}
+            {result && (
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-medium text-gray-700">评分结果</h2>
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span className="text-2xl font-bold text-blue-600">{result.overall}</span>
+                    <span className="text-xs text-gray-400">/100</span>
+                  </div>
+                </div>
+
+                {/* 原文 + 逐词评分 */}
+                <div className="flex flex-wrap gap-x-2 gap-y-2 leading-relaxed text-xl text-gray-800">
+                  {sentence.words.map((word, i) => {
+                    const wordScore = result.words.find((w) => w.text === word.text)?.score
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setPopupWordIdx(i)}
+                        className="relative inline-flex items-start px-1 py-0.5 rounded hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                        title="查看音标与发音"
+                      >
+                        <span>{word.text}</span>
+                        {wordScore != null && (
+                          <span className={`absolute -top-2 -right-2 text-[10px] leading-none px-1 py-0.5 rounded-full border font-medium ${scoreColor(wordScore)}`}>
+                            {Math.round(wordScore)}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* 底部按钮：与听力页一致（重录 + 下一句/完成） */}
+      {/* 底部按钮：上一句/下一句（icon 按钮）+ 重录/下一句，与听力页一致 */}
       <div className="flex items-center justify-between gap-3 pt-6 border-t border-gray-100">
-        {result && (
-          <button
-            onClick={() => setResult(null)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <RotateCcw className="w-4 h-4" /> 重录本句
-          </button>
-        )}
+        <button
+          onClick={goPrev}
+          disabled={sentenceIndex === 0}
+          title="上一句"
+          className="p-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
         <div className="flex items-center gap-3">
+          {result && (
+            <button
+              onClick={() => setResult(null)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
+            >
+              <RotateCcw className="w-4 h-4" /> 重录本句
+            </button>
+          )}
           <button
             onClick={goNext}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
@@ -551,6 +578,14 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
             <CheckCircle2 className="w-4 h-4" />
           </button>
         </div>
+        <button
+          onClick={goNext}
+          disabled={sentenceIndex >= sentences.length - 1}
+          title="下一句"
+          className="p-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* 逐词详情弹窗 */}
