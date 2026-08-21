@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Gauge,
@@ -379,17 +378,6 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
       {/* 播放控制：右对齐（播放原音/录音 + 变速 popup），与听力页一致 */}
       <div className="flex justify-end mt-3 mb-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              if (!sentence) return
-              setPlayCount(1)
-              const range = sentencePlayRange(sentence)
-              playTwice(range.startMs, range.endMs)
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
-          >
-            <Play className="w-4 h-4" /> 播放原音
-          </button>
           {recUrl && (
             <button
               onClick={() => void recAudioRef.current?.play()}
@@ -497,21 +485,6 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
               {recError && <p className="mt-2 text-xs text-red-500">{recError}</p>}
             </div>
 
-            {/* 播放原音：居中放在录音按钮下方 */}
-            <div className="mt-6 flex items-center justify-center">
-              <button
-                onClick={() => {
-                  if (!sentence) return
-                  setPlayCount(1)
-                  const range = sentencePlayRange(sentence)
-                  playTwice(range.startMs, range.endMs)
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
-              >
-                <Play className="w-4 h-4" /> 播放原音
-              </button>
-            </div>
-
             {/* 评分结果 */}
             {result && (
               <div className="mt-8">
@@ -571,11 +544,15 @@ export function SpeakClient({ level }: { level: SpeakingDifficultyValue }) {
             </button>
           )}
           <button
-            onClick={goNext}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+            onClick={() => {
+              if (!sentence) return
+              setPlayCount(1)
+              const range = sentencePlayRange(sentence)
+              playTwice(range.startMs, range.endMs)
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50"
           >
-            {sentenceIndex >= sentences.length - 1 ? '完成' : '下一句'}
-            <CheckCircle2 className="w-4 h-4" />
+            <Play className="w-4 h-4" /> 播放原音
           </button>
         </div>
         <button
