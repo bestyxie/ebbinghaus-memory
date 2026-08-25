@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 import { EbbinghausAPI } from '@/lib/ebbinghaus-api'
 import { hunterStorage } from '@/lib/storage'
@@ -13,13 +13,73 @@ interface PageWord {
   pending?: boolean
 }
 
+// Keep the FAB fully inside the viewport
+function clampFabPosition(x: number, y: number) {
+  const FAB_SIZE = 48
+  const maxX = Math.max(0, window.innerWidth - FAB_SIZE)
+  const maxY = Math.max(0, window.innerHeight - FAB_SIZE)
+  return {
+    x: Math.min(Math.max(0, x), maxX),
+    y: Math.min(Math.max(0, y), maxY),
+  }
+}
+
 function WordDrawer() {
   const [isOpen, setIsOpen] = useState(false)
   const [words, setWords] = useState<PageWord[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasApiKey, setHasApiKey] = useState(false)
+  const [fabPos, setFabPos] = useState<{ x: number; y: number } | null>(null)
+  const draggingRef = useRef<{ offsetX: number; offsetY: number } | null>(null)
+  const draggedRef = useRef(false)
   const currentUrl = typeof window !== 'undefined' ? window.location.href.split('#')[0] : ''
+
+  // Load persisted FAB position for this URL
+  useEffect(() => {
+    hunterStorage.getFabPosition().then((positions) => {
+      const pos = positions[currentUrl]
+      if (pos) setFabPos(pos)
+    })
+  }, [currentUrl])
+
+  const handleFabPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const el = e.currentTarget
+    draggingRef.current = {
+      offsetX: e.clientX - el.getBoundingClientRect().left,
+      offsetY: e.clientY - el.getBoundingClientRect().top,
+    }
+    draggedRef.current = false
+    el.setPointerCapture(e.pointerId)
+  }
+
+  const handleFabPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!draggingRef.current) return
+    draggedRef.current = true
+    const x = e.clientX - draggingRef.current.offsetX
+    const y = e.clientY - draggingRef.current.offsetY
+    setFabPos(clampFabPosition(x, y))
+  }
+
+  const handleFabPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!draggingRef.current) return
+    const offset = draggingRef.current
+    draggingRef.current = null
+    // Persist final position using the last pointer coordinates
+    const x = e.clientX - offset.offsetX
+    const y = e.clientY - offset.offsetY
+    const pos = clampFabPosition(x, y)
+    setFabPos(pos)
+    hunterStorage.setFabPosition(currentUrl, pos)
+  }
+
+  const handleFabClick = () => {
+    if (draggedRef.current) {
+      draggedRef.current = false
+      return
+    }
+    setIsOpen(!isOpen)
+  }
 
   const locateInPage = useCallback((word: string) => {
     const HIGHLIGHT_CLASS = 'ebbinghaus-source-highlight'
@@ -137,7 +197,12 @@ function WordDrawer() {
     <>
       <button
         className="hunter-drawer-fab"
-        onClick={() => setIsOpen(!isOpen)}
+        style={fabPos ? { left: fabPos.x, top: fabPos.y, right: 'auto', transform: 'none' } : undefined}
+        onPointerDown={handleFabPointerDown}
+        onPointerMove={handleFabPointerMove}
+        onPointerUp={handleFabPointerUp}
+        onPointerCancel={handleFabPointerUp}
+        onClick={handleFabClick}
         title="Saved words on this page"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

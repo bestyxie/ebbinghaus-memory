@@ -129,6 +129,34 @@ describe('HunterStorage', () => {
     });
   });
 
+  describe('FAB position operations', () => {
+    it('should return empty positions initially', async () => {
+      const positions = await storage.getFabPosition();
+      expect(positions).toEqual({});
+    });
+
+    it('should set and get fab position for a url', async () => {
+      await storage.setFabPosition('https://example.com/a', { x: 120, y: 300 });
+      const positions = await storage.getFabPosition();
+      expect(positions['https://example.com/a']).toEqual({ x: 120, y: 300 });
+    });
+
+    it('should overwrite position for the same url', async () => {
+      await storage.setFabPosition('https://example.com/a', { x: 120, y: 300 });
+      await storage.setFabPosition('https://example.com/a', { x: 40, y: 500 });
+      const positions = await storage.getFabPosition();
+      expect(positions['https://example.com/a']).toEqual({ x: 40, y: 500 });
+    });
+
+    it('should keep separate positions per url', async () => {
+      await storage.setFabPosition('https://example.com/a', { x: 1, y: 2 });
+      await storage.setFabPosition('https://example.com/b', { x: 3, y: 4 });
+      const positions = await storage.getFabPosition();
+      expect(positions['https://example.com/a']).toEqual({ x: 1, y: 2 });
+      expect(positions['https://example.com/b']).toEqual({ x: 3, y: 4 });
+    });
+  });
+
   describe('Cache operations', () => {
     it('should return null for uncached word', async () => {
       const result = await storage.getCachedDefinition('ephemeral');

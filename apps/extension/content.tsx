@@ -199,20 +199,18 @@ const cssText = `
   border: none;
   background: #3b82f6;
   color: white;
-  cursor: pointer;
+  cursor: grab;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 12px rgba(59, 130, 246, 0.4);
-  transition: all 0.2s ease;
-}
-.hunter-drawer-fab:hover {
-  background: #2563eb;
-  transform: translateY(-50%) scale(1.08);
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5);
+  transition: background 0.2s ease;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .hunter-drawer-fab:active {
-  transform: translateY(-50%) scale(0.95);
+  cursor: grabbing;
 }
 .hunter-drawer-badge {
   position: absolute;

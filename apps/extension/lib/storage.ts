@@ -64,7 +64,14 @@ const STORAGE_KEYS = {
   QUEUE: 'hunter-queue',
   SETTINGS: 'hunter-settings',
   CACHE: 'hunter-cache',
+  FAB_POSITION: 'hunter-fab-position',
 } as const;
+
+// Persisted FAB (word list button) position per page URL
+export interface FabPosition {
+  x: number;
+  y: number;
+}
 
 // Storage wrapper class
 export class HunterStorage {
@@ -99,6 +106,17 @@ export class HunterStorage {
 
   async clearQueue(): Promise<void> {
     await this.storage.set(STORAGE_KEYS.QUEUE, []);
+  }
+
+  // FAB position operations (per-URL word list button position)
+  async getFabPosition(): Promise<Record<string, FabPosition>> {
+    return await this.storage.get<Record<string, FabPosition>>(STORAGE_KEYS.FAB_POSITION) ?? {};
+  }
+
+  async setFabPosition(url: string, position: FabPosition): Promise<void> {
+    const positions = await this.getFabPosition();
+    positions[url] = position;
+    await this.storage.set(STORAGE_KEYS.FAB_POSITION, positions);
   }
 
   // Settings operations
