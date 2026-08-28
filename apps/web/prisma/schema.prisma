@@ -302,6 +302,9 @@ model Course {
   status    CourseStatus @default(PROCESSING)
   error     String?     // FAILED 时的失败原因
 
+  transcribeStage    String? // 当前转写阶段：ffmpeg | transcribe | mark | enrich；null = 非转写中
+  transcribeProgress Int     @default(0) // 当前阶段内进度 0-100
+
   // 转写结果 [{ idx, text, startMs, endMs, words: [{ text, isProperNoun }] }]
   transcript Json?
 
