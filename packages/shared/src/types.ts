@@ -173,6 +173,18 @@ export type MediaTypeValue = 'AUDIO' | 'VIDEO'
 export type CourseStatusValue = 'PROCESSING' | 'READY' | 'FAILED'
 export type CourseProgressStatusValue = 'IN_PROGRESS' | 'COMPLETED'
 
+/** 转写阶段 key（顺序即展示顺序；transcribeStage 为其中之一或 null） */
+export const TRANSCRIBE_STAGES = ['ffmpeg', 'transcribe', 'mark', 'enrich'] as const
+export type TranscribeStage = (typeof TRANSCRIBE_STAGES)[number]
+
+/** 阶段 UI 文案（新建页 stepper 与列表页共用） */
+export const TRANSCRIBE_STAGE_LABELS: Record<TranscribeStage, string> = {
+  ffmpeg: '转换音频格式',
+  transcribe: '语音转写',
+  mark: '标记专有名词',
+  enrich: '中文翻译 + 音标',
+}
+
 // === 课程口语学习 ===
 export type SpeakingDifficultyValue = z.infer<typeof speakingDifficultySchema>
 export type ScoreWordResult = z.infer<typeof scoreWordResultSchema>
