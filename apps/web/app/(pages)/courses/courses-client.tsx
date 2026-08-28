@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import type { CourseSummary, SpeakingProgress, SpeakingDifficultyValue } from '@ebbinghaus/shared'
+import { TRANSCRIBE_STAGE_LABELS } from '@ebbinghaus/shared'
 
 function formatDuration(ms: number): string {
   if (!ms) return '--:--'
@@ -130,6 +131,15 @@ function StatusBadge({ course }: { course: CourseSummary }) {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-full" title={course.error ?? ''}>
         <AlertCircle className="w-3 h-3" /> 转写失败
+      </span>
+    )
+  }
+  if (course.transcribeStage) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        {TRANSCRIBE_STAGE_LABELS[course.transcribeStage]}
+        {course.transcribeProgress > 0 ? ` ${course.transcribeProgress}%` : ''}
       </span>
     )
   }
