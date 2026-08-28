@@ -42,7 +42,7 @@ export async function POST(
 
     await prisma.course.update({
       where: { id },
-      data: { status: 'PROCESSING', error: null },
+      data: { status: 'PROCESSING', error: null, transcribeStage: 'ffmpeg', transcribeProgress: 0 },
     })
 
     // 读文件 → Groq Whisper 转写（真实句级时间戳）；未配置/失败回落 mimo
@@ -50,7 +50,17 @@ export async function POST(
     const mime = course.mediaType === 'VIDEO' ? 'video/mp4' : 'audio/mpeg'
     // ffmpeg 转标准 16kHz wav：分块转写需要可按字节切的 PCM（也规避 Whisper 整段跳读）
     const wav = await toStandardWav(absoluteMediaPath(course.mediaPath))
-    let transcription = await callGroqTranscription({ buffer, mime }, wav ?? undefined)
+    await prisma.course.update({
+      where: { id },
+      data: { transcribeStage: 'transcribe', transcribeProgress: 0 },
+    })
+    let transcription = await callGroqTranscription({ buffer, mime }, wav ?? undefined, {
+      onProgress: (f) => {
+        prisma.course
+          .update({ where: { id }, data: { transcribeProgress: Math.round(f * 100) } })
+          .catch(() => {}) // 进度写失败不中断转写
+      },
+    })
     let engine = 'groq'
     let groqError: string | null = null
     if (transcription.error) {
@@ -65,7 +75,7 @@ export async function POST(
       const error = groqError
         ? `Groq: ${groqError}（回落 mimo 也失败: ${transcription.error ?? 'empty'}）`
         : transcription.error ?? 'Empty transcription'
-      await prisma.course.update({ where: { id }, data: { status: 'FAILED', error } })
+      await prisma.course.update({ where: { id }, data: { status: 'FAILED', error, transcribeStage: null } })
       return NextResponse.json({ error }, { status: 502 })
     }
 
@@ -93,7 +103,14 @@ export async function POST(
     }))
 
     // 标记专有名词；失败时降级为全 false（界面变为所有词都要输入），不让整门课失败
-    const marked = await markProperNouns(clamped)
+    await prisma.course.update({ where: { id }, data: { transcribeStage: 'mark', transcribeProgress: 0 } })
+    const marked = await markProperNouns(clamped, {
+      onProgress: (f) => {
+        prisma.course
+          .update({ where: { id }, data: { transcribeProgress: Math.round(f * 100) } })
+          .catch(() => {}) // 进度写失败不中断标记
+      },
+    })
     let finalResult = marked.result
     if (marked.error || marked.result.length === 0) {
       console.warn(`Proper noun marking failed (${marked.error}); degrading to all-false marks`)
@@ -107,7 +124,14 @@ export async function POST(
     }
 
     // 富化：逐句中译 + 逐词音标（口语学习困难难度与逐词弹窗需要）；失败降级留空，不让整门课失败
-    const enriched = await enrichTranscript(finalResult)
+    await prisma.course.update({ where: { id }, data: { transcribeStage: 'enrich', transcribeProgress: 0 } })
+    const enriched = await enrichTranscript(finalResult, {
+      onProgress: (f) => {
+        prisma.course
+          .update({ where: { id }, data: { transcribeProgress: Math.round(f * 100) } })
+          .catch(() => {}) // 进度写失败不中断富化
+      },
+    })
     if (enriched.error) {
       console.warn(`Transcript enrichment degraded (${enriched.error}); speaking fields left empty`)
     }
@@ -122,6 +146,8 @@ export async function POST(
         durationMs: finalDurationMs,
         status: 'READY',
         error: null,
+        transcribeStage: null,
+        transcribeProgress: 100,
       },
     })
 
@@ -134,7 +160,10 @@ export async function POST(
     console.error('Error transcribing course:', error)
     const { id } = await params
     await prisma.course
-      .update({ where: { id }, data: { status: 'FAILED', error: 'Unexpected server error' } })
+      .update({
+        where: { id },
+        data: { status: 'FAILED', error: 'Unexpected server error', transcribeStage: null },
+      })
       .catch(() => {})
     return NextResponse.json({ error: 'Failed to transcribe course' }, { status: 500 })
   }
