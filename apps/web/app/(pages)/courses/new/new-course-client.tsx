@@ -1,8 +1,10 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AudioLines, Image as ImageIcon, Loader2, Upload, Video, X } from 'lucide-react'
+import { AudioLines, CheckCircle2, Image as ImageIcon, Loader2, Upload, Video, X } from 'lucide-react'
+import { TRANSCRIBE_STAGES, TRANSCRIBE_STAGE_LABELS } from '@ebbinghaus/shared'
+import type { CourseSummary, TranscribeStage } from '@ebbinghaus/shared'
 
 const MAX_MEDIA_BYTES = 100 * 1024 * 1024
 
@@ -74,10 +76,29 @@ export function NewCourseClient() {
   const [title, setTitle] = useState('')
   const [phase, setPhase] = useState<Phase>('form')
   const [error, setError] = useState<string | null>(null)
+  const [courseId, setCourseId] = useState<string | null>(null)
+  const [stageInfo, setStageInfo] = useState<{ stage: TranscribeStage; progress: number } | null>(null)
   const mediaInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
   const isVideo = mediaFile?.type.startsWith('video/') ?? false
+
+  // 转写期每 2s 轮询课程列表，读取当前阶段与阶段内进度
+  useEffect(() => {
+    if (phase !== 'transcribing' || !courseId) return
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/courses')
+        if (!res.ok) return
+        const data: { courses: CourseSummary[] } = await res.json()
+        const c = data.courses.find((x) => x.id === courseId)
+        if (c?.transcribeStage) setStageInfo({ stage: c.transcribeStage, progress: c.transcribeProgress })
+      } catch {
+        // 轮询失败静默，下轮重试
+      }
+    }, 2000)
+    return () => clearInterval(timer)
+  }, [phase, courseId])
 
   function pickMedia(file: File | undefined) {
     if (!file) return
@@ -140,7 +161,9 @@ export function NewCourseClient() {
         throw new Error(uploadData.error ?? '上传失败')
       }
 
+      setCourseId(uploadData.course.id)
       setPhase('transcribing')
+      setStageInfo({ stage: 'ffmpeg', progress: 0 })
       // 浏览器读真实时长随转写请求上报，服务端用于校准模型时间戳漂移
       const durationMs = await readMediaDurationMs(mediaFile)
       const transcriptRes = await fetch(`/api/courses/${uploadData.course.id}/transcribe`, {
@@ -171,6 +194,50 @@ export function NewCourseClient() {
       {autoCoverNote && !error && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-sm">
           未选择封面，已自动截取视频第一帧作为封面
+        </div>
+      )}
+
+      {/* 转写分步进度 */}
+      {phase === 'transcribing' && (
+        <div className="mb-4 p-4 bg-blue-50/50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            {TRANSCRIBE_STAGES.map((s) => {
+              const idx = TRANSCRIBE_STAGES.indexOf(s)
+              const cur = TRANSCRIBE_STAGES.indexOf(stageInfo?.stage ?? 'ffmpeg')
+              const done = idx < cur
+              const active = idx === cur
+              return (
+                <div key={s} className="flex items-center gap-2">
+                  {idx > 0 && <div className={`h-0.5 w-6 ${done || active ? 'bg-blue-400' : 'bg-gray-200'}`} />}
+                  <div
+                    className={`flex items-center gap-1.5 text-xs ${
+                      active ? 'text-blue-700 font-medium' : done ? 'text-green-700' : 'text-gray-400'
+                    }`}
+                  >
+                    {done ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : active ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full border border-gray-300" />
+                    )}
+                    {TRANSCRIBE_STAGE_LABELS[s]}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {/* 阶段内进度：无刻度阶段（ffmpeg / 整段转写）显示不定进度动画，不显示假百分比 */}
+          {stageInfo && (
+            <div className="mt-3 h-1.5 bg-blue-100 rounded overflow-hidden">
+              <div
+                className={`h-full bg-blue-500 rounded transition-all duration-500 ${
+                  stageInfo.progress > 0 ? '' : 'animate-pulse w-1/3'
+                }`}
+                style={stageInfo.progress > 0 ? { width: `${stageInfo.progress}%` } : undefined}
+              />
+            </div>
+          )}
         </div>
       )}
 
