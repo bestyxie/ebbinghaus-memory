@@ -13,7 +13,14 @@ import {
   COVER_MIME_ALLOWLIST,
   absoluteMediaPath,
 } from '@/app/lib/course-media'
-import { transcriptSchema, type CourseSummary } from '@ebbinghaus/shared'
+import { transcriptSchema, TRANSCRIBE_STAGES, type CourseSummary, type TranscribeStage } from '@ebbinghaus/shared'
+
+const TRANSCRIBE_STAGE_SET: ReadonlySet<string> = new Set(TRANSCRIBE_STAGES)
+
+// DB 任意字符串 → 合法 stage 或 null
+function isTranscribeStage(v: string | null): v is TranscribeStage {
+  return v !== null && TRANSCRIBE_STAGE_SET.has(v)
+}
 
 /**
  * POST /api/courses — multipart 上传创建课程
@@ -113,6 +120,8 @@ function toSummary(
     durationMs: number
     status: 'PROCESSING' | 'READY' | 'FAILED'
     error: string | null
+    transcribeStage: string | null
+    transcribeProgress: number
     transcript: unknown
     createdAt: Date
   },
@@ -131,6 +140,8 @@ function toSummary(
     durationMs: course.durationMs,
     status: course.status,
     error: course.error,
+    transcribeStage: isTranscribeStage(course.transcribeStage) ? course.transcribeStage : null,
+    transcribeProgress: course.transcribeProgress,
     sentenceCount: parsed.success ? parsed.data.length : 0,
     createdAt: course.createdAt.toISOString(),
     progress: progress

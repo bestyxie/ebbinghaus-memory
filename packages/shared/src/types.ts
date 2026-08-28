@@ -200,6 +200,8 @@ export interface CourseSummary {
   durationMs: number
   status: CourseStatusValue
   error: string | null
+  transcribeStage: TranscribeStage | null
+  transcribeProgress: number
   sentenceCount: number
   createdAt: string
   progress: {
