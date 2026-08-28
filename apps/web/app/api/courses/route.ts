@@ -13,7 +13,13 @@ import {
   COVER_MIME_ALLOWLIST,
   absoluteMediaPath,
 } from '@/app/lib/course-media'
-import { transcriptSchema, TRANSCRIBE_STAGES, type CourseSummary, type TranscribeStage } from '@ebbinghaus/shared'
+import {
+  transcriptSchema,
+  TRANSCRIBE_STAGES,
+  type CourseSummary,
+  type TranscribeStage,
+} from '@ebbinghaus/shared'
+import { isZombieProcessing, ZOMBIE_PROCESSING_ERROR } from '@/app/lib/course-status'
 
 const TRANSCRIBE_STAGE_SET: ReadonlySet<string> = new Set(TRANSCRIBE_STAGES)
 
@@ -92,6 +98,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/courses — 当前用户课程列表
+ * 读取时清扫僵尸 PROCESSING（转写请求随服务重启中断，状态永久卡住）
  */
 export async function GET(request: NextRequest) {
   const userId = await requireAuth(request)
@@ -103,7 +110,23 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
       include: { progress: true },
     })
-    return NextResponse.json({ courses: courses.map((c) => toSummary(c, c.progress)) })
+    const now = new Date()
+    const zombieIds = courses
+      .filter((c) => isZombieProcessing(c.status, c.updatedAt, now))
+      .map((c) => c.id)
+    if (zombieIds.length > 0) {
+      await prisma.course.updateMany({
+        where: { id: { in: zombieIds }, status: 'PROCESSING' },
+        data: { status: 'FAILED', error: ZOMBIE_PROCESSING_ERROR },
+      })
+    }
+    // 本次响应立即反映修复，不等下一轮轮询
+    const corrected = courses.map((c) =>
+      zombieIds.includes(c.id)
+        ? { ...c, status: 'FAILED' as const, error: ZOMBIE_PROCESSING_ERROR }
+        : c,
+    )
+    return NextResponse.json({ courses: corrected.map((c) => toSummary(c, c.progress)) })
   } catch (error) {
     console.error('Error listing courses:', error)
     return NextResponse.json({ error: 'Failed to list courses' }, { status: 500 })
