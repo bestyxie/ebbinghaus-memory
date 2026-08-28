@@ -286,10 +286,12 @@ export function assignWordsToSentences(
  * （实测 englishpod 整段上传丢掉 2.5-30s 的对话），分块后每块独立解码无此问题。
  * 原始 Buffer 无法在服务端安全切片 → 要求调用方提供 wav PCM 才能按字节切；
  * 非 wav 输入走整段上传（多数文件 OK，个别片头静音文件可能跳读）。
+ * onProgress 仅分块路径触发（每块成功后 fraction = chunkEnd/totalSec），整段路径不回调
  */
 export async function callGroqTranscription(
   file: { buffer: Buffer; mime: string },
   chunkedWav?: Buffer,
+  opts?: { onProgress?: (fraction: number) => void },
 ): Promise<{ sentences: RawSentence[]; error?: string }> {
   const key = process.env.GROQ_API_KEY
   if (!key) return { sentences: [], error: 'GROQ_API_KEY not configured' }
@@ -350,6 +352,7 @@ export async function callGroqTranscription(
         const words = s.words?.map((w) => ({ ...w, startMs: offsetMs + w.startMs, endMs: offsetMs + w.endMs }))
         all.push({ text: s.text, startMs: absStart, endMs: offsetMs + s.endMs, words })
       }
+      opts?.onProgress?.(Math.min(1, chunkEnd / totalSec))
       cursorSec = chunkEnd - OVERLAP_SEC
       if (chunkEnd >= totalSec) break
       chunkIndex++
@@ -620,9 +623,11 @@ async function runLLMChain(prompt: string, maxTokens: number): Promise<string> {
 /**
  * 调用 LLM 分批标记专有名词，返回完整 transcript
  * 主通道：Groq gpt-oss-120b（免费，与转写共用 key）；失败回落 opencode glm-5.1
+ * onProgress 在每批 LLM 调用完成后触发（无论该批是否降级），fraction ∈ (0, 1]
  */
 export async function markProperNouns(
   sentences: RawSentence[],
+  opts?: { onProgress?: (fraction: number) => void },
 ): Promise<{ result: TranscriptSentence[]; error?: string }> {
   try {
     const batches: RawSentence[][] = []
@@ -630,7 +635,8 @@ export async function markProperNouns(
       batches.push(sentences.slice(i, i + PROPER_NOUN_BATCH_SIZE))
     }
     const allMarks: unknown[] = []
-    for (const batch of batches) {
+    for (let bi = 0; bi < batches.length; bi++) {
+      const batch = batches[bi]
       const numbered = batch.map((s, i) => `${i + 1}. ${s.text}`).join('\n')
       const prompt = `For each numbered sentence, list EVERY word in order as JSON objects with isProperNoun=true only for person/place/organization/brand names; all other words false. Keep original word form.
 
@@ -652,9 +658,9 @@ Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — o
           for (let i = 0; i < batch.length; i++) {
             allMarks.push([])
           }
-          continue
+        } else {
+          allMarks.push(...marks)
         }
-        allMarks.push(...marks)
       } catch (e) {
         // 单批解析失败只降级该批为全 false，不让整门课失败
         console.warn(`Proper noun batch error: ${e instanceof Error ? e.message : 'unknown'}; degrading batch`)
@@ -662,6 +668,7 @@ Return ONLY JSON: {"marks": [[{"text":"word","isProperNoun":false}], ...]} — o
           allMarks.push([])
         }
       }
+      opts?.onProgress?.((bi + 1) / batches.length)
     }
     return parseProperNounResponse(JSON.stringify({ marks: allMarks }), sentences)
   } catch (e) {
@@ -675,9 +682,11 @@ const ENRICH_BATCH_SIZE = 8
 /**
  * 富化 transcript：逐句中译 + 逐词 IPA 音标
  * 输出合并进 TranscriptSentence（translation / word.phonetic），失败降级字段留空
+ * onProgress 在每批 LLM 调用完成后触发（无论该批是否降级），fraction ∈ (0, 1]
  */
 export async function enrichTranscript(
   sentences: TranscriptSentence[],
+  opts?: { onProgress?: (fraction: number) => void },
 ): Promise<{ result: TranscriptSentence[]; error?: string }> {
   if (sentences.length === 0) return { result: sentences }
   try {
@@ -686,7 +695,8 @@ export async function enrichTranscript(
     for (let i = 0; i < sentences.length; i += ENRICH_BATCH_SIZE) {
       batches.push(sentences.slice(i, i + ENRICH_BATCH_SIZE))
     }
-    for (const batch of batches) {
+    for (let bi = 0; bi < batches.length; bi++) {
+      const batch = batches[bi]
       const numbered = batch
         .map((s, i) => {
           const words = s.words.map((w) => w.text).join(' ')
@@ -707,20 +717,21 @@ Return ONLY JSON: {"translations": ["中文翻译1", ...], "words": [[{"text":"w
         const wordMarks = jsonField(data, 'words')
         const translationsOk = Array.isArray(translations) && translations.length === batch.length
         const wordsOk = Array.isArray(wordMarks) && wordMarks.length === batch.length
-        if (!translationsOk && !wordsOk) {
+        if (translationsOk || wordsOk) {
+          const batchIdxStart = batch[0].idx
+          const batchSlice = result.slice(batchIdxStart, batchIdxStart + batch.length)
+          const merged = applyEnrichment(batchSlice, translations, wordMarks)
+          result.splice(batchIdxStart, batch.length, ...merged)
+        } else {
           console.warn(
             `Enrich batch degraded (${extracted.error ?? `translations ${Array.isArray(translations) ? translations.length : 'n/a'}/${batch.length}, words ${Array.isArray(wordMarks) ? wordMarks.length : 'n/a'}/${batch.length}`}); head: ${stripCodeFence(resultText).slice(0, 120)}`,
           )
-          continue
         }
-        const batchIdxStart = batch[0].idx
-        const batchSlice = result.slice(batchIdxStart, batchIdxStart + batch.length)
-        const merged = applyEnrichment(batchSlice, translations, wordMarks)
-        result.splice(batchIdxStart, batch.length, ...merged)
       } catch (e) {
         // 单批解析失败只跳过该批，不让整个富化失败
         console.warn(`Enrich batch error: ${e instanceof Error ? e.message : 'unknown'}; skipping batch`)
       }
+      opts?.onProgress?.((bi + 1) / batches.length)
     }
     return { result }
   } catch (e) {

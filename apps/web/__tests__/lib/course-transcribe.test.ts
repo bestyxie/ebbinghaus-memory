@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import type { TranscriptSentence } from '@ebbinghaus/shared'
 import {
   normalizeWord,
   tokenizeSentence,
@@ -12,6 +13,7 @@ import {
   assignWordsToSentences,
   enrichTranscript,
   markProperNouns,
+  callGroqTranscription,
 } from '@/app/lib/course-transcribe'
 
 describe('normalizeWord', () => {
@@ -496,5 +498,120 @@ describe('enrichTranscript / markProperNouns batch resilience', () => {
     expect(res.result.slice(0, 20).every((s) => s.words.every((w) => !w.isProperNoun))).toBe(true)
     // 第二批保留专有名词标记
     expect(res.result.slice(20).some((s) => s.words.some((w) => w.isProperNoun))).toBe(true)
+  })
+})
+
+describe('onProgress callbacks', () => {
+  const originalFetch = globalThis.fetch
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    delete process.env.GROQ_API_KEY
+    vi.restoreAllMocks()
+  })
+
+  /** 构造 n 个连续 idx 的 TranscriptSentence（富化入参形状） */
+  function buildTranscriptSentences(count: number): TranscriptSentence[] {
+    return Array.from({ length: count }, (_, i) => ({
+      idx: i,
+      text: `Sentence ${i} is here.`,
+      startMs: i * 1000,
+      endMs: i * 1000 + 600,
+      words: [{ text: `Word${i}`, isProperNoun: false }],
+    }))
+  }
+
+  /** mock 全部 fetch 为 Groq chat 成功返回（content 可控，缺省空对象触发降级但批仍完成） */
+  function mockLLMSuccess(content = '{}') {
+    const body = JSON.stringify({ choices: [{ message: { content } }] })
+    globalThis.fetch = vi.fn(async () => new Response(body, { status: 200 }))
+  }
+
+  /** mock 全部 fetch 为 Groq 转写成功返回（verbose_json：1 segment + 1 word） */
+  function mockGroqTranscribeSuccess() {
+    const body = JSON.stringify({
+      segments: [{ text: 'Hello there.', start: 0.1, end: 0.9 }],
+      words: [{ word: 'Hello', start: 0.1, end: 0.5 }],
+    })
+    globalThis.fetch = vi.fn(async () => new Response(body, { status: 200 }))
+  }
+
+  it('markProperNouns reports per-batch progress [1/3, 2/3, 1] for 45 sentences', async () => {
+    process.env.GROQ_API_KEY = 'test-key'
+    // PROPER_NOUN_BATCH_SIZE=20 → 45 句分 3 批（20+20+5）
+    const sentences = buildTranscriptSentences(45).map((s) => ({
+      text: s.text,
+      startMs: s.startMs,
+      endMs: s.endMs,
+    }))
+    // 空 marks 每批都降级为全 false，但批仍算完成 → 回调仍应触发
+    mockLLMSuccess('{}')
+    const fractions: number[] = []
+    const res = await markProperNouns(sentences, {
+      onProgress: (f) => fractions.push(f),
+    })
+    expect(res.error).toBeUndefined()
+    expect(fractions).toEqual([1 / 3, 2 / 3, 1])
+  })
+
+  it('markProperNouns does not call onProgress when opts omitted', async () => {
+    process.env.GROQ_API_KEY = 'test-key'
+    const sentences = buildTranscriptSentences(45).map((s) => ({
+      text: s.text,
+      startMs: s.startMs,
+      endMs: s.endMs,
+    }))
+    mockLLMSuccess('{}')
+    // 不传 opts 必须零影响（enrich route 现状）
+    const res = await markProperNouns(sentences)
+    expect(res.error).toBeUndefined()
+    expect(res.result).toHaveLength(45)
+  })
+
+  it('enrichTranscript reports per-batch progress [1/2, 1] for 9 sentences', async () => {
+    process.env.GROQ_API_KEY = 'test-key'
+    // ENRICH_BATCH_SIZE=8 → 9 句分 2 批（8+1）
+    const sentences = buildTranscriptSentences(9)
+    mockLLMSuccess('{}')
+    const fractions: number[] = []
+    const res = await enrichTranscript(sentences, {
+      onProgress: (f) => fractions.push(f),
+    })
+    expect(res.error).toBeUndefined()
+    expect(fractions).toEqual([1 / 2, 1])
+  })
+
+  it('callGroqTranscription reports chunk progress on the chunked path only', async () => {
+    process.env.GROQ_API_KEY = 'test-key'
+    // 构造 60s 的 16kHz 单声道 16bit wav（44B 头 + 60*32000B 数据）→ 25s 块 + 2s 重叠
+    // → cursor 0→23→46，3 块后回调递增到 1
+    const wav = Buffer.concat([Buffer.alloc(44), Buffer.alloc(60 * 16000 * 2)])
+    mockGroqTranscribeSuccess()
+    const fractions: number[] = []
+    const res = await callGroqTranscription(
+      { buffer: Buffer.alloc(8), mime: 'audio/wav' },
+      wav,
+      { onProgress: (f) => fractions.push(f) },
+    )
+    expect(res.error).toBeUndefined()
+    expect(res.sentences.length).toBeGreaterThan(0)
+    // 单调递增、首值 >0、末值恰好 1
+    for (let i = 1; i < fractions.length; i++) {
+      expect(fractions[i]).toBeGreaterThanOrEqual(fractions[i - 1])
+    }
+    expect(fractions[0]).toBeGreaterThan(0)
+    expect(fractions[fractions.length - 1]).toBe(1)
+  }, 30_000)
+
+  it('callGroqTranscription whole-file path never calls onProgress', async () => {
+    process.env.GROQ_API_KEY = 'test-key'
+    mockGroqTranscribeSuccess()
+    const fractions: number[] = []
+    const res = await callGroqTranscription(
+      { buffer: Buffer.alloc(8), mime: 'audio/wav' },
+      undefined,
+      { onProgress: (f) => fractions.push(f) },
+    )
+    expect(res.error).toBeUndefined()
+    expect(fractions).toEqual([])
   })
 })
