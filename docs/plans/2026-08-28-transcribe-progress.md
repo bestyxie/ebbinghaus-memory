@@ -47,10 +47,10 @@ export const TRANSCRIBE_STAGE_LABELS: Record<TranscribeStage, string> = {
   transcribeProgress: number
 ```
 
-**Step 3: 构建 shared 确认无类型错误**
+**Step 3: 类型检查确认无错误**
 
-Run: `cd packages/shared && pnpm build`
-Expected: 构建成功（shared 是 web 的依赖源，必须先过）
+Run: `pnpm --filter shared type-check`（shared 为 raw-source 包无 build 脚本）
+Expected: 通过
 
 **Step 4: Commit**
 
@@ -267,8 +267,18 @@ git commit -m "feat(transcribe): persist stage/progress during pipeline"
 
 ### Task 5: CourseSummary 透出 + 列表 API
 
+> 偏差修正（Task 1 执行记录）：Task 1 加 CourseSummary 必填字段会先破坏 web type-check（toSummary 构造点在 :144 报缺字段），已推迟到本任务与 web 侧一起落地。
+
 **Files:**
+- Modify: `packages/shared/src/types.ts:195`（CourseSummary 接口，`error` 后加两字段）
 - Modify: `apps/web/app/api/courses/route.ts:124`（toSummary 签名与返回）
+
+**Step 0: CourseSummary 接口追加（Task 1 推迟项）**
+
+```ts
+  transcribeStage: TranscribeStage | null
+  transcribeProgress: number
+```
 
 **Step 1: toSummary 入参类型加两字段、返回加两字段**
 
