@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Loader2,
   Mic,
+  Play,
   Plus,
   RefreshCw,
   Trash2,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react'
 import type { CourseSummary, SpeakingProgress, SpeakingDifficultyValue } from '@ebbinghaus/shared'
 import { TRANSCRIBE_STAGE_LABELS } from '@ebbinghaus/shared'
+import { CourseFullPlayer } from './course-full-player'
 
 function formatDuration(ms: number): string {
   if (!ms) return '--:--'
@@ -157,6 +159,7 @@ export function CoursesClient() {
   const [transcribingId, setTranscribingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [modalCourse, setModalCourse] = useState<CourseSummary | null>(null)
+  const [playerCourse, setPlayerCourse] = useState<CourseSummary | null>(null)
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const load = useCallback(async () => {
@@ -256,23 +259,55 @@ export function CoursesClient() {
             const pct = course.sentenceCount > 0 ? Math.round((done / course.sentenceCount) * 100) : 0
             return (
               <div key={course.id} className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow flex flex-col">
-                <div className="relative aspect-video bg-gray-100">
-                  {course.coverPath ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={`/api/courses/${course.id}/media?type=cover`}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                      <MediaIcon className="w-12 h-12" />
+                {course.status === 'READY' ? (
+                  <button
+                    onClick={() => setPlayerCourse(course)}
+                    title="全片播放"
+                    className="group relative aspect-video w-full bg-gray-100 block text-left cursor-pointer"
+                  >
+                    {course.coverPath ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`/api/courses/${course.id}/media?type=cover`}
+                        alt={course.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <MediaIcon className="w-12 h-12" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2">
+                      <StatusBadge course={course} />
                     </div>
-                  )}
-                  <div className="absolute top-2 right-2">
-                    <StatusBadge course={course} />
+                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white backdrop-blur-sm">
+                      <Play className="w-3 h-3" /> 完整播放
+                    </span>
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/10">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/25 opacity-0 transition-opacity group-hover:opacity-100 backdrop-blur-sm">
+                        <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                      </span>
+                    </span>
+                  </button>
+                ) : (
+                  <div className="relative aspect-video bg-gray-100">
+                    {course.coverPath ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`/api/courses/${course.id}/media?type=cover`}
+                        alt={course.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <MediaIcon className="w-12 h-12" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2">
+                      <StatusBadge course={course} />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="p-4 flex-1 flex flex-col">
                   <h3 className="font-medium text-gray-900 truncate" title={course.title}>
@@ -350,6 +385,7 @@ export function CoursesClient() {
       )}
 
       {modalCourse && <LearnModeModal course={modalCourse} onClose={() => setModalCourse(null)} />}
+      {playerCourse && <CourseFullPlayer course={playerCourse} onClose={() => setPlayerCourse(null)} />}
     </div>
   )
 }

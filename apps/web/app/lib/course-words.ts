@@ -41,3 +41,26 @@ export function sentencePlayRange(s: {
   }
   return { startMs: s.startMs, endMs: s.endMs }
 }
+
+/**
+ * 按播放位置（毫秒）定位当前句下标（全片播放字幕同步用）。
+ * 句子按 startMs 升序。返回 startMs <= t < endMs 的句子下标；
+ * 在首句之前、两句之间、末句之后均返回 null。
+ */
+export function sentenceIndexAtMs(
+  sentences: { startMs: number; endMs: number }[],
+  timeMs: number,
+): number | null {
+  let lastStarted = -1
+  for (let i = 0; i < sentences.length; i++) {
+    if (timeMs >= sentences[i].startMs) {
+      lastStarted = i
+    } else {
+      break
+    }
+  }
+  if (lastStarted >= 0 && timeMs < sentences[lastStarted].endMs) {
+    return lastStarted
+  }
+  return null
+}
