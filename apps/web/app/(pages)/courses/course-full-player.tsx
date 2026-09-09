@@ -77,6 +77,16 @@ export function CourseFullPlayer({ course, onClose }: { course: CourseSummary; o
     }
   }, [])
 
+  // 打开弹窗即自动播放（点击封面属页面交互，满足浏览器 autoplay 策略）
+  useEffect(() => {
+    const el = mediaRef.current
+    if (!el) return
+    const promise = el.play()
+    if (promise) {
+      void promise.catch(() => {})
+    }
+  }, [])
+
   // 播放位置 → 当前句高亮（timeupdate ~4Hz，值不变则跳过重渲染）
   const syncActive = useCallback(() => {
     const el = mediaRef.current
