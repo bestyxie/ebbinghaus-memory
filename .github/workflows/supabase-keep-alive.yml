@@ -36,7 +36,8 @@ jobs:
       - name: 5. Generate Prisma Client
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DIRECT_URL }}
-        run: npx prisma generate
+        # pnpm exec 只从 workspace node_modules 解析；npx 找不到本地包会静默拉 registry（拉到 Prisma 8 RC 导致 generate 命令不存在）
+        run: pnpm exec prisma generate
         working-directory: apps/web
 
       - name: 6. 查询 Supabase 保活

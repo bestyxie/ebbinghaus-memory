@@ -37,14 +37,15 @@ jobs:
       - name: 5. Generate Prisma Client
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DIRECT_URL }}
-        run: npx prisma generate
+        # pnpm exec 只从 workspace node_modules 解析；npx 找不到本地包会静默拉 registry
+        run: pnpm exec prisma generate
         working-directory: apps/web
 
       - name: 6. 更新 Supabase 数据库表结构
         env:
           # 注意：必须是 5432 端口的直连 URL
           DATABASE_URL: ${{ secrets.SUPABASE_DIRECT_URL }}
-        run: npx prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
         working-directory: apps/web
 
       - name: Install Vercel CLI
