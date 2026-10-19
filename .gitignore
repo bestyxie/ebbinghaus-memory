@@ -63,6 +63,7 @@ test-results/
 # Temporary YAML files (but keep config files)
 *.yaml
 !playwright.config.yaml
+!pnpm-workspace.yaml
 
 # Build output
 dist/
